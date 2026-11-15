@@ -1,0 +1,2085 @@
+/* Estilo "atlas amable" (SPEC 10). Colores como variables; modo oscuro automático. */
+:root {
+  --fondo: #f6f4ef;
+  --superficie: #ffffff;
+  --texto: #1f2a37;
+  --texto-suave: #586271;
+  --borde: #e2ddd2;
+  --acento: #2f62a8;
+  --acento-texto: #ffffff;
+
+  --mar: #dbe8f1;
+  --tierra: #efece6;
+  --tierra-borde: #d3ccbf;
+  --pais: #d8d4cc;
+  --pais-hover: #cbc6bc;
+  --pais-borde: #ffffff;
+  --objetivo: #a9c9ef;
+  --objetivo-borde: #2f62a8;
+  /* El color base de la región lo fija main.ts desde regions.json. */
+  --region-base: #c8b6e2;
+  --color-region: var(--region-base);
+  /* Texto sobre el color de la región: siempre oscuro, también en modo oscuro (el pastel es claro). */
+  --texto-sobre-region: #1f2a37;
+
+  --acierto: #1f7d5c;
+  --acierto-fondo: #dcf3e9;
+  --acierto-mapa: #9ad9c0;
+  --fallo: #a8492f;
+  --fallo-fondo: #fde8df;
+  --fallo-mapa: #f5bca7;
+
+  --estrella: #1f2a37;
+  --halo: #ffffff;
+  --radio: 14px;
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.05);
+}
+
+/* Oscuro: el del sistema (salvo si se ha elegido Claro en ⋯) o el elegido en ⋯ (tema.ts). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --fondo: #161b22;
+    --superficie: #1f2630;
+    --texto: #e6e9ee;
+    --texto-suave: #a3adba;
+    --borde: #2f3845;
+    --acento: #7fa8e6;
+    --acento-texto: #10161e;
+
+    --mar: #13202e;
+    --tierra: #242c37;
+    --tierra-borde: #36404d;
+    --pais: #3a4452;
+    --pais-hover: #465263;
+    --pais-borde: #161b22;
+    --objetivo: #3d5f8f;
+    --objetivo-borde: #9cc0f0;
+
+    --acierto: #7fdcb7;
+    --acierto-fondo: #17352b;
+    --acierto-mapa: #2f7f62;
+    --fallo: #f4ad94;
+    --fallo-fondo: #3a2620;
+    --fallo-mapa: #9a5a45;
+
+    --estrella: #f3f5f8;
+    --halo: #13202e;
+    --sombra: none;
+  }
+}
+
+:root[data-theme='dark'] {
+  --fondo: #161b22;
+  --superficie: #1f2630;
+  --texto: #e6e9ee;
+  --texto-suave: #a3adba;
+  --borde: #2f3845;
+  --acento: #7fa8e6;
+  --acento-texto: #10161e;
+
+  --mar: #13202e;
+  --tierra: #242c37;
+  --tierra-borde: #36404d;
+  --pais: #3a4452;
+  --pais-hover: #465263;
+  --pais-borde: #161b22;
+  --objetivo: #3d5f8f;
+  --objetivo-borde: #9cc0f0;
+
+  --acierto: #7fdcb7;
+  --acierto-fondo: #17352b;
+  --acierto-mapa: #2f7f62;
+  --fallo: #f4ad94;
+  --fallo-fondo: #3a2620;
+  --fallo-mapa: #9a5a45;
+
+  --estrella: #f3f5f8;
+  --halo: #13202e;
+  --sombra: none;
+}
+
+:root {
+  color-scheme: light dark;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 18px;
+  line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* ---------- Estructura ---------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  height: var(--alto-app, 100dvh);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  flex-wrap: wrap;
+}
+
+.marca {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.region-actual {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 45vw;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.region-nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.region-flecha {
+  color: var(--texto-suave);
+  font-size: 0.8em;
+}
+
+@media (max-width: 480px) {
+  .barra {
+    flex-wrap: nowrap;
+    padding: 6px 16px;
+  }
+  .marca {
+    font-size: 1.1rem;
+  }
+  .modo {
+    padding: 0 14px;
+  }
+  /* En pantallas estrechas se oculta el nombre de la app para que quepan pestañas y región. */
+  .marca {
+    display: none;
+  }
+  .barra {
+    gap: 8px;
+    padding: 6px 12px;
+  }
+  .modo {
+    padding: 0 11px;
+    font-size: 0.95rem;
+  }
+  .mapa {
+    --reserva-superior: 48px;
+  }
+  /* El selector de región va sobre la esquina del mapa: en la barra no cabe. */
+  .region-actual {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 72px);
+    left: calc(env(safe-area-inset-left) + 24px);
+    z-index: 5;
+    max-width: calc(100vw - 48px);
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 0.95rem;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
+  }
+  .modos {
+    flex: 1;
+    justify-content: space-between;
+  }
+}
+
+.modos {
+  display: flex;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.modo {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 700;
+  color: var(--texto-suave);
+  cursor: pointer;
+}
+
+.modo[aria-pressed='true'] {
+  background: var(--acento);
+  color: var(--acento-texto);
+}
+
+/* Móvil: mapa arriba, tarjeta abajo. */
+.contenido {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(220px, 46%) 1fr;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+/* iPad horizontal y PC: mapa a la izquierda, panel a la derecha. */
+@media (min-width: 900px), (min-width: 700px) and (orientation: landscape) {
+  .contenido {
+    grid-template-rows: 1fr;
+    grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr);
+  }
+}
+
+.mapa {
+  position: relative;
+  min-height: 0;
+  border-radius: var(--radio);
+  overflow: hidden;
+  background: var(--mar);
+  box-shadow: var(--sombra);
+}
+
+.panel {
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 16px 20px 20px;
+  box-shadow: var(--sombra);
+}
+
+.titulo-panel {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--texto-suave);
+}
+
+/* ---------- Mapa ---------- */
+
+.mapa-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Los gestos (pellizco, arrastre) los gestiona el mapa. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mar {
+  fill: var(--mar);
+}
+
+.tierra,
+.pais {
+  /* El grosor de los bordes no cambia con el zoom. */
+  vector-effect: non-scaling-stroke;
+}
+
+.tierra {
+  fill: var(--tierra);
+  stroke: var(--tierra-borde);
+  stroke-width: 0.6;
+}
+
+.pais {
+  fill: var(--pais);
+  stroke: var(--pais-borde);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  transition: fill 0.2s ease;
+}
+
+.pais.tocable {
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .pais.tocable:not(.seleccion):hover {
+    fill: var(--pais-hover);
+  }
+}
+
+.pais:focus {
+  outline: none;
+}
+
+.pais:focus-visible {
+  stroke: var(--acento);
+  stroke-width: 3;
+}
+
+/* Progreso: el mapa se colorea según el dominio (SPEC 10). */
+.pais.nivel-1 {
+  fill: color-mix(in srgb, var(--color-pais, var(--color-region)) 35%, var(--pais));
+}
+
+.pais.nivel-2 {
+  fill: color-mix(in srgb, var(--color-pais, var(--color-region)) 65%, var(--pais));
+}
+
+.pais.nivel-3 {
+  fill: var(--color-pais, var(--color-region));
+}
+
+/* Países del continente fuera de la región: se ven, más apagados, y no se tocan. */
+.pais.contexto {
+  stroke: var(--tierra-borde);
+  stroke-width: 0.6;
+  opacity: 0.5;
+}
+
+.pais.contexto:not([class*='nivel-']) {
+  fill: var(--tierra);
+}
+
+/* Microestados: círculo visible y área tocable invisible más grande. */
+.microestado .toque {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.microestado.tocable,
+.microestado.jugable {
+  cursor: pointer;
+}
+
+.pais.circulo {
+  stroke: var(--pais-borde);
+  stroke-width: 1.5;
+}
+
+.microestado.contexto {
+  pointer-events: none;
+}
+
+/* Los círculos de la región en juego, con borde marcado para que se vean en claro y en oscuro. */
+.microestado.jugable .pais.circulo {
+  stroke: var(--texto-suave);
+  stroke-width: 2;
+}
+
+.pais.seleccion {
+  fill: var(--color-region);
+}
+
+.pais.objetivo {
+  fill: var(--objetivo);
+  stroke: var(--objetivo-borde);
+  stroke-width: 2.2;
+}
+
+.pais.acierto {
+  fill: var(--acierto-mapa);
+  animation: latido 0.45s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.pais.fallo {
+  fill: var(--fallo-mapa);
+}
+
+.estrella {
+  fill: var(--estrella);
+  stroke: var(--halo);
+  stroke-width: 1.5;
+  paint-order: stroke;
+}
+
+.estrella-fondo {
+  opacity: 0.55;
+}
+
+/* Examen: la estrella de la pregunta, más grande y en el color de acento. */
+.estrella.activa {
+  fill: var(--acento);
+  stroke-width: 2.5;
+}
+
+.etiqueta-capital {
+  font-weight: 800;
+  font-size: 16px;
+  fill: var(--texto);
+  stroke: var(--halo);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  pointer-events: none;
+}
+
+.capa-capital {
+  pointer-events: none;
+}
+
+/* Poco alto (p. ej. con el teclado abierto en el móvil): el mapa cede sitio. */
+@media (max-height: 560px) and (max-width: 899px) {
+  .contenido {
+    grid-template-rows: minmax(110px, 32%) 1fr;
+    gap: 8px;
+  }
+}
+
+/* ---------- Explorar ---------- */
+
+.ayuda {
+  color: var(--texto-suave);
+  margin: 4px 0 16px;
+}
+
+.ficha {
+  min-height: 7.5em;
+}
+
+.ficha:has(.ayuda) {
+  min-height: 0;
+}
+
+.ficha-pais {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+}
+
+/* Evita que el «?» se quede solo en otra línea. */
+.sin-corte {
+  white-space: nowrap;
+}
+
+/* Nombre del país resaltado con el mismo color que tiene en el mapa. */
+.nombre-pais {
+  display: inline-block;
+  padding: 0 0.4em;
+  border-radius: 8px;
+  font-weight: 800;
+  color: var(--texto);
+}
+
+.nombre-pais.objetivo {
+  background: var(--objetivo);
+  box-shadow: inset 0 0 0 2px var(--objetivo-borde);
+}
+
+.nombre-pais.seleccion {
+  background: var(--color-region);
+  color: var(--texto-sobre-region);
+}
+
+.ficha-capital {
+  margin: 0 0 12px;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.estrella-texto {
+  font-size: 0.7em;
+  vertical-align: 0.15em;
+}
+
+.truco {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+}
+
+.truco-etiqueta {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--texto-suave);
+}
+
+.nota {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.lista-paises {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--color-region);
+  border-color: transparent;
+  color: var(--texto-sobre-region);
+  font-weight: 700;
+}
+
+/* ---------- Practicar ---------- */
+
+.selector-practica {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+}
+
+.selector-opcion {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.selector-opcion[aria-pressed='true'] {
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: 0 0 0 1px var(--borde), 0 1px 3px rgb(0 0 0 / 0.08);
+}
+
+.pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.chip-capital {
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-width: 2px;
+}
+
+.chip-capital[aria-pressed='true'] {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: var(--acento-texto);
+}
+
+.pista {
+  color: var(--texto-suave);
+}
+
+.nombre-capital {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.respuesta-form {
+  display: grid;
+  gap: 10px;
+}
+
+.campo-texto {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 2px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  /* 16 px o más: evita que Safari de iPhone haga zoom al tocar el campo. */
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.campo-texto:focus {
+  outline: none;
+  border-color: var(--acento);
+}
+
+.campo-texto.correcta {
+  border-color: var(--acierto);
+  background: var(--acierto-fondo);
+}
+
+.campo-texto.elegida-mal {
+  border-color: var(--fallo);
+  background: var(--fallo-fondo);
+}
+
+.campo-texto:disabled {
+  opacity: 1;
+  color: var(--texto);
+  -webkit-text-fill-color: var(--texto);
+}
+
+.feedback.aviso .feedback-titulo {
+  color: var(--acierto);
+}
+
+.resumen-titulo {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--texto-suave);
+}
+
+.progreso {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.enunciado {
+  margin: 2px 0 14px;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 900px) {
+  .opciones {
+    grid-template-columns: 1fr;
+  }
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 14px;
+  text-align: left;
+  border-radius: 12px;
+  border: 2px solid var(--borde);
+  background: var(--superficie);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+@media (hover: hover) {
+  .opcion:not(:disabled):hover {
+    border-color: var(--acento);
+  }
+}
+
+.opcion:disabled {
+  cursor: default;
+  color: inherit;
+}
+
+.opcion-num {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--fondo);
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+/* Los números solo ayudan con teclado: en táctil se ocultan. */
+@media (hover: none) {
+  .opcion-num {
+    display: none;
+  }
+}
+
+.opcion.correcta {
+  border-color: var(--acierto);
+  background: var(--acierto-fondo);
+  animation: latido 0.45s ease-out;
+}
+
+.opcion.elegida-mal {
+  border-color: var(--fallo);
+  background: var(--fallo-fondo);
+  animation: none;
+}
+
+.feedback {
+  margin-top: 14px;
+}
+
+.feedback:empty {
+  display: none;
+}
+
+.feedback.acierto .feedback-titulo {
+  color: var(--acierto);
+}
+
+.feedback.fallo .feedback-titulo {
+  color: var(--fallo);
+}
+
+.feedback-titulo {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.feedback-texto {
+  margin: 0 0 12px;
+}
+
+.boton-principal,
+.boton-secundario {
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.boton-principal {
+  border: 0;
+  background: var(--acento);
+  color: var(--acento-texto);
+}
+
+.boton-secundario {
+  border: 2px solid var(--borde);
+  background: transparent;
+}
+
+.resumen {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 4px 0 16px;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.confeti {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes latido {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Avisos ---------- */
+
+.avisos {
+  position: fixed;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 64px);
+  transform: translateX(-50%);
+  display: grid;
+  gap: 8px;
+  z-index: 20;
+  pointer-events: none;
+  width: min(92vw, 420px);
+}
+
+.aviso {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--texto);
+  color: var(--fondo);
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+  transition: opacity 0.4s ease;
+}
+
+.aviso.saliendo {
+  opacity: 0;
+}
+
+.aviso-almacen {
+  margin: 0 16px 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--fallo-fondo);
+  color: var(--texto);
+  font-size: 0.9rem;
+}
+
+/* ---------- Trucos propios ---------- */
+
+.acciones-truco {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-bottom: 8px;
+}
+
+.boton-enlace {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--acento);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.campo-truco {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-size: 1.05rem;
+  resize: vertical;
+}
+
+.campo-truco:focus {
+  outline: none;
+  border-color: var(--acento);
+}
+
+/* ---------- Selector de regiones ---------- */
+
+.dialogo-regiones {
+  width: min(92vw, 480px);
+  max-height: 85dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.dialogo-regiones::backdrop {
+  background: rgb(0 0 0 / 0.35);
+}
+
+.dialogo-contenido {
+  padding: 16px 20px 20px;
+}
+
+.dialogo-titulo {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+}
+
+.dialogo-subtitulo {
+  margin: 14px 0 6px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--texto-suave);
+}
+
+.lista-regiones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.region-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--borde);
+  background: var(--superficie);
+  text-align: left;
+  cursor: pointer;
+}
+
+.region-item.actual {
+  border-color: var(--acento);
+}
+
+.region-item:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.region-muestra {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-pais);
+}
+
+.region-textos {
+  flex: 1;
+  display: grid;
+}
+
+.region-titulo {
+  font-weight: 800;
+}
+
+.region-detalle {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+/* ---------- Más (copia de seguridad) ---------- */
+
+.boton-mas {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.campo-codigo {
+  margin-top: 12px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.mensaje-copia {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  font-weight: 700;
+}
+
+.acciones-cerrar {
+  margin-top: 18px;
+}
+
+/* ---------- Panel de adultos ---------- */
+
+.dialogo-panel {
+  width: min(96vw, 760px);
+}
+
+.selector-panel {
+  margin-top: 8px;
+}
+
+.campo-pin {
+  max-width: 260px;
+  letter-spacing: 0.3em;
+}
+
+.tabla-dominio {
+  display: grid;
+  gap: 6px;
+}
+
+.fila-dominio {
+  display: grid;
+  grid-template-columns: minmax(110px, 38%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+}
+
+.fila-cifra {
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-suave);
+}
+
+.barra-dominio {
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--pais);
+}
+
+.tramo,
+.muestra {
+  display: inline-block;
+}
+
+.muestra {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: -1px;
+  /* Color fijo: el de la región del mapa puede ser casi gris (el continente entero) y la leyenda no se leería. */
+  --color-pais: #e0a93e;
+}
+
+.nivel-tramo-0 {
+  background: var(--pais);
+}
+
+.nivel-tramo-1 {
+  background: color-mix(in srgb, var(--color-pais) 35%, var(--pais));
+}
+
+.nivel-tramo-2 {
+  background: color-mix(in srgb, var(--color-pais) 65%, var(--pais));
+}
+
+.nivel-tramo-3 {
+  background: var(--color-pais);
+}
+
+.leyenda {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  white-space: pre-wrap;
+}
+
+.lista-simple {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.grafico-actividad {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  gap: 4px;
+  height: 90px;
+  align-items: end;
+}
+
+.columna-actividad {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 2px;
+}
+
+.barra-actividad {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--acento);
+}
+
+.dia-actividad {
+  font-size: 0.7rem;
+  color: var(--texto-suave);
+}
+
+.etiqueta-campo {
+  display: grid;
+  gap: 4px;
+  font-weight: 700;
+  max-width: 260px;
+}
+
+.grupos-examen {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+
+.grupo-examen {
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 4px 12px;
+}
+
+.grupo-examen summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.casillas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0 12px;
+  padding-bottom: 8px;
+}
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.casilla input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--acento);
+}
+
+.lista-trucos {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.fila-truco-titulo {
+  margin: 0 0 4px;
+}
+
+.boton-peligro {
+  border-color: var(--fallo);
+  color: var(--fallo);
+}
+
+.info-examen {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+}
+
+.selector-repaso {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ---------- Controles del mapa (zoom) ---------- */
+
+.controles-mapa {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  gap: 6px;
+  z-index: 4;
+}
+
+.control-mapa {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
+}
+
+/* "Ver toda la región" solo tiene sentido con zoom. */
+.controles-mapa:not(.con-zoom) .control-mapa:last-child {
+  display: none;
+}
+
+/* ---------- Guía y Acerca de ---------- */
+
+.dialogo-guia {
+  width: min(94vw, 560px);
+}
+
+.cuerpo-guia p {
+  margin: 0 0 12px;
+}
+
+.lista-guia {
+  margin: 0 0 12px;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 6px;
+}
+
+.respuesta-guia {
+  margin-top: 12px;
+}
+
+.etiqueta-guia {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.puntos-guia {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 14px 0 4px;
+}
+
+.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--borde);
+}
+
+.punto.actual {
+  background: var(--acento);
+}
+
+.acciones-guia {
+  align-items: center;
+  margin-top: 10px;
+}
+
+.acciones-guia .boton-enlace {
+  margin-left: auto;
+}
+
+.lista-creditos a {
+  /* En línea: el relleno amplía la zona de toque (44 px) sin estirar el renglón. */
+  display: inline;
+  padding: 12px 0;
+  color: var(--acento);
+}
+
+.lista-creditos li {
+  margin-bottom: 8px;
+  line-height: 1.45;
+}
+
+.bloque-continente {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.casilla-continente {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.acciones-columna {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.boton-ancho {
+  width: 100%;
+  min-height: 56px;
+  font-size: 1.05rem;
+}
+
+/* --- Aprender: escalones de la región (SPEC 4.3) --- */
+.escalera {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.escalon {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+}
+
+.escalon.vacio {
+  opacity: 0.6;
+}
+
+.escalon-titulo {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.escalon-cuenta {
+  min-width: 1.8em;
+  text-align: center;
+  border-radius: 999px;
+  background: var(--fondo);
+  font-variant-numeric: tabular-nums;
+}
+
+.escalon-aprendido .escalon-cuenta {
+  background: var(--acierto-fondo);
+  color: var(--acierto);
+}
+
+.escalon-detalle {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+.escalon-paises {
+  font-size: 0.9rem;
+}
+
+.resumen-escalones {
+  margin: 6px 0 0;
+}
+
+/* --- Mapa mudo: país y capital --- */
+.campo-etiquetado {
+  display: grid;
+  gap: 4px;
+}
+
+.etiqueta-campo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+/* --- Hoy --- */
+.hoy-cuentas {
+  list-style: none;
+  margin: 10px 0 14px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hoy-cuentas li {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+}
+
+/* Rótulo con el nombre de la región cuando Hoy cambia el mapa. */
+.rotulo-region {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 140px);
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+  font-size: 1.25rem;
+  font-weight: 800;
+  pointer-events: none;
+  animation: rotulo-entra 0.25s ease-out;
+  transition: opacity 0.25s;
+}
+
+.rotulo-region.saliendo {
+  opacity: 0;
+}
+
+@keyframes rotulo-entra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotulo-region {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* --- Examen --- */
+.region-actual[hidden] {
+  display: none;
+}
+
+.nota-examen {
+  margin: 4px 0;
+  font-size: 1.4rem;
+}
+
+.nota-examen strong {
+  font-size: 2rem;
+}
+
+.lista-fallos {
+  margin: 6px 0 12px;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 4px;
+}
+
+.fallo-detalle {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+/* Cuatro pestañas y el botón ⋯ en una fila, también en móviles estrechos (360 px). */
+@media (max-width: 480px) {
+  .modos {
+    min-width: 0;
+  }
+  .modo {
+    flex: 1 1 auto;
+    padding: 0 8px;
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .barra {
+    gap: 6px;
+    padding: 6px 10px;
+  }
+  .modo {
+    padding: 0 6px;
+    font-size: 0.86rem;
+  }
+}
+
+.campo-select {
+  width: auto;
+  min-width: 5em;
+  min-height: 44px;
+  margin-left: 6px;
+}
+
+/* --- Portada de Hoy --- */
+.portada-progreso {
+  margin-top: 18px;
+  padding-top: 4px;
+  border-top: 1px solid var(--borde);
+}
+
+.cifra-portada {
+  margin: 4px 0 8px;
+}
+
+.cifra-portada strong {
+  font-size: 1.8rem;
+}
+
+.barras-continente {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.fila-continente {
+  display: grid;
+  grid-template-columns: 4.5em 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.barra-progreso {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  overflow: hidden;
+}
+
+.barra-relleno {
+  display: block;
+  height: 100%;
+  background: var(--acierto-mapa);
+}
+
+.fila-cifra {
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-suave);
+}
+
+.region-item.region-entera .region-titulo {
+  font-weight: 800;
+}
+
+/* --- Revisión visual: espaciados y anchos coherentes --- */
+
+/* Controles segmentados: tantas columnas iguales como opciones (antes, siempre 4: con 3 quedaba un hueco). */
+.selector-practica {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.selector-opcion {
+  padding: 4px 6px;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+/* En los diálogos, los botones de una fila se reparten el ancho: si saltan de línea, no quedan de largos distintos. */
+.dialogo-contenido .acciones > button:not(.boton-enlace) {
+  flex: 1 1 auto;
+}
+
+/* El mensaje de estado vacío no ocupa sitio (sigue presente para los lectores de pantalla). */
+.mensaje-copia:empty {
+  min-height: 0;
+  margin: 0;
+}
+
+/* En el móvil, los botones del panel ocupan el ancho (más fáciles de tocar y del mismo largo). */
+@media (max-width: 600px) {
+  .panel .acciones > button:not(.boton-enlace) {
+    flex: 1 1 auto;
+  }
+}
+
+/* iPad horizontal y PC: el panel mide lo que su contenido (con desplazamiento si no cabe), no todo el alto. */
+@media (min-width: 900px), (min-width: 700px) and (orientation: landscape) {
+  .panel {
+    align-self: start;
+    max-height: 100%;
+  }
+}
+
+/* Las acciones peligrosas no se estiran: que no llamen más la atención que el resto. */
+.dialogo-contenido .acciones > button.boton-peligro {
+  flex: 0 0 auto;
+}
+
+/* Panel: "¿Qué significan estos datos?" */
+.ayuda-panel {
+  margin: 4px 0 8px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: var(--fondo);
+}
+
+.ayuda-panel summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  color: var(--acento);
+  cursor: pointer;
+}
+
+.ayuda-panel ul {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.ayuda-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.ayuda-panel summary::after {
+  content: '▾';
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+.ayuda-panel[open] summary::after {
+  content: '▴';
+}
+
+.leyenda-nota {
+  display: block;
+  margin-top: 4px;
+}
+
+/* --- Qué estudia Hoy: continente en pausa --- */
+.aviso-pausa {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--acento);
+  background: color-mix(in srgb, var(--acento) 10%, var(--superficie));
+}
+
+.aviso-pausa p {
+  margin: 0;
+}
+
+.aviso-pausa .boton-secundario {
+  justify-self: start;
+}
+
+.aviso-pausa-panel {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--acento);
+  background: color-mix(in srgb, var(--acento) 10%, var(--superficie));
+}
+
+.bloque-foco {
+  margin-top: 12px;
+}
+
+.fila-continente.pausada .barra-progreso,
+.fila-continente.pausada .fila-cifra {
+  opacity: 0.5;
+}
+
+.etiqueta-pausa {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+/* --- Instalar la app --- */
+.aviso-instalar {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+}
+
+.aviso-instalar p {
+  margin: 0;
+}
+
+.pasos-instalar li {
+  margin-bottom: 6px;
+}
+
+/* Aviso de pausa plegado ("Entendido"): solo el recordatorio, destacado; al tocarlo se despliega. */
+.aviso-pausa.plegado {
+  padding: 0;
+}
+
+.aviso-pausa-plegado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.aviso-pausa-detalle {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.aviso-pausa-plegado::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--texto-suave);
+}
+
+/* --- Alumnos (perfiles locales: nombre e imagen, sin fotos) --- */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #1f2a37;
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.avatar-grande {
+  width: 64px;
+  height: 64px;
+  font-size: 1.8rem;
+}
+
+.lista-perfiles {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 4px;
+}
+
+.perfil-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.perfil-item.actual {
+  border-color: var(--acento);
+}
+
+.perfil-ahora,
+.chip-alumno-cambiar {
+  font-weight: 400;
+  color: var(--texto-suave);
+}
+
+.cabecera-hoy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cabecera-hoy .titulo-panel {
+  margin: 0;
+}
+
+.chip-alumno {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chip-alumno-cambiar {
+  font-size: 0.85rem;
+}
+
+.alumno-actual {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+  font-weight: 700;
+}
+
+.bloque-alumno {
+  margin-bottom: 4px;
+}
+
+.fila-avatar {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.rejilla-iconos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 6px;
+  flex: 1;
+}
+
+.opcion-imagen,
+.opcion-color {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 2px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.opcion-inicial {
+  grid-column: span 2;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.opcion-imagen[aria-pressed='true'],
+.opcion-color[aria-pressed='true'] {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 2px var(--acento);
+}
+
+.rejilla-colores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lista-alumnos {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.fila-alumno {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.fila-alumno .boton-peligro {
+  margin-left: auto;
+}
+
+.dialogo-perfiles .campo-etiquetado {
+  margin-top: 12px;
+}
+
+/* Menú ⋯: los botones de cada sección en columnas iguales (dos en el ordenador, uno en el móvil), alineados. */
+.acciones-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.bloque-alumno {
+  margin-bottom: 0;
+}
+
+
+/* Menú ⋯ → Tu perfil: [imagen nombre ✎] ...... (+) Añadir alumno */
+.fila-perfil {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fila-perfil-quien {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fila-perfil .alumno-actual {
+  margin: 0;
+}
+
+.boton-icono {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.boton-anadir {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--texto-suave);
+  font: inherit;
+  cursor: pointer;
+}
+
+.circulo-mas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--acento);
+  color: var(--acento);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.texto-anadir {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* En los diálogos, estos no se estiran como los demás botones. */
+.dialogo-contenido .fila-perfil button {
+  flex: none;
+}
+
+/* Ayuda: el botón principal a lo ancho; los demás, emparejados debajo. */
+.acciones-rejilla > .boton-principal {
+  grid-column: 1 / -1;
+}
+
+
+/* --- Versión nueva: aviso en la portada de Hoy y franja al pie en el resto --- */
+.aviso-version,
+.franja-version {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--acento);
+  background: color-mix(in srgb, var(--acento) 10%, var(--superficie));
+}
+
+.aviso-version {
+  margin: 4px 0 12px;
+}
+
+.aviso-version p,
+.franja-version p {
+  flex: 1 1 200px;
+  margin: 0;
+}
+
+.franja-version {
+  flex: none;
+  flex-wrap: nowrap;
+  margin: 0 16px 12px;
+}
+
+.franja-version p {
+  font-size: 0.95rem;
+}
+
+.franja-version .boton-principal {
+  flex: none;
+}
+
+/* En la portada de Hoy ya está el aviso: la franja no sale dos veces. */
+.app:has(.aviso-version) .franja-version {
+  display: none;
+}
+
+/* En el móvil, la franja en una sola línea: solo lo esencial. */
+@media (max-width: 600px) {
+  .franja-detalle {
+    display: none;
+  }
+  .franja-version {
+    gap: 8px;
+    padding: 6px 8px 6px 12px;
+  }
+  .franja-version p {
+    flex: 1 1 auto;
+  }
+  .franja-version .boton-principal {
+    padding: 0 14px;
+  }
+}

@@ -1,0 +1,122 @@
+# Plan v2: Hoy, Aprender y Examen
+
+Rediseño acordado con el responsable (SPEC 4, 6 y 7). Se hizo en la rama `rediseno-hoy-aprender-examen` y se fusionó con la rama publicada el 2026-11-01. La rama publicada se llama ahora `main` (antes `claude/hito-1-plan-7opthj`).
+
+## Ahora mismo
+- **Estado:** v2 terminada (F1 a F6), aprobada por el responsable, fusionada y **publicada** el 2026-11-01 (salió como 2.0.0; numeración correcta: 1.1.0). Rama publicada: `main` (Pages publica con cada push a `main`). Después: 1.2.0 ("Qué estudia Hoy", instalar la app, aviso de pausa plegable) y 1.3.0 (alumnos), publicadas.
+- **Siguiente paso:** que el alumno la use y recoger lo que se vea raro.
+- **Pendientes que no bloquean:** pruebas con el alumno en iPad y iPhone reales; Explorar en "Europa entera" no tiene prueba automática propia.
+- **Ideas aparcadas:** sitio para contactar sin publicar el correo (formulario externo enlazado desde ⋯; detalle en SPEC 14).
+
+## Cómo retomar (tras una compactación o en otra sesión)
+1. Leer `CLAUDE.md`, `SPEC.md` (secciones 3.3, 4, 6, 7), este plan y `docs/notas-tecnicas.md`.
+2. `git log --oneline -15` en la rama `main`.
+3. Seguir por la primera fase sin marcar; si estaba a medias, comprobar sus criterios.
+
+## Modo de trabajo (el mismo que en la noche de la v1)
+- **Autonomía:** el responsable confía en los avances; tomar decisiones sin preguntar y anotarlas en "Decisiones de implementación" (opción elegida, motivo, si se puede revertir), **en el momento**, no al final.
+- **Memoria:** actualizar "Ahora mismo" al cerrar cada paso; commit y push tras cada paso relevante (nunca más de una hora sin subir).
+- **Calidad antes de cerrar una fase:** `npm test`, `npx tsc --noEmit`, `npm run build` y prueba en navegador con Playwright (móvil, iPad y PC; claro y oscuro donde toque). Revisar capturas, no solo los recuentos.
+- **Rama:** el trabajo nuevo, en una rama por funcionalidad. **No fusionar con `main`** (la que despliega Pages y usa el alumno) **hasta que el responsable lo apruebe**.
+- **Datos:** los listados de clase mandan (CLAUDE.md). Nada de notas políticas ni nombres antiguos.
+- **Reglas de producto:** las de CLAUDE.md (sobrio, sin castigos, sin rachas, 44 px, teclado).
+
+## Notas del entorno (Windows)
+- Playwright no es dependencia del proyecto: está en la carpeta temporal de la sesión; ejecutar los scripts con `NODE_PATH` apuntando a su `node_modules` (si se pierde, `npm i playwright` y `npx playwright install chromium` en una carpeta fuera del repo).
+- Preview: `npx vite preview --port 4173 --strictPort` en segundo plano.
+- La herramienta PowerShell bloquea algunos textos largos (here-strings con `/**` o `*'`): escribir ficheros con el editor y hacer commit con `git commit -F <fichero>`.
+- El repositorio usa CRLF en Windows: editar con el editor, no reescribir ficheros enteros desde scripts.
+- Llega a veces un aviso repetido "Sigue con docs/plan-v1.md..." de una tarea programada antigua de otra sesión: el plan v1 está completo, así que se ignora sin hacer nada.
+
+## Decisiones del responsable
+- Tres modos: **Hoy** (rutina diaria con nuevos intercalados), **Aprender** (extra, por escalones) y **Examen** (mapa mudo del continente). Explorar se queda. Desaparecen Practicar y "Preparar examen".
+- Escalones: Elegir → Colocar → Escribir → Mapa mudo; subir con dos aciertos separados. "Al revés" solo para variedad en Hoy.
+- Examen: país y capital; medio punto si solo uno; los resultados cuentan para la planificación.
+- Variantes de nombre de país; Holanda con aviso.
+- Nuevos por día autorregulados entre 5 y 10.
+- En Hoy el mapa puede saltar de región.
+- Botón de tema claro/oscuro (Automático/Claro/Oscuro) en ⋯.
+
+## Fases
+
+### [x] F1. Lógica y datos (con tests)
+- Variantes de nombre de país en los datos (`variantesPais`, `avisosPais`) y validación del nombre del país.
+- Escalones por país en el estado (`aprendizaje`), con la regla de subida y paso a "aprendido".
+- Migración del progreso v1: nivel FSRS 3 → aprendido; 2 → escalón Escribir; 1 → Colocar; sin empezar → nada.
+- Sesión de Hoy: repasos vencidos de aprendidos + en curso + nuevos intercalados; prioridad de examen; nuevos autorregulados 5-10.
+- Modo de cada pregunta en Hoy según el estado del país (incluye Al revés y Mapa mudo para variedad).
+- Examen: selección de preguntas por ámbito y corrección con medio punto; registro en FSRS.
+
+### [x] F2. Aprender
+- Pestaña por región; cada país en su escalón; Colocar por tandas para los países en ese escalón.
+- Pregunta de mapa mudo (estrella resaltada, país y capital).
+
+### [x] F3. Hoy
+- Sesión mezclada multirregión con transición de mapa y nombre de región; tiempo desde que el mapa está quieto.
+- Nuevos intercalados; resumen al terminar.
+
+### [x] F4. Examen
+- Mapa del continente sin colores de progreso, con todas las estrellas; ámbito y número de preguntas; nota y lista de fallos.
+
+### [x] F5. Navegación, tema y documentación
+- Pestañas Hoy / Aprender / Examen / Explorar (comprobar que caben en móvil).
+- Ajuste de tema en ⋯.
+- Guías, README, SPEC, notas técnicas; panel de adultos (máximo de nuevos por día).
+- Pruebas en navegador completas. La fusión con la rama publicada queda para cuando el responsable la apruebe.
+
+### [x] F6. Portada de Hoy y continentes enteros (pedido tras probar la v2)
+- Hoy como portada: lo que toca, cifras de logro (sin rachas) y mapa del continente; sin selector de región; entra todo lo abierto.
+- Nuevos por orden del curso (Europa y luego Asia).
+- "Europa entera" y "Asia entera" en el selector de Aprender y Explorar, cuando están abiertas todas sus regiones; tandas de 16; sin "Todo".
+
+## Decisiones de implementación
+- **E1. Subida de escalón:** dos aciertos en el modo del escalón (Colocar admite Al revés, que es su versión suelta). Un fallo reinicia el contador sin bajar; una errata ni suma ni resta (`progreso.ts`, `registrarEscalon`).
+- **E2. Región superada** (abre la siguiente): todos sus países en el escalón Escribir o más. Antes era "todos en repaso FSRS"; se acepta también eso para no bloquear a quien venga de la v1.
+- **E3. Conversión de la v1:** dominado → aprendido; en repaso → Escribir; aprendiendo → Colocar. Se hace sola al cargar el progreso.
+- **E4. Composición de Hoy:** 3 repasos de calentamiento; luego los nuevos repartidos entre el resto; cada nuevo sale dos veces, separado por 3 preguntas. Orden de los repasos: países priorizados (examen, fallados) y luego los más atrasados. Los nuevos salen primero de la región actual.
+- **E5. Nuevos autorregulados:** con menos de 10 respuestas recientes, la media (7-8); 90 % de aciertos o más, el máximo (10); 80 %, unos 8; 70 %, 6; menos, 5. Con más de 40 repasos pendientes, 5. Se descuentan los países empezados hoy, para que dos sesiones el mismo día no doblen los nuevos.
+- **E6. Tipo de pregunta de los aprendidos en Hoy:** al azar entre Mapa mudo, Escribir y Al revés; más Mapa mudo (50 %) cuando el país ya es estable.
+- **E7. Corrección de Mapa mudo:** una errata o un aviso (Holanda) valen el punto en la nota, pero el país se repasa (cuenta como "repasar" para la planificación y no sube de escalón). Medio punto vale 0,5 en la nota y cuenta como "repasar" (Hard) para la planificación, como dice la SPEC 4.4; fuera del examen, para el escalón y la cola de la ronda cuenta como fallo (se vio en la prueba de F2: si no, un país podía quedar aprendido sin saberse la capital).
+- **E8. Pregunta de mapa mudo:** la estrella sin nombre y el país sombreado (el responsable lo pidió tras probarla: sin sombrear, Ciudad del Vaticano se confundía con Roma; la SPEC 4.2 decía "sin resaltar el país" y se ha actualizado). En los microestados, el círculo del país resaltado es más grande y hace de anillo alrededor de la estrella. Hay que escribir país y capital. Enter en el campo del país pasa al de la capital. Al corregir se muestra el nombre de la capital en el mapa.
+- **E9. Tanda de Aprender:** una pregunta por cada país pendiente de la región, en el modo de su escalón; los de Colocar van juntos en el pool de capitales (si hay al menos dos; uno solo va como Al revés). Así los dos aciertos de un escalón llegan siempre en tandas distintas. Al terminar, resumen con quién sube y la escalera actualizada. Si la región está toda aprendida, se ofrece practicarla con mapa mudo.
+- **E10. Practicar desaparece ya en F2:** la pestaña Aprender ocupa su sitio (las pestañas definitivas se ordenan en F5).
+- **E11. Hoy agrupa por región:** para que el mapa salte poco, la sesión va por bloques de región: primero las regiones sin nuevos (por urgencia) y al final la de los nuevos, con ellos intercalados. En la prueba, 20 preguntas de tres regiones pasaron de 7 cambios de mapa a 3.
+- **E12. Los países en aprendizaje salen en Hoy una vez al día:** si ya se respondieron hoy, esperan a mañana (como los pasos de aprendizaje de Anki). Sin esto, Hoy nunca quedaba "hecho".
+- **E13. Reintento de un fallo en Hoy** (`ColaHoy`): dentro del bloque de su región (hasta 3 preguntas después); si el bloque se acaba, tras la última pregunta de esa región o al final. Así un fallo no hace ir y volver el mapa.
+- **E14. Cambio de región en Hoy:** rótulo con el nombre de la región en la parte baja del mapa durante 1,1 s; el tiempo de la respuesta empieza a contar al terminar. Ese cambio no toca la "última región" guardada. Elegir otra región en el selector reinicia la sesión de Hoy (lo hecho ya está guardado).
+- **E15. Prioridad:** un país priorizado (fallado en un examen) deja de serlo al acertarlo fuera del examen. La lista de examen del panel también prioriza en Hoy.
+- **E16. "Las dos" (Europa y Asia) en el examen:** un mapa por continente, primero Europa y luego Asia, con rótulo al cambiar. Un solo mapa de los dos continentes no cabe en la proyección (recorta a 60° del centro) y los países quedarían diminutos. Con la lista del panel, igual: por continentes. Rusia y Turquía salen en el mapa del ámbito elegido (en "Las dos", en Europa).
+- **E17. Examen sin corrección en el momento:** como en clase, se responde todo y al final se ve la nota y la lista de fallos (con lo que se escribió). En blanco vale como "no lo sé". El mapa mudo no lleva colores de región ni de progreso, tampoco mientras se responde; el selector de región se oculta durante el examen.
+- **E18. Priorizar en Hoy es un botón** al final del examen ("Repasarlos antes en Hoy"), como pide la SPEC 4.4 ("opción de priorizarlos"). El examen cuenta para FSRS pero no mueve escalones.
+- **E19. Pestañas en móvil:** Hoy, Aprender, Examen y Explorar más ⋯ caben en una fila desde 360 px (texto algo más pequeño por debajo de 380 px), con objetivos de 44 px.
+- **E20. Versión:** se publicó como 2.0.0, pero el responsable prefiere 1.1.0 para este rediseño (la app es la misma y el progreso sigue valiendo) y 1.2.0 para "Qué estudia Hoy". Desde la 1.2.0, Acerca de dice 1.2.0.
+- **E21. Tema guardado aparte del progreso** (`localStorage`, clave `capitalia-tema`): es una preferencia del dispositivo, no del alumno; no viaja con la copia de seguridad.
+- **E22. Se retiran `prueba-modos.cjs` y `capturas-oscuro.cjs`** (probaban Practicar); los sustituyen `prueba-aprender`, `prueba-hoy` y `prueba-tema`.
+- **E23. Examen: acercar el mapa a los países pequeños.** Si el país de la estrella mide menos de 70 px en el mapa del continente, el mapa se acerca (hasta 3x) centrado en la capital; con uno grande, vuelve a la vista entera. Siempre se dibuja el continente entero con todas sus estrellas, también con la lista del panel (antes solo se dibujaban los países de la lista y no había referencias).
+- **E24. "Adelantar repasos":** el botón de Hoy se llama así y solo se menciona en el texto cuando hay repasos que adelantar (si no, solo se sugiere Aprender).
+- **E25. Decisiones del responsable para F6:** orden del curso (opción a), Europa y Asia enteras al abrir todas sus regiones, tandas de 16, sin "Todo".
+- **E26. Colores del mapa por escalones** (`nivelMapa`): gris sin empezar, tono suave en Elegir o Colocar, más intenso en Escribir o Mapa mudo, pleno al quedar aprendido. Antes seguían el dominio FSRS y no cuadraban con la portada.
+- **E27. "Esta semana: N aprendidos"** cuenta los países que han quedado aprendidos en los últimos 7 días (`aprendidoEl`, que se guarda desde ahora). Los convertidos desde la v1 no tienen fecha: cuentan en el total, no en la semana. Si es 0, no se muestra (nada que suene a reproche).
+- **E28. Mapa de la portada:** el continente que toca según el orden del curso (el primero con países sin aprender), con un selector Europa/Asia para mirar el otro. Al terminar la sesión, vuelve al mapa del continente para ver lo coloreado.
+- **E29. Región elegida aparte:** Hoy y el examen mueven el mapa; Aprender y Explorar vuelven siempre a la región que eligió el alumno (que es la que se recuerda al recargar).
+- **E30. Mapas de continente entero:** solo los microestados de verdad (menos de unos 3.000 km²) llevan círculo; si no, en el móvil casi todos los países salían como círculos. Se aplica a la portada, a "Europa/Asia entera" y al examen.
+- **E31. Duración estimada en la portada:** unos 25 segundos por pregunta.
+- **E32. Hoy no mira si una región está cerrada** (lo detectó una revisión: al segundo día, con Europa occidental aún cerrada, Hoy sacaba nuevos de Asia oriental y rompía el orden del curso). Ahora Hoy saca los nuevos por orden del curso entre todos los países, y una región se abre en el selector también cuando tiene algún país empezado (con su aviso "Nueva región disponible"). Decidido con el responsable: sin freno extra, basta con la autorregulación de nuevos.
+- **E33. Revisión visual** (pedida por el responsable): controles segmentados con tantas columnas como opciones (antes siempre 4, con hueco a la derecha); en los diálogos, los botones de una fila se reparten el ancho, salvo las acciones peligrosas; "Cerrar" separado de lo anterior; el mensaje de estado vacío no ocupa sitio; en el móvil, los botones del panel ocupan el ancho; en iPad horizontal y PC, el panel mide lo que su contenido en vez de todo el alto.
+- **E34. Tarea programada `bf6b8f47`** ("Sigue con docs/plan-v1.md…", cada hora): era una tarea solo de esta sesión de Claude Code, heredada de la sesión en la nube; por eso no aparecía en ningún sitio. Cancelada (el plan v1 estaba terminado).
+- **E35. Resumen del panel por escalones:** "Aprendidos por región" con la misma leyenda que el mapa (Sin empezar, Elegir o Colocar, Escribir o Mapa mudo, Aprendidos); antes contaba el dominio FSRS y no cuadraba con la portada. La leyenda usa un color fijo (el de la región del mapa podía ser casi gris y no se leía).
+- **E36. "¿Qué significan estos datos?"** en el Resumen del panel (pedido por el responsable): desplegable cerrado por defecto que explica los escalones y la barra de aprendidos, los que más se atascan (fallos de 30 días), la actividad (14 días, sin castigar días sin practicar) y cómo avanza (Hoy, nuevos de 5 a 10, Aprender, Examen).
+- **E37. "Qué estudia Hoy"** (versión 1.2.0, pedido por el responsable, por si los exámenes de Europa y Asia son por separado): en la portada, Todo / Solo Europa / Solo Asia. No es una preferencia: lo que queda fuera se **anula** en Hoy (ni repasos ni nuevos); mientras dura, un aviso fijo arriba de la portada lo explica y tiene "Volver a Todo" (un toque). Hubo una confirmación previa, pero el responsable prefirió quitarla: el aviso basta y deshacer es un toque. Al cambiar, la tarjeta vuelve arriba para que el aviso se vea. Lo puede cambiar el alumno; el panel de adultos muestra cuál está activo. No se pierde nada: al volver, los repasos atrasados salen primero. El Examen de prueba propone el continente activo.
+- **E38. Rusia y Turquía con un solo continente:** con "Solo Asia", el orden y el mapa usan sus regiones asiáticas (Asia central y Cáucaso y Oriente Próximo), así que salen en su sitio de Asia y no los primeros (su región principal es europea).
+- **E39. Instalar la app** (versión 1.2.0, pedido por el responsable): entrada en ⋯ y aviso discreto en la portada de Hoy, una sola vez, a partir del segundo día de uso ("Ahora no" lo descarta para siempre; queda la entrada en ⋯). En Chrome y Edge (Android y escritorio) el botón abre la instalación del navegador (evento `beforeinstallprompt`); en iPhone y iPad muestra los pasos de Safari, porque Apple no deja lanzarla desde la página; en otros navegadores, los pasos según el dispositivo. Si ya está instalada, no se ofrece. El descarte se guarda aparte del progreso (preferencia del dispositivo). Prueba: `scripts/prueba-instalar.cjs` (simula el evento de Chrome).
+- **E40. Aviso de pausa plegable** (pedido por el responsable): el aviso completo tiene "Volver a Todo" y "Entendido" en la misma línea. "Entendido" lo pliega a un recuadro pequeño del mismo color que destaca "Solo Asia" (y, en pequeño, "Europa en pausa"); tocarlo lo despliega. Plegado se recuerda en el dispositivo para ese continente; al cambiar de continente o volver a Todo, sale completo de nuevo. Además, "Los países nuevos salen dos veces" pasa debajo de Empezar, para que el botón quepa en la pantalla del móvil.
+- **E41. Alumnos (perfiles locales)** (versión 1.3.0, pedido por el responsable): nombre e imagen (inicial con color o icono sobrio de viajes y geografía; sin fotos). Progreso, trucos y ajustes de examen por alumno; PIN, tema e instalación comunes. Con 2 o más alumnos, "¿Quién va a estudiar?" cada vez que se abre la app (Escape no lo cierra; al recargar en la misma visita no vuelve a preguntar); la portada de Hoy muestra quién estudia y deja cambiar. Crear, cualquiera (⋯ → Añadir alumno; si quien ya la usaba no tiene nombre, se le pide); borrar, solo el adulto desde el panel, nunca al actual, con doble confirmación. El primer alumno conserva la clave de guardado de siempre (el progreso anterior es suyo sin moverlo); los demás, `progreso-capitales-<id>`; el índice de alumnos y el PIN común en `capitalia-perfiles`. La copia de seguridad es del alumno actual. Cambiar de alumno recarga la app con su progreso. Lógica con tests (`src/logic/perfiles.ts`) y `scripts/prueba-perfiles.cjs`.
+- **E42. Volver a la app tras 10 minutos** (detectado en una revisión y decidido con el responsable): con dos o más alumnos, si la app ha estado oculta más de 10 minutos, al volver pregunta "¿Quién va a estudiar?" (en iPhone y iPad volver solo reanuda la app, sin esto un hermano seguiría en el perfil del otro). Si es el mismo alumno, sigue donde estaba, sin recargar.
+- **E43. Nombre del perfil desde el principio** (pedido por el responsable): al estrenar la app como alumno (tras "Soy el alumno o la alumna", antes de su guía) o al abrir por primera vez la versión con alumnos, "¿Cómo te llamas?" con nombre, imagen y color; "Ahora no" (o Escape) no vuelve a insistir (`nombrePedido` en el índice). "Editar perfil" en ⋯ para cambiarlo cuando se quiera; con nombre, ⋯ muestra el alumno aunque sea uno solo. Las pruebas de navegador parten de un índice con el nombre ya pedido, salvo las que prueban justo ese primer arranque (guía, teclado y alumnos).
+- **E44. Copias con varios alumnos** (detectado en una revisión y decidido con el responsable): la copia de ⋯ es del alumno activo y ahora lleva su nombre, fecha y tipo de dispositivo (fichero y código; los códigos antiguos se siguen leyendo). Al importar, la confirmación avisa de quién es y en qué perfil se pone, sin bloquear (bloquear impediría restaurar en un dispositivo nuevo). Panel → Ajustes → Alumnos: "Descargar copia de todos" y "Restaurar copia de todos" (sustituye a todos los alumnos, con confirmación, conserva el PIN del dispositivo y vuelve a preguntar quién estudia). Cada tipo de copia avisa si se intenta importar en el sitio del otro.
+- **E45. Menú ⋯ y Acerca de** (pedido por el responsable): en ⋯, secciones con título ("Tu perfil", "Ayuda", "Tema", "Copia de seguridad"). Tu perfil: imagen y nombre con un lápiz para editar y, a la derecha, un círculo con "+" y "Añadir alumno" debajo; con varios alumnos, tocar la imagen y el nombre deja cambiar (sobra el botón "Cambiar de alumno"). Ayuda: el botón principal a lo ancho y los demás emparejados. En Acerca de, los enlaces de los créditos ya no estiran su renglón (siguen teniendo 44 px de zona de toque).
+- **E46. Aviso de versión nueva** (1.3.2, pedido por el responsable): cuando la versión nueva ya está descargada, la portada de Hoy muestra "Hay una versión nueva de Capitalia. Tu progreso no cambia." con "Actualizar"; en las demás pestañas, una franja fina al pie (en el flujo de la página, sin tapar nada; en el móvil, en una sola línea; "×" la oculta hasta la próxima vez), para que no pase desapercibida si no se pasa por Hoy. En la portada no sale la franja (ya está el aviso). Al volver a la app desde segundo plano, busca versión nueva (en iOS ya no hace falta cerrarla dos veces).
+- **E47. Actualizaciones a la primera** (idea tomada de la agenda C1b3rwall, decidido con el responsable): la página se pide "primero la red" (3 s de espera; si no, la guardada), así que con conexión se abre siempre la última versión sin esperar a otra apertura. El aviso de versión nueva ya no depende de los eventos del service worker (en el PC no saltaba al volver a la ventana): compara el identificador de la compilación con `version.json` del servidor. En la agenda el truco era subir a mano un número de caché en `sw.js`; aquí no hace falta porque el `sw.js` lo genera la compilación. Probado con compilaciones reales y sin conexión (`scripts/prueba-actualizacion.cjs`).
+- **E48. El aviso solo salta con cambios en la app** (pedido por el responsable): el identificador de compilación es una huella del contenido de la app, no la hora; publicar solo documentación, pruebas o scripts no avisa a nadie. Comprobado: dos compilaciones iguales dan la misma huella, igual con saltos de línea de Windows o de GitHub; cambiar el README no la cambia; cambiar el código sí.
+- **Probado por el responsable en su ordenador** (2026-11-02): con la app abierta en la 1.3.1, al publicar una versión de prueba el aviso salió al volver a la ventana y "Actualizar" la cargó.
+
