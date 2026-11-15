@@ -1,5 +1,5 @@
 import type { Pais } from '../logic/types';
-import type { Mapa } from '../map/mapa';
+import type { Tablero } from './tablero';
 import { boton, el, rellenar } from './dom';
 
 export interface Modo {
@@ -23,7 +23,7 @@ const MAX_TRUCO = 160;
  * Modo 1: tocar un país muestra su capital y su truco. Sin evaluación.
  * Permite inventar un truco propio, que sustituye al predefinido (SPEC 5.3).
  */
-export function iniciarExplorar(panel: HTMLElement, mapa: Mapa, region: readonly Pais[], trucos: ServicioTrucos): Modo {
+export function iniciarExplorar(panel: HTMLElement, mapa: Tablero, region: readonly Pais[], trucos: ServicioTrucos): Modo {
   let seleccionado: string | null = null;
   let editando = false;
   mapa.setInteractivo(true);

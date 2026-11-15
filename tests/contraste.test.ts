@@ -54,7 +54,7 @@ describe('contraste (WCAG AA)', () => {
   }
 
   it('texto oscuro sobre el color de cada región (nombres resaltados y chips)', () => {
-    const regiones: { color: string; nombre: string }[] = JSON.parse(readFileSync(new URL('../src/data/regions.json', import.meta.url), 'utf8'));
+    const regiones: { color: string; nombre: string }[] = JSON.parse(readFileSync(new URL('./fixtures/regiones.json', import.meta.url), 'utf8'));
     for (const r of regiones) expect(contraste('#1f2a37', r.color), r.nombre).toBeGreaterThanOrEqual(4.5);
   });
 });

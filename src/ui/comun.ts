@@ -4,7 +4,7 @@ import type { Resultado, ResumenRonda } from '../logic/sesion';
 import type { ModoId } from '../logic/config';
 import type { CambioEscalon } from '../logic/progreso';
 import { MENSAJE_RECUPERADO, OTRA_OPORTUNIDAD, mensajeAcierto, mensajeResumen } from '../logic/mensajes';
-import type { Mapa } from '../map/mapa';
+import type { Tablero } from './tablero';
 import { boton, el, rellenar } from './dom';
 import { lanzarConfeti } from './confeti';
 
@@ -15,7 +15,7 @@ export const PAUSA_TRAS_ACIERTO_MS = 1300;
 export interface Contexto {
   /** Zona del panel donde dibuja el modo. */
   contenedor: HTMLElement;
-  mapa: Mapa;
+  mapa: Tablero;
   /** Países de la región en juego. */
   region: readonly Pais[];
   /** Todos los países activos (para distractores y validación). */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { nombresCorrectos, validarPais } from '../src/logic/texto';
-import { paises } from '../src/data';
+import { paises } from './fixtures';
 
 const p = (id: string) => paises.find((x) => x.id === id)!;
 const v = (texto: string, id: string) => validarPais(texto, p(id), paises).tipo;

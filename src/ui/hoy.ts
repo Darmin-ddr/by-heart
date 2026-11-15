@@ -8,7 +8,7 @@ import type { ResumenPortada } from '../logic/portada';
 import type { Perfil } from '../logic/perfiles';
 import { avatar, nombreVisible } from './perfiles';
 import { actualizarAhora, alHaberVersionNueva, hayVersionNueva } from './actualizar';
-import type { Mapa } from '../map/mapa';
+import type { Tablero } from './tablero';
 import { boton, el, rellenar } from './dom';
 import { PAUSA_TRAS_ACIERTO_MS, Teclado, progreso, type Motor } from './comun';
 import type { Modo } from './explorar';
@@ -33,9 +33,9 @@ export interface ServiciosHoy {
   /** Tipo de pregunta de un país en este momento (según su escalón o, si está aprendido, variado). */
   modoPara: (paisId: string) => ModoId;
   /** Mapa con la región del país (lo cambia si hace falta) y cuánto dura el rótulo de la región nueva (0 si no cambia). */
-  mapaPara: (pais: Pais) => { mapa: Mapa; region: readonly Pais[]; transicionMs: number };
+  mapaPara: (pais: Pais) => { mapa: Tablero; region: readonly Pais[]; transicionMs: number };
   /** Mapa actual (para limpiarlo al salir). */
-  mapaActual: () => Mapa | null;
+  mapaActual: () => Tablero | null;
   /** Cifras de la portada. */
   resumen: () => ResumenPortada;
   /** Días hasta el examen del panel (null si no hay lista de examen o fecha). */

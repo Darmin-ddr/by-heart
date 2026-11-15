@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { corregirMapaMudo, notaExamen, paisesDeAmbito, prepararExamen } from '../src/logic/examen';
-import { paises } from '../src/data';
+import { paises } from './fixtures';
 import { paisesActivos } from '../src/logic/datos';
 import { rngConSemilla } from '../src/logic/rng';
 

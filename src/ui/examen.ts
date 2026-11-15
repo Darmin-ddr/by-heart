@@ -1,7 +1,7 @@
 import { corregirMapaMudo, notaExamen, paisesDeAmbito, prepararExamen, type AmbitoExamen, type CorreccionMapaMudo } from '../logic/examen';
 import type { Rng } from '../logic/rng';
 import type { Continente, Pais } from '../logic/types';
-import type { Mapa } from '../map/mapa';
+import type { Tablero } from './tablero';
 import { boton, el, rellenar } from './dom';
 import { progreso, type Motor } from './comun';
 import type { Modo } from './explorar';
@@ -17,7 +17,7 @@ export interface ServiciosExamen {
   /** Continente al que está limitado Hoy (se propone por defecto), o null. */
   ambitoInicial: () => Continente | null;
   /** Monta el mapa mudo de un continente con estos países; devuelve el mapa y cuánto dura el rótulo (0 si no cambia). */
-  mapaContinente: (continente: Continente, paises: readonly Pais[]) => { mapa: Mapa; transicionMs: number };
+  mapaContinente: (continente: Continente, paises: readonly Pais[]) => { mapa: Tablero; transicionMs: number };
   /** Añade países a los priorizados de Hoy. */
   priorizar: (ids: readonly string[]) => void;
 }
@@ -59,7 +59,7 @@ export function iniciarExamen(panel: HTMLElement, s: ServiciosExamen): Modo {
   panel.replaceChildren(contenedor);
   let ambito: AmbitoExamen = s.ambitoInicial() ?? (ultimoAmbito === 'lista' && !s.listaExamen()?.length ? 'europa' : ultimoAmbito);
   let cantidad: Cantidad = ultimaCantidad;
-  let mapa: Mapa | null = null;
+  let mapa: Tablero | null = null;
 
   function selector<T>(etiqueta: string, opciones: { valor: T; texto: string; desactivado?: boolean }[], actual: T, elegir: (v: T) => void): HTMLElement {
     const grupo = el('div', 'selector-practica');

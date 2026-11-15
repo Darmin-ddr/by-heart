@@ -1,7 +1,8 @@
-import datos from './countries.json';
-import regionesJson from './regions.json';
 import type { Pais, Region } from '../logic/types';
 
-// El JSON no conserva tipos como [lon, lat]; los tests de datos validan la forma.
-export const paises = datos.paises as unknown as Pais[];
-export const regiones = regionesJson as unknown as Region[];
+/**
+ * Contenido de la app. Vacío hasta que lleguen los verbos del listado de clase
+ * (SPEC 13, hitos 1 y 3). Los tipos son todavía los heredados de Capitalia.
+ */
+export const paises: Pais[] = [];
+export const regiones: Region[] = [];

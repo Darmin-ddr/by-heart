@@ -13,7 +13,7 @@ describe('mensajes', () => {
 });
 
 import { conArticulo, preposicionDe } from '../src/logic/mensajes';
-import { paises } from '../src/data';
+import { paises } from './fixtures';
 
 describe('preposición delante del país', () => {
   it('con artículo cuando el nombre lo lleva', () => {

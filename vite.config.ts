@@ -81,7 +81,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Todo empaquetado y disponible sin conexión (incluido el mapa, que va dentro del JS).
+        // Todo empaquetado y disponible sin conexión.
         globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // La página (index.html) no sale de la copia guardada: "primero la red" (abajo).

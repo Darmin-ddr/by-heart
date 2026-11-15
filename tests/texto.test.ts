@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { distancia, margenErratas, normalizar, validarTexto } from '../src/logic/texto';
-import { paises } from '../src/data';
+import { paises } from './fixtures';
 import type { Pais } from '../src/logic/types';
 
 function pais(id: string, capital: string, extra: Partial<Pais> = {}): Pais {

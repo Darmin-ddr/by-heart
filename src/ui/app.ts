@@ -16,7 +16,7 @@ import {
 } from '../logic/progreso';
 import { crearSesionHoy, modoHoy, nuevosDeHoy, repasoAdelantado, repasosPendientes } from '../logic/hoy';
 import type { Continente, Pais, Region } from '../logic/types';
-import { Mapa } from '../map/mapa';
+import { crearTablero, type Tablero } from './tablero';
 import { lanzarConfeti } from './confeti';
 import { el } from './dom';
 import type { Motor } from './comun';
@@ -211,12 +211,15 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   const avisos = document.getElementById('avisos')!;
   const botonesPestana = document.querySelectorAll<HTMLButtonElement>('.modo');
 
+  /** Hay verbos que estudiar. Mientras no, las pestañas enseñan un aviso y no se monta nada más. */
+  const hayContenido = todos.length > 0 && regiones.length > 0;
   let activos: Pais[] = [];
   /** Región del mapa en este momento (Hoy la mueve; el examen pone el suyo). */
   let region: Region = regiones[0];
   /** Región que ha elegido el alumno en el selector (Aprender y Explorar vuelven a ella). */
   let regionElegida: Region = regiones[0];
-  let mapa: Mapa | null = null;
+  /** El tablero (lo que ocupa el sitio del mapa de Capitalia): null mientras no exista la cuadrícula. */
+  let mapa: Tablero | null = null;
   let modo: Modo | null = null;
   let pestana: Pestana = 'hoy';
   let actualizarSelector: (() => void) | null = null;
@@ -364,18 +367,18 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   function montarMapa(): void {
     mapa?.destruir();
     mapaDeExamen = false;
-    const paisesRegion = paisesDeRegion(region.id);
-    mapa = new Mapa({
+    mapa = null;
+    contenedorMapa.hidden = true;
+    if (!hayContenido) return;
+    mapa = crearTablero({
       contenedor: contenedorMapa,
-      paises: todos,
-      activos: new Set(activos.map((p) => p.id)),
-      region: paisesRegion,
+      region: paisesDeRegion(region.id),
       contexto: paisesContinente(),
-      fueraDeEncuadre: new Set(paisesRegion.filter((p) => p.regionesExtra?.includes(region.id)).map((p) => p.id)),
-      circulosSoloMicroestados: esContinente(region),
       colorDe: (id) => colorEnContinente(id),
       onSeleccion: (id) => modo?.alSeleccionarPais(id),
     });
+    contenedorMapa.hidden = !mapa;
+    if (!mapa) return;
     actualizarNiveles();
     document.documentElement.style.setProperty('--region-base', region.color);
     actualizarSelector?.();
@@ -384,6 +387,12 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   function cambiarPestana(nueva: Pestana): void {
     modo?.salir();
     pestana = nueva;
+    if (!hayContenido) {
+      modo = null;
+      for (const b of botonesPestana) b.setAttribute('aria-pressed', String(b.dataset.modo === nueva));
+      pintarSinContenido(nueva);
+      return;
+    }
     // Hoy y el examen no usan el selector: eligen ellos el mapa.
     botonRegion.hidden = nueva === 'hoy' || nueva === 'examen';
     if (nueva === 'hoy') {
@@ -396,7 +405,11 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
       montarMapa();
     }
     for (const b of botonesPestana) b.setAttribute('aria-pressed', String(b.dataset.modo === nueva));
-    if (!mapa) return;
+    if (!mapa) {
+      modo = null;
+      pintarSinContenido(nueva);
+      return;
+    }
     const paisesRegion = paisesDeRegion(region.id);
     const ctx = {
       mapa,
@@ -412,6 +425,27 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
     else modo = iniciarHoy(panel, serviciosHoy());
   }
 
+  /** Lo que se ve en cada pestaña mientras la app no tiene verbos (SPEC 13, hito 0). */
+  function pintarSinContenido(nueva: Pestana): void {
+    const titulos: Record<Pestana, string> = { hoy: 'Hoy', aprender: 'Aprender', examen: 'Examen', explorar: 'Explorar' };
+    const textos: Record<Pestana, string> = {
+      hoy: 'Aquí estará el repaso de cada día: lo que toca hoy y los verbos que ya te sabes.',
+      aprender: 'Aquí irás subiendo cada verbo por sus escalones, grupo a grupo.',
+      examen: 'Aquí podrás hacer un examen de prueba, con nota, como el de clase.',
+      explorar: 'Aquí estará la tabla de verbos, para consultarla sin que nadie te pregunte.',
+    };
+    botonRegion.hidden = true;
+    panel.replaceChildren(
+      el(
+        'div',
+        'contenido-modo',
+        el('h2', 'titulo-panel', titulos[nueva]),
+        el('p', 'resumen', 'By Heart está en construcción: todavía no hay verbos.'),
+        el('p', 'ayuda', textos[nueva]),
+      ),
+    );
+  }
+
   function serviciosExamen() {
     return {
       motor,
@@ -423,17 +457,11 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
         // Mapa mudo del continente: sin colores de región ni de progreso (SPEC 4.4).
         const cambio = mapaDeExamen;
         mapa?.destruir();
-        mapa = new Mapa({
-          contenedor: contenedorMapa,
-          paises: todos,
-          activos: new Set(activos.map((p) => p.id)),
-          region: paises,
-          circulosSoloMicroestados: true,
-          onSeleccion: () => undefined,
-        });
+        // Al examen solo se llega con un tablero montado, así que aquí siempre lo hay.
+        mapa = crearTablero({ contenedor: contenedorMapa, region: paises, onSeleccion: () => undefined });
         mapaDeExamen = true;
         botonRegion.hidden = true;
-        return { mapa, transicionMs: cambio ? mostrarRotuloRegion(continente === 'europa' ? 'Europa' : 'Asia') : 0 };
+        return { mapa: mapa!, transicionMs: cambio ? mostrarRotuloRegion(continente === 'europa' ? 'Europa' : 'Asia') : 0 };
       },
       priorizar(ids: readonly string[]) {
         estado.prioridad = [...new Set([...estado.prioridad, ...ids])];
@@ -551,7 +579,8 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   void navigator.storage?.persist?.().catch(() => undefined);
 
   for (const b of botonesPestana) b.addEventListener('click', () => cambiarPestana(b.dataset.modo as Pestana));
-  actualizarSelector = prepararSelectorRegiones(botonRegion, {
+  if (!hayContenido) botonRegion.hidden = true;
+  else actualizarSelector = prepararSelectorRegiones(botonRegion, {
     regiones,
     entero: (c) => ({ region: regionContinente(c), abierto: continenteAbierto(c) }),
     paisesDe: paisesDeRegion,
@@ -618,6 +647,7 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   });
   const abrirGuia = crearGuia({
     paisParaTaller() {
+      if (!hayContenido) return null;
       const sinTruco = paisesDeRegion(region.id).filter((p) => !estado.trucosPropios[p.id]);
       if (!sinTruco.length) return null;
       // Primero, el que más ha fallado: es donde un truco propio sirve de verdad.
@@ -655,9 +685,10 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
     cambiarAlumno,
     editarPerfil: () => editarPerfil(),
     anadirAlumno: () => anadirAlumno(backend, indice, () => undefined),
-    abrirGuia,
+    // Las guías explican cómo estudiar con la app: sin verbos todavía, no se ofrecen.
+    abrirGuia: hayContenido ? abrirGuia : undefined,
     abrirInstalar: () => (formaInstalar() === 'instalada' ? null : abrirInstalar),
-    abrirGuiaAdultos,
+    abrirGuiaAdultos: hayContenido ? abrirGuiaAdultos : undefined,
     abrirAcercaDe: crearAcercaDe(),
     abrirPanelAdultos: abrirPanel,
     estado: () => estado,
@@ -670,6 +701,8 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   });
   montarMapa();
   cambiarPestana('hoy');
+  // Sin verbos todavía, la bienvenida y la guía (que hablan de cómo estudiar con la app) esperan.
+  if (!hayContenido) return;
   // Primer arranque: "¿quién eres?". Después, si el alumno aún no ha visto su guía, se le abre sola.
   if (!estado.bienvenidaVista) abrirBienvenida();
   // Primera vez con la versión de los alumnos: ponerle nombre al perfil (una sola vez).

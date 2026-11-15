@@ -281,6 +281,18 @@ button {
   }
 }
 
+/* Sin tablero (aún no hay cuadrícula de verbos): el panel ocupa todo el sitio. */
+.contenido:has(> .mapa[hidden]) {
+  grid-template-rows: 1fr;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.contenido:has(> .mapa[hidden]) .panel {
+  width: 100%;
+  max-width: 640px;
+  justify-self: center;
+}
+
 .mapa {
   position: relative;
   min-height: 0;

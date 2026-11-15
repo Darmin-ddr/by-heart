@@ -5,14 +5,14 @@ import { crearPreguntaOpciones } from '../logic/opciones';
 import { validarTexto, type ResultadoTexto } from '../logic/texto';
 import { corregirMapaMudo } from '../logic/examen';
 import { conArticulo, preposicionDe } from '../logic/mensajes';
-import type { Mapa } from '../map/mapa';
+import type { Tablero } from './tablero';
 import { boton, el } from './dom';
 import { nombreResaltado, pintarAcierto, pintarAviso, pintarFallo, type OpcionesRespuesta, type Teclado } from './comun';
 
 /** Lo que recibe una pregunta suelta (modos 2, 4 y 5). */
 export interface ArgsPregunta {
   zona: HTMLElement;
-  mapa: Mapa;
+  mapa: Tablero;
   pais: Pais;
   /** Países de la región (para nombrar el país tocado por error). */
   region: readonly Pais[];
