@@ -156,6 +156,8 @@ Progreso (local): como en Capitalia, por verbo en lugar de por país.
 
 ## 13. Hitos
 
+**Estado:** hito 0 hecho (15/11/2026). Siguiente: hito 1, para el que hace falta el listado de clase o, al menos, un grupo de verbos de muestra.
+
 0. **Puesta a punto:** nombre, textos, icono provisional y claves de guardado propias; retirar el mapa. La app compila, pasa los tests y abre, aunque esté vacía de contenido. Adaptar también `CLAUDE.md` y el README, que aún hablan de capitales.
 1. **Prototipo de un grupo** (6 a 10 verbos): cuadrícula, Elegir y Emparejar, feedback. Probar en iPad y móvil.
 2. Completar y Tabla muda, con la validación exacta y el "casi acierto".
