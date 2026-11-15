@@ -2,9 +2,9 @@
 # Requisito (una sola vez): Settings > Pages > Source: "GitHub Actions".
 name: Publicar en GitHub Pages
 
+# De momento solo a mano (pestaña Actions): la app está a medias. Al llegar al hito de
+# publicación (SPEC 13) se vuelve a poner `push: branches: [main]`.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
