@@ -237,7 +237,7 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   /** "Europa entera" y "Asia entera": se usan como una región más (SPEC 4.1). */
   const regionesContinente: Region[] = continentesCurso(regiones).map((c) => ({
     id: PREFIJO_CONTINENTE + c,
-    nombre: `${NOMBRE_CONTINENTE[c]} entera`,
+    nombre: 'Todos los verbos',
     continente: c,
     orden: 0,
     color: '#cfd8e3',
@@ -354,11 +354,11 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
         estado.regionesCelebradas.push(r.id);
         guardar();
         lanzarConfeti();
-        avisar(`¡Has dominado ${r.nombre}!`);
+        avisar(`¡Has dominado el grupo «${r.nombre}»!`);
       }
     }
     for (const id of todasAbiertas()) {
-      if (!antes.has(id)) avisar(`Nueva región disponible: ${regionDe(id)?.nombre ?? id}`);
+      if (!antes.has(id)) avisar(`Nuevo grupo disponible: ${regionDe(id)?.nombre ?? id}`);
     }
   }
 

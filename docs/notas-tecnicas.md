@@ -3,7 +3,7 @@
 By Heart parte de una copia de Capitalia 1.3.2. Estas notas vienen de allí: lo que sigue valiendo está adaptado; lo que describe pantallas aún sin adaptar a los verbos lo dice.
 
 ## Estado (hitos 1 y 2, prototipo)
-- **Contenido:** un grupo de muestra provisional de seis verbos (`src/data/verbs.json` y `groups.json`, con el modelo de SPEC 12). De dónde sale: `docs/listas/README.md`.
+- **Contenido:** los 79 verbos del listado de clase en 11 grupos (`src/data/verbs.json` y `groups.json`, con el modelo de SPEC 12). Los genera `scripts/generar-verbos.cjs` a partir de su propia tabla, comprobando cada fila contra el texto del PDF (`pdftotext -raw`); para cambiar un verbo, un grupo o un truco, se cambia ahí y se regenera. Detalles del listado: `docs/listas/README.md`.
 - **Puente con la lógica heredada** (`src/logic/verbos.ts`): la lógica y las pantallas de Capitalia siguen trabajando con `Pais` y `Region`. Un verbo les llega como un "país" cuyo `nombre` es el infinitivo y cuya `capital` son las formas ("bought · bought"); un grupo, como una "región" (de un único "continente" que no se enseña). Es provisional: se quita cuando esa lógica se pase a verbos.
 - **Tablero:** el sitio del mapa lo ocupa la cuadrícula de verbos (`src/ui/cuadricula.ts`), que cumple el contrato `Tablero` (`src/ui/tablero.ts`). Las pantallas solo conocen el contrato.
 - **Adaptado a verbos:** Aprender (`aprender.ts`), Elegir, Al revés, Completar y Tabla muda (`preguntas.ts`), Emparejar (`colocar.ts`, el antiguo Colocar) y Explorar (`explorar.ts`).

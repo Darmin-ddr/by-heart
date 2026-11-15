@@ -35,7 +35,7 @@ describe('verbos para la lógica heredada', () => {
     const buy = verboComoPais(verbos.find((v) => v.id === 'buy')!);
     expect(buy.nombre).toBe('buy');
     expect(buy.capital).toBe('bought · bought');
-    expect(buy.significado).toBe('comprar');
+    expect(buy.significado).toBe('comprar, mercar');
     expect(buy.region).toBe('ght');
     expect(formasDe({ pasado: 'sang', participio: 'sung' })).toBe('sang · sung');
   });

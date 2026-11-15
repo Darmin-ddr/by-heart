@@ -22,9 +22,10 @@ Herramienta interactiva para que un alumno de secundaria se aprenda de memoria l
 ### 3.1 Estructura del contenido
 - **Módulo 1: verbos irregulares.** Es lo único que entra en la primera versión.
 - **Módulo 2: phrasal verbs.** Hito posterior, con su propio diseño (ver 3.4). No se adelanta nada.
-- Los verbos se reparten en **grupos por patrón** de 6 a 10 verbos: las tres formas iguales (*cut, cut, cut*), pasado y participio iguales (*buy, bought, bought*), vocal que cambia i-a-u (*sing, sang, sung*), participio en -en (*break, broke, broken*), etc. El grupo hace el papel de la región de Capitalia y es, además, el primer truco de memoria. La división concreta se define en los datos.
+- Los verbos se reparten en **grupos por patrón** de 6 a 10 verbos (ahora, 11 grupos; la división es una propuesta, **por confirmar**): las tres formas iguales (*cut, cut, cut*), pasado y participio iguales (*buy, bought, bought*), vocal que cambia i-a-u (*sing, sang, sung*), participio en -en (*break, broke, broken*), etc. El grupo hace el papel de la región de Capitalia y es, además, el primer truco de memoria. La división concreta se define en los datos.
 - Los grupos se desbloquean progresivamente (en Aprender y Explorar): un grupo se abre cuando todos los verbos del anterior llegan al escalón Completar, o cuando Hoy ya ha empezado alguno de sus verbos. Siempre se puede volver a los anteriores.
-- **Lista base: el listado de clase** (`docs/listas/`), **pendiente de recibir**. Será la **fuente de verdad**: qué verbos entran, con qué formas y con qué significado en español. No se añaden verbos que no estén en él.
+- **Lista base: el listado de clase** (`docs/listas/`, recibido el 15/11/2026): 79 verbos de 3º de ESO. Es la **fuente de verdad**: qué verbos entran, con qué formas y con qué significado. No se añaden verbos que no estén en él.
+- **Los significados del listado están en gallego** y la app los enseña tal cual, aunque sus textos están en castellano **(por confirmar)**.
 - **Filtro "solo examen"**: el adulto marca qué verbos entran en un examen concreto.
 
 ### 3.2 Casos especiales
@@ -156,7 +157,7 @@ Progreso (local): como en Capitalia, por verbo en lugar de por país.
 
 ## 13. Hitos
 
-**Estado:** hito 0 hecho (15/11/2026). Hitos 1 y 2 hechos en el ordenador con un **grupo de muestra provisional** de seis verbos (`docs/listas/README.md`): cuadrícula, los cuatro escalones (Elegir, Emparejar, Completar y Tabla muda) y Explorar. Falta probarlos en iPad y móvil. Hoy y Examen enseñan un aviso de "llega más adelante".
+**Estado (15/11/2026):** hitos 0, 1 y 2 hechos en el ordenador: cuadrícula, los cuatro escalones (Elegir, Emparejar, Completar y Tabla muda) y Explorar. Del hito 3 están cargados los 79 verbos del listado de clase en 11 grupos; faltan confirmar los grupos y revisar los trucos. Falta probarlo todo en iPad y móvil. Hoy y Examen enseñan un aviso de "llega más adelante".
 
 0. **Puesta a punto:** nombre, textos, icono provisional y claves de guardado propias; retirar el mapa. La app compila, pasa los tests y abre, aunque esté vacía de contenido. Adaptar también `CLAUDE.md` y el README, que aún hablan de capitales.
 1. **Prototipo de un grupo** (6 a 10 verbos): cuadrícula, Elegir y Emparejar, feedback. Probar en iPad y móvil.
@@ -168,7 +169,10 @@ Progreso (local): como en Capitalia, por verbo en lugar de por país.
 
 ## 14. Pendiente
 
-- **Listado de clase** de verbos irregulares (y saber si habrá listas de examen más cortas).
+- Saber si habrá listas de examen más cortas que el listado de clase.
+- Significados en gallego o en castellano (3.1).
+- Variantes *learned* y *dreamed*: comprobarlas en un diccionario antes de aceptarlas (`docs/listas/README.md`).
+- Quitar los nombres heredados de Capitalia (país, capital, región) del código.
 - Curso exacto del alumno.
 - Cómo es el examen de clase: qué dan, qué hay que escribir y cómo se puntúa (afecta a 4, 4.4 y a la nota).
 - Voz: botón "Escuchar" sí o no (5.5).

@@ -15,15 +15,13 @@ export interface DatosSelector {
   elegir(regionId: string): void;
 }
 
-const NOMBRE_CONTINENTE: Record<Continente, string> = { europa: 'Europa', asia: 'Asia' };
-
 /**
- * Selector de región (SPEC 3.1): Europa y Asia por separado; las regiones se
- * desbloquean en orden y siempre se puede volver a las anteriores.
+ * Selector de grupo (SPEC 3.1): los grupos se desbloquean en orden y siempre se
+ * puede volver a los anteriores. El primero de la lista es "Todos los verbos".
  */
 export function prepararSelectorRegiones(disparador: HTMLButtonElement, datos: DatosSelector): () => void {
   const dialogo = el('dialog', 'dialogo-regiones');
-  dialogo.setAttribute('aria-label', 'Elegir región');
+  dialogo.setAttribute('aria-label', 'Elegir grupo');
   document.body.append(dialogo);
   // Tocar fuera del contenido cierra el diálogo.
   dialogo.addEventListener('click', (e) => {
@@ -32,14 +30,16 @@ export function prepararSelectorRegiones(disparador: HTMLButtonElement, datos: D
 
   function actualizarBoton(): void {
     disparador.replaceChildren(el('span', 'region-nombre', datos.actual().nombre), el('span', 'region-flecha', '▾'));
-    disparador.setAttribute('aria-label', `Región: ${datos.actual().nombre}. Cambiar de región`);
+    disparador.setAttribute('aria-label', `Grupo: ${datos.actual().nombre}. Cambiar de grupo`);
   }
 
   function abrir(): void {
     const contenido = el('div', 'dialogo-contenido');
     const cerrar = boton('Cerrar', 'boton-secundario', () => dialogo.close());
-    contenido.append(el('h2', 'dialogo-titulo', 'Regiones'));
+    contenido.append(el('h2', 'dialogo-titulo', 'Grupos de verbos'));
+    // La lógica heredada reparte los grupos en "continentes": los verbos están todos en uno, que no se nombra.
     for (const c of ['europa', 'asia'] as Continente[]) {
+      if (!datos.regiones.some((r) => r.continente === c)) continue;
       const abiertas = datos.desbloqueadas(c);
       const lista = el('ul', 'lista-regiones');
       const ordenadas = datos.regiones.filter((r) => r.continente === c).sort((a, b) => a.orden - b.orden);
@@ -59,22 +59,22 @@ export function prepararSelectorRegiones(disparador: HTMLButtonElement, datos: D
         const detalle = abierta
           ? `${aprendidos} de ${paises.length} aprendidos`
           : esEntero
-            ? `Se abre cuando estén abiertas todas las regiones de ${NOMBRE_CONTINENTE[c]}`
-            : `Se abre cuando todos los países de ${ordenadas[i - 1]?.nombre ?? 'la anterior'} lleguen al escalón Escribir`;
+            ? 'Se abre cuando estén abiertos todos los grupos'
+            : `Se abre cuando todos los verbos de «${ordenadas[i - 1]?.nombre ?? 'el anterior'}» lleguen al escalón Completar`;
         const examen = esEntero ? 0 : datos.conExamen(r.id);
         b.append(
           el('span', 'region-muestra'),
           el('span', 'region-textos', el('span', 'region-titulo', r.nombre, actual ? ' (ahora)' : ''), el('span', 'region-detalle', detalle)),
           el('span', 'region-estado', !abierta ? '🔒' : examen ? `📝 ${examen}` : ''),
         );
-        if (!abierta) b.setAttribute('aria-label', `${r.nombre}, bloqueada. ${detalle}`);
+        if (!abierta) b.setAttribute('aria-label', `${r.nombre}, bloqueado. ${detalle}`);
         b.addEventListener('click', () => {
           dialogo.close();
           if (!actual) datos.elegir(r.id);
         });
         lista.append(el('li', '', b));
       });
-      contenido.append(el('h3', 'dialogo-subtitulo', NOMBRE_CONTINENTE[c]), lista);
+      contenido.append(lista);
     }
     contenido.append(el('div', 'acciones acciones-cerrar', cerrar));
     dialogo.replaceChildren(contenido);
