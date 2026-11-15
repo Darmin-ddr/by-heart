@@ -158,7 +158,7 @@ export function pintarResumen(
   contenedor.replaceChildren(
     el('p', 'resumen-titulo', textos.titulo),
     el('p', 'resumen', mensajeResumen(resumen.aLaPrimera, resumen.total)),
-    el('div', 'acciones', otra, boton('Explorar el mapa', 'boton-secundario', alExplorar)),
+    el('div', 'acciones', otra, boton('Ver la tabla', 'boton-secundario', alExplorar)),
   );
   otra.focus({ preventScroll: true });
 }

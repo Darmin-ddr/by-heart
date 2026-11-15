@@ -1,0 +1,77 @@
+{
+  "fuente": "Grupo de muestra provisional (docs/listas/README.md). Formas y significados del grupo -ght de 'Irregular verbs by groups' (Colegio Alquería), comprobados uno a uno. Los trucos son propios y están sin revisar por un adulto.",
+  "verbos": [
+    {
+      "id": "buy",
+      "infinitivo": "buy",
+      "pasado": "bought",
+      "participio": "bought",
+      "variantesPasado": [],
+      "variantesParticipio": [],
+      "significado": "comprar",
+      "variantesSignificado": [],
+      "grupo": "ght",
+      "trucos": [{ "tipo": "familia", "texto": "Pasado y participio iguales, acabados en -ought (con o).", "revisado": false }]
+    },
+    {
+      "id": "fight",
+      "infinitivo": "fight",
+      "pasado": "fought",
+      "participio": "fought",
+      "variantesPasado": [],
+      "variantesParticipio": [],
+      "significado": "luchar",
+      "variantesSignificado": ["pelear"],
+      "grupo": "ght",
+      "trucos": [{ "tipo": "familia", "texto": "Pasado y participio iguales, acabados en -ought (con o).", "revisado": false }]
+    },
+    {
+      "id": "think",
+      "infinitivo": "think",
+      "pasado": "thought",
+      "participio": "thought",
+      "variantesPasado": [],
+      "variantesParticipio": [],
+      "significado": "pensar",
+      "variantesSignificado": [],
+      "grupo": "ght",
+      "trucos": [{ "tipo": "familia", "texto": "Pasado y participio iguales, acabados en -ought (con o).", "revisado": false }]
+    },
+    {
+      "id": "teach",
+      "infinitivo": "teach",
+      "pasado": "taught",
+      "participio": "taught",
+      "variantesPasado": [],
+      "variantesParticipio": [],
+      "significado": "enseñar",
+      "variantesSignificado": [],
+      "grupo": "ght",
+      "trucos": [{ "tipo": "familia", "texto": "Teach lleva a: taught, con au. Igual que catch, caught.", "revisado": false }]
+    },
+    {
+      "id": "catch",
+      "infinitivo": "catch",
+      "pasado": "caught",
+      "participio": "caught",
+      "variantesPasado": [],
+      "variantesParticipio": [],
+      "significado": "atrapar",
+      "variantesSignificado": ["coger"],
+      "grupo": "ght",
+      "trucos": [{ "tipo": "familia", "texto": "Catch lleva a: caught, con au. Igual que teach, taught.", "revisado": false }]
+    },
+    {
+      "id": "bring",
+      "infinitivo": "bring",
+      "pasado": "brought",
+      "participio": "brought",
+      "variantesPasado": [],
+      "variantesParticipio": [],
+      "significado": "traer",
+      "variantesSignificado": [],
+      "grupo": "ght",
+      "trucos": [{ "tipo": "familia", "texto": "Pasado y participio iguales, acabados en -ought (con o).", "revisado": false }]
+    }
+  ]
+}

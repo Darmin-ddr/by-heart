@@ -2095,3 +2095,116 @@ button {
     padding: 0 14px;
   }
 }
+
+/* ---------- Cuadrícula de verbos (el tablero: ocupa el sitio del mapa de Capitalia) ---------- */
+
+.cuadricula {
+  height: 100%;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-auto-rows: minmax(76px, auto);
+  align-content: start;
+  gap: 10px;
+  padding: 16px;
+}
+
+.casilla {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 76px;
+  padding: 8px 10px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: var(--pais);
+  color: var(--texto);
+  font: inherit;
+  text-align: center;
+  cursor: default;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.casilla-verbo {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+/* El pasado y el participio solo se ven cuando la app los enseña (respuesta o Explorar). */
+.casilla-formas {
+  display: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.casilla.revelada .casilla-formas {
+  display: block;
+}
+
+.cuadricula.tocable .casilla {
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .cuadricula.tocable .casilla:not(.seleccion):not(.objetivo):not(.acierto):not(.fallo):hover {
+    border-color: var(--texto-suave);
+  }
+}
+
+.casilla:focus {
+  outline: none;
+}
+
+.casilla:focus-visible {
+  border-color: var(--acento);
+}
+
+/* Progreso: la casilla se colorea según el escalón del verbo (SPEC 10). */
+.casilla.nivel-1 {
+  background: color-mix(in srgb, var(--color-pais, var(--color-region)) 35%, var(--pais));
+}
+
+.casilla.nivel-2 {
+  background: color-mix(in srgb, var(--color-pais, var(--color-region)) 65%, var(--pais));
+  color: var(--texto-sobre-region);
+}
+
+.casilla.nivel-3,
+.casilla.seleccion {
+  background: var(--color-pais, var(--color-region));
+  color: var(--texto-sobre-region);
+}
+
+.casilla.seleccion {
+  border-color: var(--texto-suave);
+}
+
+.casilla.objetivo {
+  background: var(--objetivo);
+  border-color: var(--objetivo-borde);
+  color: var(--texto);
+}
+
+.casilla.acierto {
+  background: var(--acierto-mapa);
+  color: var(--texto);
+  animation: latido 0.45s ease-out;
+}
+
+.casilla.fallo {
+  background: var(--fallo-mapa);
+  color: var(--texto);
+}
+
+/* Significado junto al verbo, en el enunciado y en la ficha de Explorar. */
+.significado {
+  color: var(--texto-suave);
+  font-weight: 400;
+}
+
+.ficha-significado {
+  margin: 0 0 12px;
+  color: var(--texto-suave);
+}

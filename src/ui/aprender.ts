@@ -11,19 +11,26 @@ import { iniciarRonda } from './ronda';
 
 export const NOMBRE_ESCALON: Record<Escalon, string> = {
   elegir: 'Elegir',
-  colocar: 'Colocar',
-  escribir: 'Escribir',
-  mapamudo: 'Mapa mudo',
+  colocar: 'Emparejar',
+  escribir: 'Completar',
+  mapamudo: 'Tabla muda',
 };
 
 const QUE_SE_HACE: Record<Escalon, string> = {
-  elegir: 'reconocer la capital entre cuatro',
-  colocar: 'llevar cada capital a su país',
-  escribir: 'escribir la capital de memoria',
-  mapamudo: 'decir país y capital con solo la estrella',
+  elegir: 'reconocer el pasado y el participio entre cuatro',
+  colocar: 'unir cada verbo con sus formas',
+  escribir: 'escribir el pasado y el participio',
+  mapamudo: 'escribir las tres formas a partir del significado',
 };
 
-/** Países por tanda como mucho (con "Europa entera" o "Asia entera" serían más de 40). */
+/**
+ * Escalones que ya se pueden practicar. Completar y Tabla muda llegan en el
+ * hito 2 (SPEC 13): un verbo que supera Emparejar se queda esperando en Completar.
+ */
+const ESCALONES_LISTOS: readonly Escalon[] = ['elegir', 'colocar'];
+const listo = (e: Escalon | null): e is Escalon => e !== null && ESCALONES_LISTOS.includes(e);
+
+/** Verbos por tanda como mucho. */
 const TAM_TANDA = 16;
 /** En la escalera, cuántos nombres se listan por escalón antes de resumir "y N más". */
 const NOMBRES_MAX = 12;
@@ -34,10 +41,10 @@ function modoDeEscalon(e: Escalon): ModoId {
 }
 
 /**
- * Pestaña "Aprender" (SPEC 4.3): los países de la región, cada uno en su
- * escalón (Elegir → Colocar → Escribir → Mapa mudo). Cada tanda pregunta una
- * vez por cada país pendiente, en el modo de su escalón; los de Colocar van
- * juntos en el pool de capitales. Dos aciertos separados suben de escalón.
+ * Pestaña "Aprender" (SPEC 4.3): los verbos del grupo, cada uno en su
+ * escalón (Elegir → Emparejar → Completar → Tabla muda). Cada tanda pregunta una
+ * vez por cada verbo pendiente, en el modo de su escalón; los de Emparejar van
+ * juntos. Dos aciertos separados suben de escalón.
  */
 export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contenedor'>, estado: () => EstadoProgreso): Modo {
   const contenedor = el('div', 'contenido-modo');
@@ -70,10 +77,10 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
   function escalera(): HTMLElement {
     const e = estado();
     const lista = el('ol', 'escalera');
-    lista.setAttribute('aria-label', 'Escalones de esta región');
+    lista.setAttribute('aria-label', 'Escalones de este grupo');
     const filas: { titulo: string; detalle: string; ids: string[]; clase: string }[] = ESCALONES.map((esc, i) => ({
       titulo: `${i + 1}. ${NOMBRE_ESCALON[esc]}`,
-      detalle: QUE_SE_HACE[esc],
+      detalle: QUE_SE_HACE[esc] + (ESCALONES_LISTOS.includes(esc) ? '' : ' (en construcción)'),
       ids: ctx.region.filter((p) => escalonDe(e, p.id) === esc).map((p) => p.id),
       clase: `escalon-${esc}`,
     }));
@@ -104,7 +111,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
 
   function pendientes(): string[] {
     const e = estado();
-    return ctx.region.filter((p) => escalonDe(e, p.id) !== null).map((p) => p.id);
+    return ctx.region.filter((p) => listo(escalonDe(e, p.id))).map((p) => p.id);
   }
 
   function pintarInicio(): void {
@@ -113,15 +120,15 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     const hay = pendientes().length > 0;
     const empezar = hay
       ? boton('Empezar', 'boton-principal', empezarTanda)
-      : boton('Repasar con mapa mudo', 'boton-principal', repasoMapaMudo);
+      : boton('Repasar con Elegir', 'boton-principal', repasoLibre);
     contenedor.replaceChildren(
       el('h2', 'titulo-panel', 'Aprender'),
       el(
         'p',
         'ayuda',
         hay
-          ? `Cada país sube de escalón con dos aciertos en tandas distintas. Al superar el último, queda aprendido y pasa a Hoy.${pendientes().length > TAM_TANDA ? ` Cada tanda lleva ${TAM_TANDA} países.` : ''}`
-          : 'Ya has aprendido todos los países de esta región: los repasarás en Hoy. Si quieres, puedes practicarlos ahora con el mapa mudo.',
+          ? `Cada verbo sube de escalón con dos aciertos en tandas distintas. De momento se pueden practicar los dos primeros escalones.${pendientes().length > TAM_TANDA ? ` Cada tanda lleva ${TAM_TANDA} verbos.` : ''}`
+          : 'Todos los verbos de este grupo han pasado ya por Elegir y Emparejar. Los dos escalones siguientes están en construcción; mientras, puedes repasarlos.',
       ),
       escalera(),
       el('div', 'acciones', empezar),
@@ -146,7 +153,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
       .slice(0, TAM_TANDA);
     const modos = new Map(ids.map((id) => [id, escalonDe(e, id)!]));
     const enColocar = ids.filter((id) => modos.get(id) === 'colocar');
-    // Colocar necesita al menos dos capitales para tener sentido; con una sola, va suelta (Al revés).
+    // Emparejar necesita al menos dos verbos para tener sentido; con uno solo, va suelto (Al revés).
     if (enColocar.length >= 2) {
       actual = iniciarColocar(contexto, {
         ids: enColocar,
@@ -174,14 +181,15 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     });
   }
 
-  function repasoMapaMudo(): void {
+  /** Repaso sin escalones pendientes: una vuelta de Elegir a todo el grupo. */
+  function repasoLibre(): void {
     actual?.salir();
     subieron.clear();
     aprendidos.clear();
     resumen = { total: 0, aLaPrimera: 0, fallos: 0 };
     actual = iniciarRonda(contexto, {
       ids: () => barajar(ctx.region.map((p) => p.id), ctx.rng).slice(0, TAM_TANDA),
-      modoPara: () => 'mapamudo',
+      modoPara: () => 'elegir',
       alTerminar(r) {
         acumular(r);
         pintarFinal();
@@ -196,7 +204,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     ctx.mapa.mostrarCapital(null);
     const listaNombres = (ids: string[]) => ids.map(nombre).join(', ');
     const sube = [...subieron.entries()];
-    const seguir = boton(pendientes().length ? 'Seguir aprendiendo' : 'Ver la región', 'boton-principal', () =>
+    const seguir = boton(pendientes().length ? 'Seguir aprendiendo' : 'Ver el grupo', 'boton-principal', () =>
       pendientes().length ? empezarTanda() : pintarInicio(),
     );
     rellenar(
@@ -214,7 +222,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
           )
         : null,
       escalera(),
-      el('div', 'acciones', seguir, boton('Explorar el mapa', 'boton-secundario', ctx.alExplorar)),
+      el('div', 'acciones', seguir, boton('Ver la tabla', 'boton-secundario', ctx.alExplorar)),
     );
     seguir.focus({ preventScroll: true });
   }

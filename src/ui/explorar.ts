@@ -20,7 +20,7 @@ export interface ServicioTrucos {
 const MAX_TRUCO = 160;
 
 /**
- * Modo 1: tocar un país muestra su capital y su truco. Sin evaluación.
+ * Explorar: tocar un verbo muestra sus formas, su significado y su truco. Sin evaluación.
  * Permite inventar un truco propio, que sustituye al predefinido (SPEC 5.3).
  */
 export function iniciarExplorar(panel: HTMLElement, mapa: Tablero, region: readonly Pais[], trucos: ServicioTrucos): Modo {
@@ -30,7 +30,7 @@ export function iniciarExplorar(panel: HTMLElement, mapa: Tablero, region: reado
 
   const ficha = el('div', 'ficha');
   const lista = el('div', 'lista-paises');
-  lista.setAttribute('aria-label', 'Países de la región');
+  lista.setAttribute('aria-label', 'Verbos del grupo');
   const botones = new Map<string, HTMLButtonElement>();
   for (const p of [...region].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))) {
     const b = boton(p.nombre, 'chip', () => seleccionar(p.id));
@@ -54,14 +54,15 @@ export function iniciarExplorar(panel: HTMLElement, mapa: Tablero, region: reado
   function pintarFicha(): void {
     const pais = region.find((p) => p.id === seleccionado);
     if (!pais) {
-      ficha.replaceChildren(el('p', 'ayuda', 'Toca un país en el mapa (o en la lista) para ver su capital.'));
+      ficha.replaceChildren(el('p', 'ayuda', 'Toca un verbo en la cuadrícula (o en la lista) para ver sus formas.'));
       return;
     }
     const propio = trucos.propio(pais.id);
     const predefinido = trucos.predefinido(pais.id);
     const cabecera = [
       el('p', 'ficha-pais', el('span', 'nombre-pais seleccion', pais.nombre)),
-      el('p', 'ficha-capital', el('span', 'estrella-texto', '★'), ' ', pais.capital),
+      el('p', 'ficha-capital', pais.capital),
+      pais.significado ? el('p', 'ficha-significado', pais.significado) : null,
     ];
 
     if (editando) {
@@ -69,8 +70,8 @@ export function iniciarExplorar(panel: HTMLElement, mapa: Tablero, region: reado
       area.maxLength = MAX_TRUCO;
       area.rows = 3;
       area.value = propio ?? '';
-      area.placeholder = 'Una frase corta que te ayude a recordarla';
-      area.setAttribute('aria-label', `Tu truco para ${pais.capital}`);
+      area.placeholder = 'Una frase corta que te ayude a recordarlo';
+      area.setAttribute('aria-label', `Tu truco para ${pais.nombre}`);
       const guardar = boton('Guardar', 'boton-principal', () => {
         const texto = area.value.trim();
         trucos.guardarPropio(pais.id, texto || null);

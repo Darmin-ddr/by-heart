@@ -1,15 +1,14 @@
 import type { Pais } from '../logic/types';
 import type { Nivel } from '../logic/progreso';
+import { Cuadricula } from './cuadricula';
 
 /**
  * El tablero es lo que ocupa el sitio del mapa de Capitalia: donde se ve el
- * progreso y donde se señala aquello por lo que se pregunta. En By Heart será la
- * cuadrícula de verbos (SPEC 10), que llega en el hito 1.
+ * progreso y donde se señala aquello por lo que se pregunta. En By Heart es la
+ * cuadrícula de verbos (SPEC 10, `cuadricula.ts`).
  *
- * De momento solo existe el contrato: las pantallas heredadas de Capitalia
- * (Hoy, Aprender, Examen, Explorar) lo usan, pero no hay nada que lo cumpla, así
- * que `crearTablero` devuelve null y la app enseña el aviso de "sin contenido".
- * Los nombres (país, capital) son los de Capitalia y se cambiarán con los datos.
+ * Las pantallas heredadas de Capitalia solo conocen este contrato. Los nombres
+ * (país, capital) son los suyos: aquí "país" es un verbo y "capital", sus formas.
  */
 
 export type EstadoPais = 'objetivo' | 'acierto' | 'fallo' | 'seleccion';
@@ -41,7 +40,7 @@ export interface Tablero {
   mostrarEstrellas(ids: readonly string[]): void;
 }
 
-/** Hito 1: aquí se creará la cuadrícula de verbos. */
-export function crearTablero(_opciones: OpcionesTablero): Tablero | null {
-  return null;
+/** El tablero de la app: la cuadrícula de verbos. Sin verbos que enseñar, no hay tablero. */
+export function crearTablero(opciones: OpcionesTablero): Tablero | null {
+  return opciones.region.length ? new Cuadricula(opciones) : null;
 }

@@ -37,6 +37,13 @@ import { continenteQueToca, continentesCurso, ordenCurso, paisesDeHoy, resumenPo
 
 type Pestana = 'hoy' | 'aprender' | 'examen' | 'explorar';
 
+/**
+ * Prototipo (SPEC 13, hito 1): solo Aprender y Explorar están adaptadas a los
+ * verbos. Hoy y Examen enseñan un aviso, y las guías (que aún hablan de
+ * capitales) no se abren ni se ofrecen. Se quita cuando todo esté adaptado.
+ */
+const PROTOTIPO = true;
+
 /** Duración del rótulo con el nombre de la región cuando Hoy cambia el mapa de región. */
 const ROTULO_REGION_MS = 1100;
 
@@ -387,14 +394,18 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   function cambiarPestana(nueva: Pestana): void {
     modo?.salir();
     pestana = nueva;
-    if (!hayContenido) {
+    const enConstruccion = PROTOTIPO && (nueva === 'hoy' || nueva === 'examen');
+    if (!hayContenido || enConstruccion) {
       modo = null;
+      mapa?.limpiarEstados();
+      mapa?.mostrarCapital(null);
+      mapa?.setInteractivo(false);
       for (const b of botonesPestana) b.setAttribute('aria-pressed', String(b.dataset.modo === nueva));
-      pintarSinContenido(nueva);
+      pintarSinContenido(nueva, hayContenido ? 'Esta parte llega más adelante. De momento, prueba Aprender y Explorar.' : undefined);
       return;
     }
-    // Hoy y el examen no usan el selector: eligen ellos el mapa.
-    botonRegion.hidden = nueva === 'hoy' || nueva === 'examen';
+    // Hoy y el examen no usan el selector: eligen ellos el mapa. Con un solo grupo, no hay nada que elegir.
+    botonRegion.hidden = nueva === 'hoy' || nueva === 'examen' || regiones.length < 2;
     if (nueva === 'hoy') {
       // Portada: el continente que toca, coloreado según lo aprendido.
       region = regionContinente(estado.ajustes.focoHoy ?? continenteQueToca(estado, activos, regiones));
@@ -426,7 +437,7 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   }
 
   /** Lo que se ve en cada pestaña mientras la app no tiene verbos (SPEC 13, hito 0). */
-  function pintarSinContenido(nueva: Pestana): void {
+  function pintarSinContenido(nueva: Pestana, titular = 'By Heart está en construcción: todavía no hay verbos.'): void {
     const titulos: Record<Pestana, string> = { hoy: 'Hoy', aprender: 'Aprender', examen: 'Examen', explorar: 'Explorar' };
     const textos: Record<Pestana, string> = {
       hoy: 'Aquí estará el repaso de cada día: lo que toca hoy y los verbos que ya te sabes.',
@@ -440,7 +451,7 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
         'div',
         'contenido-modo',
         el('h2', 'titulo-panel', titulos[nueva]),
-        el('p', 'resumen', 'By Heart está en construcción: todavía no hay verbos.'),
+        el('p', 'resumen', titular),
         el('p', 'ayuda', textos[nueva]),
       ),
     );
@@ -686,9 +697,9 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
     editarPerfil: () => editarPerfil(),
     anadirAlumno: () => anadirAlumno(backend, indice, () => undefined),
     // Las guías explican cómo estudiar con la app: sin verbos todavía, no se ofrecen.
-    abrirGuia: hayContenido ? abrirGuia : undefined,
+    abrirGuia: hayContenido && !PROTOTIPO ? abrirGuia : undefined,
     abrirInstalar: () => (formaInstalar() === 'instalada' ? null : abrirInstalar),
-    abrirGuiaAdultos: hayContenido ? abrirGuiaAdultos : undefined,
+    abrirGuiaAdultos: hayContenido && !PROTOTIPO ? abrirGuiaAdultos : undefined,
     abrirAcercaDe: crearAcercaDe(),
     abrirPanelAdultos: abrirPanel,
     estado: () => estado,
@@ -700,9 +711,9 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
     },
   });
   montarMapa();
-  cambiarPestana('hoy');
-  // Sin verbos todavía, la bienvenida y la guía (que hablan de cómo estudiar con la app) esperan.
-  if (!hayContenido) return;
+  cambiarPestana(PROTOTIPO && hayContenido ? 'aprender' : 'hoy');
+  // Sin verbos, o mientras las guías sigan hablando de capitales, la bienvenida y la guía esperan.
+  if (!hayContenido || PROTOTIPO) return;
   // Primer arranque: "¿quién eres?". Después, si el alumno aún no ha visto su guía, se le abre sola.
   if (!estado.bienvenidaVista) abrirBienvenida();
   // Primera vez con la versión de los alumnos: ponerle nombre al perfil (una sola vez).

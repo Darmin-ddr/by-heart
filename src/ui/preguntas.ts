@@ -4,7 +4,7 @@ import type { Resultado } from '../logic/sesion';
 import { crearPreguntaOpciones } from '../logic/opciones';
 import { validarTexto, type ResultadoTexto } from '../logic/texto';
 import { corregirMapaMudo } from '../logic/examen';
-import { conArticulo, preposicionDe } from '../logic/mensajes';
+import { preposicionDe } from '../logic/mensajes';
 import type { Tablero } from './tablero';
 import { boton, el } from './dom';
 import { nombreResaltado, pintarAcierto, pintarAviso, pintarFallo, type OpcionesRespuesta, type Teclado } from './comun';
@@ -34,7 +34,13 @@ export interface ControlPregunta {
 export type Renderizador = (a: ArgsPregunta) => ControlPregunta;
 
 function enunciadoCapitalDe(pais: Pais): HTMLElement {
-  return el('p', 'enunciado', `¿Cuál es la capital ${preposicionDe(pais.nombre)}`, el('span', 'sin-corte', nombreResaltado(pais.nombre, 'objetivo'), '?'));
+  return el(
+    'p',
+    'enunciado',
+    '¿Cuál es el pasado y el participio de ',
+    el('span', 'sin-corte', nombreResaltado(pais.nombre, 'objetivo'), '?'),
+    pais.significado ? el('span', 'significado', ` (${pais.significado})`) : null,
+  );
 }
 
 /** Modo 2: 4 capitales posibles. */
@@ -161,8 +167,8 @@ export const preguntaAlReves: Renderizador = (a) => {
   let esperando = true;
   const feedback = el('div', 'feedback');
   zona.append(
-    el('p', 'enunciado', '¿De qué país es capital ', el('span', 'sin-corte', el('strong', 'nombre-capital', '★ ', pais.capital), '?')),
-    el('p', 'ayuda', 'Tócalo en el mapa.'),
+    el('p', 'enunciado', '¿De qué verbo son estas formas? ', el('span', 'sin-corte', el('strong', 'nombre-capital', pais.capital))),
+    el('p', 'ayuda', 'Tócalo en la cuadrícula.'),
     feedback,
   );
   teclado.usar(null);
@@ -180,12 +186,12 @@ export const preguntaAlReves: Renderizador = (a) => {
         return;
       }
       a.responder('fallo');
-      const nombreTocado = a.candidatos.find((p) => p.id === tocado)?.nombre ?? 'otro país';
+      const nombreTocado = a.candidatos.find((p) => p.id === tocado)?.nombre ?? 'otro verbo';
       mapa.setEstado(tocado, 'fallo');
       mapa.setEstado(pais.id, 'objetivo');
       pintarFallo(
         feedback,
-        ['Has tocado ', conArticulo(nombreTocado), '. ', pais.capital, ` es la capital ${preposicionDe(pais.nombre)}`, el('strong', '', pais.nombre), '.'],
+        ['Has tocado ', el('strong', '', nombreTocado), '. ', pais.capital, ' son las formas de ', el('strong', '', pais.nombre), '.'],
         a.truco,
         a.siguiente,
       )?.focus({ preventScroll: true });

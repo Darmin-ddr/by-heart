@@ -9,6 +9,37 @@ export interface Truco {
   revisado?: boolean;
 }
 
+/** Un verbo irregular, tal como está en `verbs.json` (SPEC 12). */
+export interface Verbo {
+  /** El infinitivo, sin "to". */
+  id: string;
+  infinitivo: string;
+  pasado: string;
+  participio: string;
+  /** Otras formas aceptadas (learnt/learned). */
+  variantesPasado: string[];
+  variantesParticipio: string[];
+  /** En español, como en el listado de clase. */
+  significado: string;
+  variantesSignificado: string[];
+  grupo: string;
+  nota?: string;
+  trucos: Truco[];
+}
+
+/** Grupo de verbos por patrón (`groups.json`). */
+export interface Grupo {
+  id: string;
+  nombre: string;
+  orden: number;
+  color: string;
+}
+
+/**
+ * Tipo heredado de Capitalia. La lógica y las pantallas aún trabajan con él: los
+ * verbos les llegan convertidos (`logic/verbos.ts`), con el infinitivo en `nombre`
+ * y las formas en `capital`.
+ */
 export interface Pais {
   /** ISO 3166-1 alfa-3 (Kosovo usa XKX, código provisional habitual). */
   id: string;
@@ -16,6 +47,8 @@ export interface Pais {
   isoNumerico: string | null;
   nombre: string;
   capital: string;
+  /** Significado en español (solo en los verbos). */
+  significado?: string;
   variantes: string[];
   /** Nombres de país equivalentes, aceptados sin aviso al escribir el país (Chequia, Myanmar...). */
   variantesPais?: string[];

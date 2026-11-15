@@ -1,5 +1,4 @@
 import { RondaColocar } from '../logic/colocar';
-import { conArticulo, preposicionDe } from '../logic/mensajes';
 import { boton, el } from './dom';
 import { pintarAcierto, pintarFallo, pintarResumen, progreso, type Contexto, type ModoPractica } from './comun';
 import type { ResumenRonda } from '../logic/sesion';
@@ -12,8 +11,8 @@ export interface OpcionesColocar {
 }
 
 /**
- * Modo 3: tandas de capitales para colocar. "Toca la capital, luego toca el
- * país." Todos los países de la región se pueden tocar siempre.
+ * Emparejar (SPEC 4.2): tandas de formas para unir con su verbo. "Toca unas formas,
+ * luego toca su verbo." Todos los verbos del grupo se pueden tocar siempre.
  */
 export function iniciarColocar(ctx: Contexto, op: OpcionesColocar = {}): ModoPractica {
   const { contenedor, mapa, region, rng, motor } = ctx;
@@ -32,7 +31,7 @@ export function iniciarColocar(ctx: Contexto, op: OpcionesColocar = {}): ModoPra
 
   const cabecera = el('div', 'cabecera-modo');
   const pool = el('div', 'pool');
-  pool.setAttribute('aria-label', 'Capitales por colocar');
+  pool.setAttribute('aria-label', 'Formas por emparejar');
   const feedback = el('div', 'feedback');
 
   function nombre(id: string): string {
@@ -51,8 +50,8 @@ export function iniciarColocar(ctx: Contexto, op: OpcionesColocar = {}): ModoPra
   function pintarTanda(): void {
     const { total } = ronda.resumen();
     cabecera.replaceChildren(
-      progreso(`Tanda ${ronda.numeroTanda()} · ${colocadasEnRonda} de ${total} colocadas`),
-      el('p', 'enunciado', 'Toca una capital y después su país en el mapa.'),
+      progreso(`Tanda ${ronda.numeroTanda()} · ${colocadasEnRonda} de ${total} emparejados`),
+      el('p', 'enunciado', 'Toca unas formas y después su verbo en la cuadrícula.'),
     );
     pool.replaceChildren(
       ...ronda.tanda().map((id) => {
@@ -72,7 +71,7 @@ export function iniciarColocar(ctx: Contexto, op: OpcionesColocar = {}): ModoPra
       b.setAttribute('aria-pressed', String(b.dataset.id === id));
     }
     feedback.className = 'feedback';
-    feedback.replaceChildren(el('p', 'feedback-texto pista', `Ahora toca el país de ${capital(id)}.`));
+    feedback.replaceChildren(el('p', 'feedback-texto pista', `Ahora toca el verbo de ${capital(id)}.`));
   }
 
   function alTocarPais(paisId: string): void {
@@ -80,7 +79,7 @@ export function iniciarColocar(ctx: Contexto, op: OpcionesColocar = {}): ModoPra
     if (!seleccionada) {
       limpiarMarcas();
       feedback.className = 'feedback';
-      feedback.replaceChildren(el('p', 'feedback-texto pista', 'Primero elige una capital de la lista.'));
+      feedback.replaceChildren(el('p', 'feedback-texto pista', 'Primero elige unas formas de la lista.'));
       return;
     }
     const capitalDe = seleccionada;
@@ -103,7 +102,7 @@ export function iniciarColocar(ctx: Contexto, op: OpcionesColocar = {}): ModoPra
       marcasTemporales = [paisId, capitalDe];
       pintarFallo(
         feedback,
-        ['Has tocado ', conArticulo(nombre(paisId)), '. ', capital(capitalDe), ` es la capital ${preposicionDe(nombre(capitalDe))}`, el('strong', '', nombre(capitalDe)), '.'],
+        ['Has tocado ', el('strong', '', nombre(paisId)), '. ', capital(capitalDe), ' son las formas de ', el('strong', '', nombre(capitalDe)), '.'],
         motor.truco(capitalDe),
         null,
       );

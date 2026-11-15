@@ -2,17 +2,19 @@
 
 By Heart parte de una copia de Capitalia 1.3.2. Estas notas vienen de allí: lo que sigue valiendo está adaptado; lo que describe pantallas aún sin adaptar a los verbos lo dice.
 
-## Estado (hito 0)
-- La app abre con su nombre, su icono provisional y sus claves de guardado, pero **sin contenido**: `src/data/index.ts` exporta listas vacías y cada pestaña enseña un aviso de "en construcción" (`pintarSinContenido` en `src/ui/app.ts`).
-- **No hay mapa.** Su sitio lo ocupa el contrato `Tablero` (`src/ui/tablero.ts`): lo que las pantallas necesitan del sitio donde se ve el progreso y se señala la pregunta. `crearTablero` devuelve null hasta que exista la cuadrícula de verbos (hito 1); con null, la app no monta ninguna pantalla de preguntas.
-- Las pantallas heredadas (`hoy.ts`, `aprender.ts`, `examen.ts`, `explorar.ts`, `preguntas.ts`, `colocar.ts`, `ronda.ts`, `regiones.ts`, `panel.ts`, `guia.ts`, `bienvenida.ts`) compilan pero siguen hablando de países y capitales. Se adaptan en los hitos 1 a 5.
-- La lógica (`src/logic/`) sigue con los tipos de Capitalia (`Pais`, `Region`, `Continente`). Sus tests usan los países de Capitalia como datos de prueba, en `tests/fixtures/`.
-- Con la app vacía no se abren solas la bienvenida ni las guías, ni se ofrecen en ⋯.
-
+## Estado (hito 1, prototipo)
+- **Contenido:** un grupo de muestra provisional de seis verbos (`src/data/verbs.json` y `groups.json`, con el modelo de SPEC 12). De dónde sale: `docs/listas/README.md`.
+- **Puente con la lógica heredada** (`src/logic/verbos.ts`): la lógica y las pantallas de Capitalia siguen trabajando con `Pais` y `Region`. Un verbo les llega como un "país" cuyo `nombre` es el infinitivo y cuya `capital` son las formas ("bought · bought"); un grupo, como una "región" (de un único "continente" que no se enseña). Es provisional: se quita cuando esa lógica se pase a verbos.
+- **Tablero:** el sitio del mapa lo ocupa la cuadrícula de verbos (`src/ui/cuadricula.ts`), que cumple el contrato `Tablero` (`src/ui/tablero.ts`). Las pantallas solo conocen el contrato.
+- **Adaptado a verbos:** Aprender (`aprender.ts`), Elegir y Al revés (`preguntas.ts`), Emparejar (`colocar.ts`, el antiguo Colocar) y Explorar (`explorar.ts`).
+- **Solo dos escalones:** `ESCALONES_LISTOS` en `aprender.ts`. Un verbo que supera Emparejar se queda esperando en Completar (hito 2). Por dentro los escalones conservan los nombres de Capitalia: `colocar` es Emparejar, `escribir` es Completar y `mapamudo` es Tabla muda.
+- **`PROTOTIPO` en `src/ui/app.ts`:** mientras sea true, Hoy y Examen enseñan un aviso, la app arranca en Aprender y no se abren ni se ofrecen la bienvenida y las guías (que aún hablan de capitales). El selector de grupo se oculta si solo hay un grupo.
+- **Sin adaptar todavía:** `hoy.ts`, `examen.ts`, `panel.ts`, `guia.ts`, `bienvenida.ts`, `regiones.ts` y las preguntas de escribir y de mapa mudo de `preguntas.ts`. El panel de adultos se abre, pero habla de países.
+- Los tests de la lógica heredada usan los países de Capitalia como datos de prueba (`tests/fixtures/`); los de los verbos están en `tests/verbos.test.ts`.
 ## Estructura
 - `src/logic/`: lógica pura con tests (`tests/`). Nada de DOM.
 - `src/ui/`: interfaz sin framework. `comun.ts` tiene el feedback compartido.
-- `src/data/index.ts`: el contenido (vacío por ahora).
+- `src/data/`: el contenido (`verbs.json`, `groups.json`) y su conversión para la lógica heredada (`index.ts`).
 
 ## Comandos
 - `npm test`, `npm run build`, `npm run dev`.
