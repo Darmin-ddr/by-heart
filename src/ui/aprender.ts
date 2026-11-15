@@ -23,12 +23,6 @@ const QUE_SE_HACE: Record<Escalon, string> = {
   mapamudo: 'escribir las tres formas a partir del significado',
 };
 
-/**
- * Escalones que ya se pueden practicar. Completar y Tabla muda llegan en el
- * hito 2 (SPEC 13): un verbo que supera Emparejar se queda esperando en Completar.
- */
-const ESCALONES_LISTOS: readonly Escalon[] = ['elegir', 'colocar'];
-const listo = (e: Escalon | null): e is Escalon => e !== null && ESCALONES_LISTOS.includes(e);
 
 /** Verbos por tanda como mucho. */
 const TAM_TANDA = 16;
@@ -80,13 +74,13 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     lista.setAttribute('aria-label', 'Escalones de este grupo');
     const filas: { titulo: string; detalle: string; ids: string[]; clase: string }[] = ESCALONES.map((esc, i) => ({
       titulo: `${i + 1}. ${NOMBRE_ESCALON[esc]}`,
-      detalle: QUE_SE_HACE[esc] + (ESCALONES_LISTOS.includes(esc) ? '' : ' (en construcción)'),
+      detalle: QUE_SE_HACE[esc],
       ids: ctx.region.filter((p) => escalonDe(e, p.id) === esc).map((p) => p.id),
       clase: `escalon-${esc}`,
     }));
     filas.push({
       titulo: 'Aprendidos',
-      detalle: 'se repasan en Hoy',
+      detalle: 'ya te los sabes de memoria',
       ids: ctx.region.filter((p) => escalonDe(e, p.id) === null).map((p) => p.id),
       clase: 'escalon-aprendido',
     });
@@ -111,7 +105,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
 
   function pendientes(): string[] {
     const e = estado();
-    return ctx.region.filter((p) => listo(escalonDe(e, p.id))).map((p) => p.id);
+    return ctx.region.filter((p) => escalonDe(e, p.id) !== null).map((p) => p.id);
   }
 
   function pintarInicio(): void {
@@ -120,15 +114,15 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     const hay = pendientes().length > 0;
     const empezar = hay
       ? boton('Empezar', 'boton-principal', empezarTanda)
-      : boton('Repasar con Elegir', 'boton-principal', repasoLibre);
+      : boton('Repasar con tabla muda', 'boton-principal', repasoLibre);
     contenedor.replaceChildren(
       el('h2', 'titulo-panel', 'Aprender'),
       el(
         'p',
         'ayuda',
         hay
-          ? `Cada verbo sube de escalón con dos aciertos en tandas distintas. De momento se pueden practicar los dos primeros escalones.${pendientes().length > TAM_TANDA ? ` Cada tanda lleva ${TAM_TANDA} verbos.` : ''}`
-          : 'Todos los verbos de este grupo han pasado ya por Elegir y Emparejar. Los dos escalones siguientes están en construcción; mientras, puedes repasarlos.',
+          ? `Cada verbo sube de escalón con dos aciertos en tandas distintas. Al superar el último, queda aprendido.${pendientes().length > TAM_TANDA ? ` Cada tanda lleva ${TAM_TANDA} verbos.` : ''}`
+          : 'Ya has aprendido todos los verbos de este grupo. Si quieres, puedes practicarlos ahora con la tabla muda.',
       ),
       escalera(),
       el('div', 'acciones', empezar),
@@ -181,7 +175,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     });
   }
 
-  /** Repaso sin escalones pendientes: una vuelta de Elegir a todo el grupo. */
+  /** Repaso sin escalones pendientes: una vuelta de Tabla muda a todo el grupo. */
   function repasoLibre(): void {
     actual?.salir();
     subieron.clear();
@@ -189,7 +183,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     resumen = { total: 0, aLaPrimera: 0, fallos: 0 };
     actual = iniciarRonda(contexto, {
       ids: () => barajar(ctx.region.map((p) => p.id), ctx.rng).slice(0, TAM_TANDA),
-      modoPara: () => 'elegir',
+      modoPara: () => 'mapamudo',
       alTerminar(r) {
         acumular(r);
         pintarFinal();
@@ -211,7 +205,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
       contenedor,
       el('p', 'resumen-titulo', 'Tanda terminada'),
       el('p', 'resumen', mensajeResumen(resumen.aLaPrimera, resumen.total)),
-      aprendidos.size ? el('p', 'resumen-escalones', el('strong', '', 'Aprendidos: '), listaNombres([...aprendidos]), '. Ya pasan a Hoy.') : null,
+      aprendidos.size ? el('p', 'resumen-escalones', el('strong', '', 'Aprendidos: '), listaNombres([...aprendidos]), '.') : null,
       sube.length
         ? el(
             'p',

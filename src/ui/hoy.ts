@@ -12,13 +12,13 @@ import type { Tablero } from './tablero';
 import { boton, el, rellenar } from './dom';
 import { PAUSA_TRAS_ACIERTO_MS, Teclado, progreso, type Motor } from './comun';
 import type { Modo } from './explorar';
-import { preguntaAlReves, preguntaElegir, preguntaEscribir, preguntaMapaMudo, type ControlPregunta, type Renderizador } from './preguntas';
+import { preguntaAlReves, preguntaElegir, preguntaCompletar, preguntaTablaMuda, type ControlPregunta, type Renderizador } from './preguntas';
 
 const RENDERIZADORES: Partial<Record<ModoId, Renderizador>> = {
   elegir: preguntaElegir,
-  escribir: preguntaEscribir,
+  escribir: preguntaCompletar,
   alreves: preguntaAlReves,
-  mapamudo: preguntaMapaMudo,
+  mapamudo: preguntaTablaMuda,
 };
 
 /** Lo que Hoy necesita de la app. */

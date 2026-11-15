@@ -75,6 +75,11 @@ export class Cuadricula implements Tablero {
     if (this.revelada) this.casillas.get(this.revelada)?.classList.add('revelada');
   }
 
+  /** Tabla muda: las casillas no dicen qué verbo son, salvo la que enseñe su respuesta. */
+  setMudo(valor: boolean): void {
+    this.raiz.classList.toggle('muda', valor);
+  }
+
   enfocar(id: string | null): void {
     if (id) this.casillas.get(id)?.scrollIntoView({ block: 'nearest' });
   }

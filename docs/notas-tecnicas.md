@@ -2,14 +2,16 @@
 
 By Heart parte de una copia de Capitalia 1.3.2. Estas notas vienen de allí: lo que sigue valiendo está adaptado; lo que describe pantallas aún sin adaptar a los verbos lo dice.
 
-## Estado (hito 1, prototipo)
+## Estado (hitos 1 y 2, prototipo)
 - **Contenido:** un grupo de muestra provisional de seis verbos (`src/data/verbs.json` y `groups.json`, con el modelo de SPEC 12). De dónde sale: `docs/listas/README.md`.
 - **Puente con la lógica heredada** (`src/logic/verbos.ts`): la lógica y las pantallas de Capitalia siguen trabajando con `Pais` y `Region`. Un verbo les llega como un "país" cuyo `nombre` es el infinitivo y cuya `capital` son las formas ("bought · bought"); un grupo, como una "región" (de un único "continente" que no se enseña). Es provisional: se quita cuando esa lógica se pase a verbos.
 - **Tablero:** el sitio del mapa lo ocupa la cuadrícula de verbos (`src/ui/cuadricula.ts`), que cumple el contrato `Tablero` (`src/ui/tablero.ts`). Las pantallas solo conocen el contrato.
-- **Adaptado a verbos:** Aprender (`aprender.ts`), Elegir y Al revés (`preguntas.ts`), Emparejar (`colocar.ts`, el antiguo Colocar) y Explorar (`explorar.ts`).
-- **Solo dos escalones:** `ESCALONES_LISTOS` en `aprender.ts`. Un verbo que supera Emparejar se queda esperando en Completar (hito 2). Por dentro los escalones conservan los nombres de Capitalia: `colocar` es Emparejar, `escribir` es Completar y `mapamudo` es Tabla muda.
+- **Adaptado a verbos:** Aprender (`aprender.ts`), Elegir, Al revés, Completar y Tabla muda (`preguntas.ts`), Emparejar (`colocar.ts`, el antiguo Colocar) y Explorar (`explorar.ts`).
+- **Los cuatro escalones.** Por dentro conservan los nombres de Capitalia: `colocar` es Emparejar, `escribir` es Completar y `mapamudo` es Tabla muda.
+- **Escribir las formas** (`preguntaFormas` en `preguntas.ts`; corrección en `src/logic/formas.ts`, con tests): ortografía exacta; solo se perdonan mayúsculas, espacios y el "to" del infinitivo. Una letra de diferencia es un "casi": cuenta como fallo, con mensaje más suave y la letra subrayada. Se aceptan las variantes del verbo y, en formas dobles ("was / were"), las dos en cualquier orden.
+- **Tabla muda:** la cuadrícula esconde los verbos (`setMudo`) y no señala ninguna casilla hasta responder, para no chivar el infinitivo.
 - **`PROTOTIPO` en `src/ui/app.ts`:** mientras sea true, Hoy y Examen enseñan un aviso, la app arranca en Aprender y no se abren ni se ofrecen la bienvenida y las guías (que aún hablan de capitales). El selector de grupo se oculta si solo hay un grupo.
-- **Sin adaptar todavía:** `hoy.ts`, `examen.ts`, `panel.ts`, `guia.ts`, `bienvenida.ts`, `regiones.ts` y las preguntas de escribir y de mapa mudo de `preguntas.ts`. El panel de adultos se abre, pero habla de países.
+- **Sin adaptar todavía:** `hoy.ts`, `examen.ts`, `panel.ts`, `guia.ts`, `bienvenida.ts`, `regiones.ts`. La validación de capitales (`logic/texto.ts`) y la corrección del mapa mudo (`logic/examen.ts`) ya solo las usa `examen.ts`. El panel de adultos se abre, pero habla de países.
 - Los tests de la lógica heredada usan los países de Capitalia como datos de prueba (`tests/fixtures/`); los de los verbos están en `tests/verbos.test.ts`.
 ## Estructura
 - `src/logic/`: lógica pura con tests (`tests/`). Nada de DOM.

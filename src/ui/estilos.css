@@ -2208,3 +2208,35 @@ button {
   margin: 0 0 12px;
   color: var(--texto-suave);
 }
+
+/* ---------- Completar y Tabla muda: escribir las formas ---------- */
+
+.tabla-formas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.tabla-formas .campo-texto {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Tabla muda: las casillas no dicen qué verbo son, salvo la que enseña su respuesta. */
+.cuadricula.muda .casilla:not(.revelada) .casilla-verbo {
+  visibility: hidden;
+}
+
+/* La letra en la que se ha fallado por poco: subrayada, sin depender del color. */
+.letra {
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 3px;
+}
+
+.formas-correctas .forma {
+  white-space: nowrap;
+}

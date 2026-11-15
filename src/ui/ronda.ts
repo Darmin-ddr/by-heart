@@ -2,13 +2,13 @@ import type { ModoId } from '../logic/config';
 import { ColaRonda, type Resultado, type ResumenRonda } from '../logic/sesion';
 import { el } from './dom';
 import { PAUSA_TRAS_ACIERTO_MS, Teclado, pintarResumen, progreso, type Contexto, type ModoPractica } from './comun';
-import { preguntaAlReves, preguntaElegir, preguntaEscribir, preguntaMapaMudo, type ControlPregunta, type Renderizador } from './preguntas';
+import { preguntaAlReves, preguntaElegir, preguntaCompletar, preguntaTablaMuda, type ControlPregunta, type Renderizador } from './preguntas';
 
 const RENDERIZADORES: Partial<Record<ModoId, Renderizador>> = {
   elegir: preguntaElegir,
-  escribir: preguntaEscribir,
+  escribir: preguntaCompletar,
   alreves: preguntaAlReves,
-  mapamudo: preguntaMapaMudo,
+  mapamudo: preguntaTablaMuda,
 };
 
 export interface OpcionesRonda {
@@ -46,6 +46,7 @@ export function iniciarRonda(ctx: Contexto, op: OpcionesRonda): ModoPractica {
   function limpiarMapa(): void {
     mapa.limpiarEstados();
     mapa.mostrarCapital(null);
+    mapa.setMudo(false);
   }
 
   function siguiente(): void {

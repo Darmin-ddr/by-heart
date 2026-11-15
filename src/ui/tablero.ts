@@ -36,6 +36,8 @@ export interface Tablero {
   mostrarCapital(id: string | null, conNombre?: boolean): void;
   /** Lleva la vista a un elemento (o la deja como estaba con null). */
   enfocar(id: string | null): void;
+  /** Esconde los nombres de los elementos (Tabla muda), salvo el de la respuesta que se enseñe. */
+  setMudo(valor: boolean): void;
   /** Marca los elementos por los que se va a preguntar en un examen. */
   mostrarEstrellas(ids: readonly string[]): void;
 }

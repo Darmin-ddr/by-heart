@@ -156,13 +156,13 @@ Progreso (local): como en Capitalia, por verbo en lugar de por país.
 
 ## 13. Hitos
 
-**Estado:** hito 0 hecho (15/11/2026). Hito 1 hecho en el ordenador con un **grupo de muestra provisional** de seis verbos (`docs/listas/README.md`): cuadrícula, Elegir, Emparejar y Explorar. Falta probarlo en iPad y móvil. Hoy y Examen enseñan un aviso de "llega más adelante".
+**Estado:** hito 0 hecho (15/11/2026). Hitos 1 y 2 hechos en el ordenador con un **grupo de muestra provisional** de seis verbos (`docs/listas/README.md`): cuadrícula, los cuatro escalones (Elegir, Emparejar, Completar y Tabla muda) y Explorar. Falta probarlos en iPad y móvil. Hoy y Examen enseñan un aviso de "llega más adelante".
 
 0. **Puesta a punto:** nombre, textos, icono provisional y claves de guardado propias; retirar el mapa. La app compila, pasa los tests y abre, aunque esté vacía de contenido. Adaptar también `CLAUDE.md` y el README, que aún hablan de capitales.
 1. **Prototipo de un grupo** (6 a 10 verbos): cuadrícula, Elegir y Emparejar, feedback. Probar en iPad y móvil.
 2. Completar y Tabla muda, con la validación exacta y el "casi acierto".
 3. Datos completos del listado de clase, grupos definitivos y trucos revisados.
-4. Examen y panel de adultos adaptados.
+4. Hoy, Examen y panel de adultos adaptados.
 5. Guías, icono definitivo y publicación en GitHub Pages.
 6. Phrasal verbs (antes, su sección en esta SPEC).
 
