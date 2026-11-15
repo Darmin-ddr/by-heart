@@ -159,9 +159,9 @@ describe('Almacen', () => {
 
   it('datos ilegibles: empieza de cero y aparta una copia', () => {
     const m = new Memoria();
-    m.datos.set('progreso-capitales', '{roto');
+    m.datos.set('byheart-progreso', '{roto');
     expect(new Almacen(m).cargar()).toEqual(estadoVacio());
-    expect(m.datos.get('progreso-capitales-ilegible')).toBe('{roto');
+    expect(m.datos.get('byheart-progreso-ilegible')).toBe('{roto');
   });
 
   it('validarEstado completa campos que falten', () => {

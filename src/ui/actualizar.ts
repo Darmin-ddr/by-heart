@@ -76,7 +76,7 @@ export function prepararFranjaVersion(app: HTMLElement): void {
     const franja = el(
       'div',
       'franja-version',
-      el('p', '', el('strong', '', 'Hay una versión nueva'), el('span', 'franja-detalle', ' de Capitalia. Tu progreso no cambia.')),
+      el('p', '', el('strong', '', 'Hay una versión nueva'), el('span', 'franja-detalle', ' de By Heart. Tu progreso no cambia.')),
       boton('Actualizar', 'boton-principal', actualizarAhora),
       cerrar,
     );

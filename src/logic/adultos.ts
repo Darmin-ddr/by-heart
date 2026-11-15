@@ -10,7 +10,7 @@ export function pinValido(pin: string): boolean {
 
 /** Hash del PIN (SHA-256 si el navegador lo permite; si no, un hash sencillo). */
 export async function hashPin(pin: string): Promise<string> {
-  const texto = `progreso-capitales:${pin}`;
+  const texto = `byheart-progreso:${pin}`;
   const subtle = globalThis.crypto?.subtle;
   if (subtle) {
     const datos = await subtle.digest('SHA-256', new TextEncoder().encode(texto));

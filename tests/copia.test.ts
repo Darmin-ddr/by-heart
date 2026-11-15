@@ -54,12 +54,17 @@ describe('copia de seguridad', () => {
     expect(importar('hola')).toMatchObject({ ok: false });
     expect(importar('{"formato":"otra-cosa"}')).toMatchObject({ ok: false, error: expect.stringContaining('no es una copia') });
     expect(importar(PREFIJO_CODIGO + 'xxxx')).toMatchObject({ ok: false });
+    // Las copias de Capitalia (de donde nació By Heart) se rechazan diciendo por qué (SPEC 9).
+    const deCapitalia = { ok: false, error: expect.stringContaining('es de Capitalia') };
+    expect(importar('{"formato":"progreso-capitales","estado":{}}')).toMatchObject(deCapitalia);
+    expect(importar('CAPITALES2:abcd')).toMatchObject(deCapitalia);
+    expect(importarCasa('{"formato":"capitalia-casa","perfiles":[]}')).toMatchObject(deCapitalia);
     const codigo = exportarCodigo(estadoConDatos());
     expect(importar(codigo.slice(0, codigo.length - 20))).toMatchObject({ ok: false }); // código cortado
   });
 
   it('nombre del fichero con la fecha', () => {
-    expect(nombreFichero(new Date('2026-11-01T10:00:00Z'))).toBe('progreso-capitales-2026-11-01.json');
+    expect(nombreFichero(new Date('2026-11-01T10:00:00Z'))).toBe('byheart-progreso-2026-11-01.json');
   });
 });
 
@@ -79,7 +84,7 @@ describe('copia de todos los alumnos', () => {
     expect(r.perfiles.map((p) => p.nombre)).toEqual(['Lucía', 'Pablo']);
     expect(r.progresos.p1.historial).toHaveLength(2);
     expect(r.progresos.p2.trucosPropios.FRA).toBe('de Pablo');
-    expect(nombreFicheroCasa(new Date('2026-11-02T10:00:00Z'))).toBe('capitalia-todos-los-alumnos-2026-11-02.json');
+    expect(nombreFicheroCasa(new Date('2026-11-02T10:00:00Z'))).toBe('byheart-todos-los-alumnos-2026-11-02.json');
   });
 
   it('cada copia en su sitio, con un mensaje claro', () => {
@@ -125,7 +130,7 @@ describe('de quién es la copia (aviso al importar, sin bloquear)', () => {
     expect(tipoDispositivo('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 5)).toBe('un iPad');
     expect(tipoDispositivo('Mozilla/5.0 (Linux; Android 14)')).toBe('un móvil o tableta Android');
     expect(tipoDispositivo('Mozilla/5.0 (Windows NT 10.0)')).toBe('un ordenador');
-    expect(nombreFichero(ahora, 'Lucía María')).toBe('progreso-capitales-lucia-maria-2026-11-02.json');
+    expect(nombreFichero(ahora, 'Lucía María')).toBe('byheart-progreso-lucia-maria-2026-11-02.json');
   });
 });
 

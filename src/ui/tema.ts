@@ -5,7 +5,7 @@
  */
 export type Tema = 'auto' | 'claro' | 'oscuro';
 
-const CLAVE = 'capitalia-tema';
+const CLAVE = 'byheart-tema';
 const COLOR_BARRA = { claro: '#f6f4ef', oscuro: '#161b22' };
 
 export function leerTema(): Tema {

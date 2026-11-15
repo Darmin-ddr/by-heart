@@ -66,7 +66,7 @@ const TIPOS: Record<ItemHoy['tipo'], string> = { repaso: 'repasos', aprendiendo:
 const SEGUNDOS_PREGUNTA = 25;
 
 /** El alumno plegó el aviso de pausa (con "Entendido") para este continente: se recuerda en este dispositivo. */
-const CLAVE_AVISO_PAUSA = 'capitalia-aviso-pausa-plegado';
+const CLAVE_AVISO_PAUSA = 'byheart-aviso-pausa-plegado';
 
 function avisoPausaPlegado(foco: Continente): boolean {
   try {
@@ -137,7 +137,7 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
     const a = el(
       'div',
       'aviso-version',
-      el('p', '', el('strong', '', 'Hay una versión nueva de Capitalia.'), ' Tu progreso no cambia.'),
+      el('p', '', el('strong', '', 'Hay una versión nueva de By Heart.'), ' Tu progreso no cambia.'),
       boton('Actualizar', 'boton-principal', actualizarAhora),
     );
     a.setAttribute('role', 'status');

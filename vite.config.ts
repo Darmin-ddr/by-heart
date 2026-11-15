@@ -11,7 +11,7 @@ const version = JSON.parse(readFileSync(new URL('./package.json', import.meta.ur
  * públicos, versión y dependencias), no de la hora: así, publicar solo cambios en el README,
  * los documentos, las pruebas o los scripts no hace saltar el aviso de "versión nueva".
  * Se normalizan los saltos de línea para que salga igual en Windows y en GitHub.
- * CAPITALIA_COMPILACION_EXTRA (solo para pruebas) fuerza una huella distinta.
+ * BYHEART_COMPILACION_EXTRA (solo para pruebas) fuerza una huella distinta.
  */
 function huellaDeLaApp(): string {
   const raiz = new URL('.', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
@@ -32,14 +32,14 @@ function huellaDeLaApp(): string {
     h.update(f);
     h.update(readFileSync(join(raiz, f)).toString('latin1').split('\r\n').join('\n'));
   }
-  h.update(process.env.CAPITALIA_COMPILACION_EXTRA ?? '');
+  h.update(process.env.BYHEART_COMPILACION_EXTRA ?? '');
   return h.digest('hex').slice(0, 12);
 }
 const compilacion = huellaDeLaApp();
 
 /** Publica `version.json` con la versión y la compilación (no va en la copia sin conexión: se pide siempre a la red). */
 const ficheroVersion = {
-  name: 'capitalia-version-json',
+  name: 'byheart-version-json',
   generateBundle(this: { emitFile: (f: { type: 'asset'; fileName: string; source: string }) => void }) {
     this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version, compilacion }) });
   },
@@ -64,9 +64,9 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['icono.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Capitalia: capitales sobre el mapa',
-        short_name: 'Capitalia',
-        description: 'Aprende las capitales del mundo sobre el mapa.',
+        name: 'By Heart: verbos irregulares en inglés',
+        short_name: 'By Heart',
+        description: 'Aprende de memoria los verbos irregulares en inglés.',
         lang: 'es',
         start_url: './',
         scope: './',
@@ -97,7 +97,7 @@ export default defineConfig({
             urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'capitalia-pagina',
+              cacheName: 'byheart-pagina',
               networkTimeoutSeconds: 3,
               precacheFallback: { fallbackURL: 'index.html' },
             },
@@ -107,7 +107,7 @@ export default defineConfig({
             // al cargarlos, para que sin conexión no falte nada justo después de actualizar.
             urlPattern: ({ url }) => url.pathname.includes('/assets/'),
             handler: 'CacheFirst',
-            options: { cacheName: 'capitalia-recursos', expiration: { maxEntries: 40 } },
+            options: { cacheName: 'byheart-recursos', expiration: { maxEntries: 40 } },
           },
         ],
       },

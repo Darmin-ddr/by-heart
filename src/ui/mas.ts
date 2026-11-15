@@ -100,7 +100,7 @@ export function prepararMas(disparador: HTMLButtonElement, datos: DatosMas): voi
     const importarFichero = boton('Importar fichero', 'boton-secundario', () => selectorFichero.click());
 
     const ayuda = el('div', 'acciones acciones-rejilla');
-    if (datos.abrirGuia) ayuda.append(boton('Cómo aprender con Capitalia', 'boton-principal', () => (dialogo.close(), datos.abrirGuia?.())));
+    if (datos.abrirGuia) ayuda.append(boton('Cómo aprender con By Heart', 'boton-principal', () => (dialogo.close(), datos.abrirGuia?.())));
     const instalar = datos.abrirInstalar?.();
     if (instalar) ayuda.append(boton('Instalar la app', 'boton-secundario', () => (dialogo.close(), instalar())));
     if (datos.abrirAcercaDe) ayuda.append(boton('Acerca de', 'boton-secundario', () => (dialogo.close(), datos.abrirAcercaDe?.())));

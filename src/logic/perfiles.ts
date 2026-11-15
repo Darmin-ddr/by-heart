@@ -32,7 +32,7 @@ export interface IndicePerfiles {
   nombrePedido?: boolean;
 }
 
-export const CLAVE_PERFILES = 'capitalia-perfiles';
+export const CLAVE_PERFILES = 'byheart-perfiles';
 /** El primer alumno usa la clave de siempre: el progreso de antes de los perfiles es suyo sin moverlo. */
 export const ID_PRIMERO = 'p1';
 

@@ -18,7 +18,7 @@ interface EventoInstalacion extends Event {
 
 export type FormaInstalar = 'instalada' | 'nativa' | 'ios' | 'manual';
 
-const CLAVE_AVISO = 'capitalia-aviso-instalar';
+const CLAVE_AVISO = 'byheart-aviso-instalar';
 let evento: EventoInstalacion | null = null;
 let instaladaAhora = false;
 const oyentes = new Set<() => void>();
@@ -135,7 +135,7 @@ export function crearInstalar(): () => void {
           ['Abre esta página en ', el('strong', '', 'Safari'), ' (en iPhone y iPad, desde ahí es lo más sencillo).'],
           ['Toca el botón ', el('strong', '', 'Compartir'), ': el cuadrado con una flecha hacia arriba (abajo en el iPhone, arriba en el iPad).'],
           ['Elige ', el('strong', '', 'Añadir a pantalla de inicio'), ' (si no lo ves, desliza la lista hacia abajo).'],
-          ['Toca ', el('strong', '', 'Añadir'), '. Aparecerá el icono de Capitalia junto a tus otras apps.'],
+          ['Toca ', el('strong', '', 'Añadir'), '. Aparecerá el icono de By Heart junto a tus otras apps.'],
         ),
       );
       return;
@@ -145,7 +145,7 @@ export function crearInstalar(): () => void {
       el('p', '', 'Este navegador no deja instalarla con un botón desde la página. Según el dispositivo:'),
       pasos(
         [el('strong', '', 'Android (Chrome):'), ' menú ⋮ (arriba a la derecha) → ', el('strong', '', 'Instalar aplicación'), ' o ', el('strong', '', 'Añadir a pantalla de inicio'), '.'],
-        [el('strong', '', 'Ordenador (Chrome o Edge):'), ' el icono de instalar en la barra de direcciones, a la derecha, o menú → ', el('strong', '', 'Instalar Capitalia'), '.'],
+        [el('strong', '', 'Ordenador (Chrome o Edge):'), ' el icono de instalar en la barra de direcciones, a la derecha, o menú → ', el('strong', '', 'Instalar By Heart'), '.'],
         [el('strong', '', 'iPhone o iPad:'), ' en Safari, Compartir → ', el('strong', '', 'Añadir a pantalla de inicio'), '.'],
       ),
     );

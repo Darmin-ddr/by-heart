@@ -28,7 +28,7 @@ const fuerte = (t: string) => el('strong', '', t);
  */
 export function crearGuia(datos: DatosGuia): () => void {
   const dialogo = el('dialog', 'dialogo-regiones dialogo-guia');
-  dialogo.setAttribute('aria-label', 'Cómo aprender con Capitalia');
+  dialogo.setAttribute('aria-label', 'Cómo aprender con By Heart');
   document.body.append(dialogo);
   enterPulsaPrincipal(dialogo);
   dialogo.addEventListener('close', () => datos.alCerrar());

@@ -50,7 +50,7 @@ const esContinente = (r: Region) => r.id.startsWith(PREFIJO_CONTINENTE);
  * pestañas y avisos (región dominada, región desbloqueada).
  */
 /** Alumno elegido en esta visita (al abrir de nuevo la app, se vuelve a preguntar si hay varios). */
-const CLAVE_ELEGIDO = 'capitalia-perfil-elegido';
+const CLAVE_ELEGIDO = 'byheart-perfil-elegido';
 
 function leerElegido(): string | null {
   try {

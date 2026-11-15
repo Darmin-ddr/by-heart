@@ -8,7 +8,7 @@ export interface AlmacenTexto {
 }
 
 /** Clave genérica, sin el nombre de la app (SPEC: el nombre puede cambiar). */
-export const CLAVE = 'progreso-capitales';
+export const CLAVE = 'byheart-progreso';
 
 /**
  * Comprueba que un objeto tiene la forma de un estado guardado y rellena lo

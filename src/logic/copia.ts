@@ -9,9 +9,16 @@ import type { EstadoProgreso } from './progreso';
  */
 
 /** Prefijo del código; el número permite cambiar el formato en el futuro. */
-export const PREFIJO_CODIGO = 'CAPITALES1:';
+export const PREFIJO_CODIGO = 'BYHEART1:';
 /** Código que además dice de quién es la copia (nombre, dispositivo y fecha). */
-export const PREFIJO_CODIGO_2 = 'CAPITALES2:';
+export const PREFIJO_CODIGO_2 = 'BYHEART2:';
+
+/**
+ * By Heart nació de Capitalia y sus copias se parecen, pero no son intercambiables
+ * (SPEC 9): se rechazan diciendo por qué.
+ */
+const DE_CAPITALIA = 'Esta copia es de Capitalia, no de By Heart: aquí no se puede usar.';
+const esDeCapitalia = (formato: unknown) => formato === 'progreso-capitales' || formato === 'capitalia-casa';
 
 /** De quién es una copia: sirve para avisar al importarla (no para bloquear: restaurar en otro dispositivo es su uso normal). */
 export interface OrigenCopia {
@@ -23,7 +30,7 @@ export interface OrigenCopia {
 }
 
 interface Envoltorio {
-  formato: 'progreso-capitales';
+  formato: 'byheart-progreso';
   version: 1;
   fecha: string;
   alumno?: string;
@@ -33,7 +40,7 @@ interface Envoltorio {
 
 export function exportarFichero(estado: EstadoProgreso, ahora = new Date(), origen: Omit<OrigenCopia, 'fecha'> = {}): string {
   const datos: Envoltorio = {
-    formato: 'progreso-capitales',
+    formato: 'byheart-progreso',
     version: 1,
     fecha: ahora.toISOString(),
     ...(origen.alumno ? { alumno: origen.alumno } : {}),
@@ -53,7 +60,7 @@ export function nombreFichero(ahora = new Date(), alumno?: string): string {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')}`
     : '';
-  return `progreso-capitales${quien}-${ahora.toISOString().slice(0, 10)}.json`;
+  return `byheart-progreso${quien}-${ahora.toISOString().slice(0, 10)}.json`;
 }
 
 /** Tipo de dispositivo para la copia, a partir del navegador. */
@@ -120,6 +127,7 @@ function leerOrigen(d: { alumno?: unknown; dispositivo?: unknown; fecha?: unknow
 export function importar(texto: string): ResultadoImportacion {
   const limpio = texto.trim().replace(/\s+/g, '');
   if (!limpio) return { ok: false, error: 'No hay nada que importar.' };
+  if (limpio.startsWith('CAPITALES')) return { ok: false, error: DE_CAPITALIA };
   try {
     if (limpio.startsWith(PREFIJO_CODIGO)) {
       const estado = validarEstado(JSON.parse(deBase64Url(limpio.slice(PREFIJO_CODIGO.length))));
@@ -130,11 +138,12 @@ export function importar(texto: string): ResultadoImportacion {
       const estado = validarEstado(d.estado);
       return estado ? { ok: true, estado, incluyeHistorial: false, origen: leerOrigen(d) } : { ok: false, error: 'El código no es válido.' };
     }
-    const datos = JSON.parse(texto) as Partial<Envoltorio> | Partial<CopiaCasa>;
-    if (datos.formato === 'capitalia-casa') {
+    const datos = JSON.parse(texto) as (Partial<Envoltorio> | Partial<CopiaCasa>) & { formato?: string };
+    if (esDeCapitalia(datos.formato)) return { ok: false, error: DE_CAPITALIA };
+    if (datos.formato === 'byheart-casa') {
       return { ok: false, error: 'Esta es una copia de todos los alumnos: se restaura desde el panel de adultos (Ajustes → Alumnos).' };
     }
-    if (datos.formato !== 'progreso-capitales') return { ok: false, error: 'Este fichero no es una copia de Capitalia.' };
+    if (datos.formato !== 'byheart-progreso') return { ok: false, error: 'Este fichero no es una copia de By Heart.' };
     const estado = validarEstado(datos.estado);
     return estado
       ? { ok: true, estado, incluyeHistorial: true, origen: leerOrigen(datos) }
@@ -155,7 +164,7 @@ export function aplicarImportacion(actual: EstadoProgreso, importado: EstadoProg
 /* ---------- Copia de toda la casa (todos los alumnos, desde el panel de adultos) ---------- */
 
 interface CopiaCasa {
-  formato: 'capitalia-casa';
+  formato: 'byheart-casa';
   version: 1;
   fecha: string;
   perfiles: Perfil[];
@@ -164,12 +173,12 @@ interface CopiaCasa {
 }
 
 export function exportarCasa(perfiles: readonly Perfil[], progresos: Record<string, EstadoProgreso>, ahora = new Date()): string {
-  const datos: CopiaCasa = { formato: 'capitalia-casa', version: 1, fecha: ahora.toISOString(), perfiles: [...perfiles], progresos };
+  const datos: CopiaCasa = { formato: 'byheart-casa', version: 1, fecha: ahora.toISOString(), perfiles: [...perfiles], progresos };
   return JSON.stringify(datos);
 }
 
 export function nombreFicheroCasa(ahora = new Date()): string {
-  return `capitalia-todos-los-alumnos-${ahora.toISOString().slice(0, 10)}.json`;
+  return `byheart-todos-los-alumnos-${ahora.toISOString().slice(0, 10)}.json`;
 }
 
 export type ResultadoCasa =
@@ -180,11 +189,12 @@ export type ResultadoCasa =
 export function importarCasa(texto: string): ResultadoCasa {
   try {
     const datos = JSON.parse(texto) as Omit<Partial<CopiaCasa>, 'formato'> & { formato?: string };
-    if (datos.formato === 'progreso-capitales') {
+    if (esDeCapitalia(datos.formato)) return { ok: false, error: DE_CAPITALIA };
+    if (datos.formato === 'byheart-progreso') {
       return { ok: false, error: 'Esta copia es de un solo alumno: se importa en ⋯ → Importar fichero, con ese alumno activo.' };
     }
-    if (datos.formato !== 'capitalia-casa' || !Array.isArray(datos.perfiles) || !datos.perfiles.length || !datos.progresos) {
-      return { ok: false, error: 'Este fichero no es una copia de todos los alumnos de Capitalia.' };
+    if (datos.formato !== 'byheart-casa' || !Array.isArray(datos.perfiles) || !datos.perfiles.length || !datos.progresos) {
+      return { ok: false, error: 'Este fichero no es una copia de todos los alumnos de By Heart.' };
     }
     const progresos: Record<string, EstadoProgreso> = {};
     for (const p of datos.perfiles) {
