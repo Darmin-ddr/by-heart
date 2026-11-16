@@ -8,5 +8,7 @@
   <rect x="324" y="212" width="88" height="88" rx="20" fill="#d5dbe3"/>
   <rect x="100" y="324" width="88" height="88" rx="20" fill="#2f62a8"/>
   <rect x="212" y="324" width="88" height="88" rx="20" fill="#d5dbe3"/>
-  <rect x="324" y="324" width="88" height="88" rx="20" fill="#d5dbe3"/>
+  <rect x="324" y="324" width="88" height="70.4" rx="20" fill="#e0a93e"/>
+  <polygon points="340,390.4 340,412 370,390.4" fill="#e0a93e"/>
+  <text x="368" y="359.2" text-anchor="middle" dominant-baseline="central" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="35.2" fill="#1f2a37">EN</text>
 </svg>
