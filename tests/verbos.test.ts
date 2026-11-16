@@ -17,7 +17,8 @@ describe('verbs.json', () => {
     }
   });
 
-  it('no repite verbos', () => {
+  it('no repite verbos ni significados', () => {
+    expect(new Set(verbos.map((v) => v.significado)).size).toBe(verbos.length);
     expect(new Set(verbos.map((v) => v.id)).size).toBe(verbos.length);
   });
 

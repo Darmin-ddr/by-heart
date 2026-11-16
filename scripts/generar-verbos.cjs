@@ -8,7 +8,7 @@ const [rawPath, repo] = process.argv.slice(2);
 const raw = fs.readFileSync(rawPath, 'utf8').replace(/\r/g, '');
 const plano = raw.replace(/\n/g, ' ').replace(/\s+/g, ' ');
 
-// infinitivo | pasado | participio | significado (como en el listado)
+// infinitivo | pasado | participio | significado original (en gallego, como en el PDF: sirve para comprobar la transcripción)
 const FILAS = `
 be|was / were|been|ser / estar
 become|became|become|chegar a ser, converterse en
@@ -116,6 +116,30 @@ const NOTA = { read: 'Se escribe igual en las tres, pero el pasado y el particip
 // Variantes: solo las que da el propio listado. learned y dreamed quedan pendientes de comprobar en un diccionario.
 const VARIANTES_PARTICIPIO = { get: ['gotten'], go: ['gone', 'been'] };
 
+// Significado que enseña la app: traducción al castellano del original gallego (propia, revisable).
+// Se queda con los sentidos principales y evita que dos verbos tengan el mismo significado.
+const CASTELLANO = {
+  be: 'ser, estar', become: 'llegar a ser, convertirse en', begin: 'empezar, comenzar', bet: 'apostar',
+  break: 'romper', bring: 'traer', build: 'construir, edificar', buy: 'comprar', catch: 'coger, atrapar',
+  choose: 'elegir, escoger', come: 'venir', cost: 'costar, valer', cut: 'cortar', do: 'hacer',
+  draw: 'dibujar', dream: 'soñar', drink: 'beber', drive: 'conducir', eat: 'comer', fall: 'caer',
+  feed: 'alimentar, dar de comer', feel: 'sentir', fight: 'luchar, pelear', find: 'encontrar',
+  fly: 'volar', forget: 'olvidar', get: 'conseguir, obtener', give: 'dar', go: 'ir',
+  grow: 'crecer, cultivar', hang: 'colgar', have: 'tener, haber, tomar', hear: 'oír',
+  hide: 'esconder', hit: 'golpear, pegar', hold: 'sujetar, agarrar', keep: 'guardar, conservar',
+  know: 'saber, conocer', lay: 'extender, tender (poner la mesa)', learn: 'aprender',
+  leave: 'salir, dejar, marcharse', let: 'dejar, permitir', lose: 'perder', make: 'hacer, fabricar',
+  mean: 'significar, querer decir', meet: 'quedar con alguien, conocer (a alguien)', pay: 'pagar',
+  put: 'poner', read: 'leer', ride: 'montar (a caballo, en bici)', ring: 'sonar, llamar (por teléfono)',
+  run: 'correr', say: 'decir', see: 'ver', sell: 'vender', send: 'enviar',
+  set: 'colocar, fijar; ponerse (el sol)', shine: 'brillar', show: 'mostrar, enseñar (algo)',
+  sing: 'cantar', sit: 'sentarse', sleep: 'dormir', speak: 'hablar', spend: 'gastar (dinero), pasar (tiempo)',
+  stand: 'estar de pie, ponerse de pie', steal: 'robar', stick: 'pegar, clavar', sweep: 'barrer',
+  swim: 'nadar', take: 'coger, tomar, llevar', teach: 'enseñar (a alguien)', tell: 'contar, decir (a alguien)',
+  think: 'pensar, creer', throw: 'lanzar, tirar', understand: 'entender, comprender',
+  wake: 'despertar(se)', wear: 'llevar puesto', win: 'ganar', write: 'escribir',
+};
+
 const grupoDe = new Map();
 for (const g of GRUPOS) for (const v of g.verbos.split(' ')) {
   if (grupoDe.has(v)) throw new Error(`repetido en grupos: ${v}`);
@@ -123,10 +147,13 @@ for (const g of GRUPOS) for (const v of g.verbos.split(' ')) {
 }
 
 const errores = [];
+for (const [i] of FILAS) if (!CASTELLANO[i]) errores.push(`sin traducción: ${i}`);
+const repetidos = Object.values(CASTELLANO).filter((s, i, a) => a.indexOf(s) !== i);
+if (repetidos.length) errores.push(`significados repetidos: ${repetidos.join(', ')}`);
 const verbos = FILAS.map(([infinitivo, pasado, participio, significado]) => {
   const g = grupoDe.get(infinitivo);
   if (!g) errores.push(`sin grupo: ${infinitivo}`);
-  // Comprobación contra el PDF: la fila tal cual y el significado (salvo los retoques anotados en docs/listas).
+  // Comprobación contra el PDF: la fila tal cual y el significado original (salvo los retoques anotados en docs/listas).
   const fila = `To ${infinitivo} ${pasado} ${participio}`;
   if (!plano.includes(fila)) errores.push(`fila no encontrada en el PDF: ${fila}`);
   const sig = significado.replace('significar, ter', 'significar ter').replace(/^facer soar/, 'Facer soar');
@@ -139,7 +166,7 @@ const verbos = FILAS.map(([infinitivo, pasado, participio, significado]) => {
     participio,
     variantesPasado: [],
     variantesParticipio: VARIANTES_PARTICIPIO[infinitivo] ?? [],
-    significado,
+    significado: CASTELLANO[infinitivo],
     variantesSignificado: [],
     grupo: g?.id,
     ...(NOTA[infinitivo] ? { nota: NOTA[infinitivo] } : {}),
@@ -158,7 +185,7 @@ const orden = new Map(GRUPOS.map((g, i) => [g.id, i]));
 verbos.sort((a, b) => orden.get(a.grupo) - orden.get(b.grupo) || a.id.localeCompare(b.id));
 
 const fuente =
-  "Listado de clase: '3ºESO – BASIC 80 IRREGULAR VERBS LIST – INFLUENCE TODAY 3' (IRREGULAR VERBS LIST 3ESO.pdf). Formas y significados (en gallego) tal como están en el listado; ver docs/listas/README.md. Los grupos y los trucos son propios; los trucos están sin revisar por un adulto.";
+  "Listado de referencia (no es el de clase): '3ºESO – BASIC 80 IRREGULAR VERBS LIST – INFLUENCE TODAY 3', del IES Alexandre Bóveda (IRREGULAR VERBS LIST 3ESO.pdf). Formas como en el listado; significados traducidos al castellano del original gallego. Ver docs/listas/README.md. Los grupos y los trucos son propios; los trucos están sin revisar por un adulto.";
 const lineas = verbos.map((v) => '    ' + JSON.stringify(v)).join(',\n');
 fs.writeFileSync(path.join(repo, 'src/data/verbs.json'), `{\n  "fuente": ${JSON.stringify(fuente)},\n  "verbos": [\n${lineas}\n  ]\n}\n`);
 fs.writeFileSync(
@@ -166,12 +193,12 @@ fs.writeFileSync(
   '[\n' + GRUPOS.map((g, i) => '  ' + JSON.stringify({ id: g.id, nombre: g.nombre, orden: i + 1, color: g.color })).join(',\n') + '\n]\n',
 );
 
-const tabla = FILAS.map(([i, p, pp, s], n) => `| ${n + 1} | ${i} | ${p} | ${infinitivoParticipio(i, pp)} | ${s} | ${grupoDe.get(i).nombre} |`).join('\n');
+const tabla = FILAS.map(([i, p, pp, s], n) => `| ${n + 1} | ${i} | ${p} | ${infinitivoParticipio(i, pp)} | ${CASTELLANO[i]} | ${s} | ${grupoDe.get(i).nombre} |`).join('\n');
 function infinitivoParticipio(i, pp) {
   return i === 'get' ? 'got / (gotten [Am. Eng])' : pp;
 }
 fs.writeFileSync(
   path.join(repo, 'docs/listas/3eso.md'),
-  `# Listado de clase: 3º de ESO\n\nTranscripción de \`IRREGULAR VERBS LIST 3ESO.pdf\` (en la raíz del repositorio), con el grupo que le toca a cada verbo en la app. Generado y comprobado fila a fila contra el texto del PDF.\n\n| N.º | Infinitivo | Pasado | Participio | Significado | Grupo en la app |\n| --- | --- | --- | --- | --- | --- |\n${tabla}\n`,
+  `# Listado de referencia: 3º de ESO\n\nTranscripción de \`IRREGULAR VERBS LIST 3ESO.pdf\` (en la raíz del repositorio), con el significado que enseña la app (traducido al castellano), el original gallego del PDF y el grupo de cada verbo en la app. Generado y comprobado fila a fila contra el texto del PDF.\n\n| N.º | Infinitivo | Pasado | Participio | Significado en la app | Original (gallego) | Grupo en la app |\n| --- | --- | --- | --- | --- | --- | --- |\n${tabla}\n`,
 );
 console.log(`${verbos.length} verbos en ${GRUPOS.length} grupos: ` + GRUPOS.map((g) => `${g.id} ${g.verbos.split(' ').length}`).join(', '));

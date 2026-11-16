@@ -24,8 +24,9 @@ By Heart nació de una copia de Capitalia, pero el código ya trabaja solo con v
 
 ## Datos
 
-- **El listado de clase (`docs/listas/`) es la fuente de verdad**: qué verbos entran, con qué formas y con qué significado. Si un dato del listado parece erróneo, avisa al responsable; no lo cambies por tu cuenta.
+- **El listado de verbos está en `docs/listas/`.** Ahora es un listado de referencia sacado de internet, no el de clase; cuando llegue el de clase, ese será la fuente de verdad. Si un dato del listado parece erróneo, avisa al responsable; no lo cambies por tu cuenta.
 - **Nada que no esté en el listado.** No se añaden verbos por iniciativa propia.
+- **Significados en castellano**, aunque el listado los traiga en otro idioma (decisión del responsable, 16/11/2026).
 - Formas alternativas válidas (*learnt/learned*): se muestra la del listado y la otra se acepta como variante, solo si es inglés estándar. **Verifícala en un diccionario** (Cambridge u Oxford) y anota la fuente en el commit o en el fichero de datos.
 - **Nunca enseñar formas incorrectas**: los distractores son formas reales de otros verbos, no inventadas (*buyed*).
 - En inglés, ortografía exacta; en español, tolerante (`SPEC.md`, 3.3).

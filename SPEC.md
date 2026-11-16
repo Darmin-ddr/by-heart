@@ -24,15 +24,15 @@ Herramienta interactiva para que un alumno de secundaria se aprenda de memoria l
 - **Módulo 2: phrasal verbs.** Hito posterior, con su propio diseño (ver 3.4). No se adelanta nada.
 - Los verbos se reparten en **grupos por patrón** de 6 a 10 verbos (ahora, 11 grupos; la división es una propuesta, **por confirmar**): las tres formas iguales (*cut, cut, cut*), pasado y participio iguales (*buy, bought, bought*), vocal que cambia i-a-u (*sing, sang, sung*), participio en -en (*break, broke, broken*), etc. El grupo hace el papel de la región de Capitalia y es, además, el primer truco de memoria. La división concreta se define en los datos.
 - Los grupos se desbloquean progresivamente (en Aprender y Explorar): un grupo se abre cuando todos los verbos del anterior llegan al escalón Completar, o cuando Hoy ya ha empezado alguno de sus verbos. Siempre se puede volver a los anteriores.
-- **Lista base: el listado de clase** (`docs/listas/`, recibido el 15/11/2026): 79 verbos de 3º de ESO. Es la **fuente de verdad**: qué verbos entran, con qué formas y con qué significado. No se añaden verbos que no estén en él.
-- **Los significados del listado están en gallego** y la app los enseña tal cual, aunque sus textos están en castellano **(por confirmar)**.
+- **Lista base: de momento, un listado de referencia** de internet (`docs/listas/`): 79 verbos de 3º de ESO del IES Alexandre Bóveda. **No es el listado de clase**: cuando llegue el de clase, lo sustituye y pasa a ser la fuente de verdad (qué verbos entran, con qué formas y con qué significado).
+- **Significados en castellano.** El listado de referencia los da en gallego; la app los enseña traducidos (decisión del responsable, 16/11/2026), sin que dos verbos tengan el mismo.
 - **Filtro "solo examen"**: el adulto marca qué verbos entran en un examen concreto.
 
 ### 3.2 Casos especiales
 - **Verbos con dos formas válidas** (*learnt/learned*, *burnt/burned*, *dreamt/dreamed*, *got/gotten*): se muestra la del listado de clase; la otra se acepta como variante si es inglés estándar. Cada variante se verifica con un diccionario (Cambridge u Oxford) y se anota la fuente.
 - ***be*:** el pasado se muestra como "was / were" y hay que escribir las dos formas, en cualquier orden **(por confirmar)**.
 - **Británico o americano:** manda el listado de clase.
-- **Significado:** el del listado. Si un verbo tiene varios sentidos, solo los que figuren en él.
+- **Significado:** en castellano, con los sentidos principales del listado.
 - **Formas que se escriben igual y suenan distinto** (*read*): se avisa en una nota breve del verbo.
 
 ### 3.3 Escritura de las respuestas
@@ -171,7 +171,7 @@ Progreso (local): como en Capitalia, por verbo en lugar de por país.
 ## 14. Pendiente
 
 - Saber si habrá listas de examen más cortas que el listado de clase.
-- Significados en gallego o en castellano (3.1).
+- Revisar la traducción de los significados (`docs/listas/3eso.md`).
 - Variantes *learned* y *dreamed*: comprobarlas en un diccionario antes de aceptarlas (`docs/listas/README.md`).
 - Quitar los nombres heredados de Capitalia (país, capital, región) del código.
 - Curso exacto del alumno.
