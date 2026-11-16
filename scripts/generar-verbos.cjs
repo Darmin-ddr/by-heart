@@ -197,6 +197,6 @@ function infinitivoParticipio(i, pp) {
 }
 fs.writeFileSync(
   path.join(repo, 'docs/listas/3eso.md'),
-  `# Listado de referencia: 3º de ESO\n\nTranscripción de \`IRREGULAR VERBS LIST 3ESO.pdf\` (en la raíz del repositorio), con el significado que enseña la app (traducido al castellano), el original gallego del PDF y el truco de cada verbo. Generado y comprobado fila a fila contra el texto del PDF.\n\n| N.º | Infinitivo | Pasado | Participio | Significado en la app | Original (gallego) | Truco |\n| --- | --- | --- | --- | --- | --- | --- |\n${tabla}\n`,
+  `# Listado de referencia: 3º de ESO\n\nTranscripción de \`IRREGULAR VERBS LIST 3ESO.pdf\` (en la carpeta del proyecto, fuera del repositorio), con el significado que enseña la app (traducido al castellano), el original gallego del PDF y el truco de cada verbo. Generado y comprobado fila a fila contra el texto del PDF.\n\n| N.º | Infinitivo | Pasado | Participio | Significado en la app | Original (gallego) | Truco |\n| --- | --- | --- | --- | --- | --- | --- |\n${tabla}\n`,
 );
 console.log(`${verbos.length} verbos; ${verbos.filter((v) => v.trucos.length).length} con truco`);

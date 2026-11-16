@@ -1,6 +1,6 @@
 # Listado de referencia: 3º de ESO
 
-Transcripción de `IRREGULAR VERBS LIST 3ESO.pdf` (en la raíz del repositorio), con el significado que enseña la app (traducido al castellano), el original gallego del PDF y el truco de cada verbo. Generado y comprobado fila a fila contra el texto del PDF.
+Transcripción de `IRREGULAR VERBS LIST 3ESO.pdf` (en la carpeta del proyecto, fuera del repositorio), con el significado que enseña la app (traducido al castellano), el original gallego del PDF y el truco de cada verbo. Generado y comprobado fila a fila contra el texto del PDF.
 
 | N.º | Infinitivo | Pasado | Participio | Significado en la app | Original (gallego) | Truco |
 | --- | --- | --- | --- | --- | --- | --- |

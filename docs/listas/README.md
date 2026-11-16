@@ -2,7 +2,7 @@
 
 **No hay listado de clase todavía.** La app usa un listado de referencia encontrado en internet; cuando llegue el de clase, lo sustituye y pasa a ser la fuente de verdad (`SPEC.md`, 3.1).
 
-- **Listado de referencia:** `IRREGULAR VERBS LIST 3ESO.pdf` (en la raíz del repositorio), "3ºESO – BASIC 80 IRREGULAR VERBS LIST – INFLUENCE TODAY 3", del aula virtual del IES Alexandre Bóveda (Galicia). Descargado el 15/11/2026.
+- **Listado de referencia:** `IRREGULAR VERBS LIST 3ESO.pdf` (en la carpeta del proyecto, pero fuera del repositorio: es un documento ajeno y no se publica), "3ºESO – BASIC 80 IRREGULAR VERBS LIST – INFLUENCE TODAY 3", del aula virtual del IES Alexandre Bóveda (Galicia). Descargado el 15/11/2026.
 - **Transcripción:** [`3eso.md`](3eso.md), con el significado que enseña la app, el original del PDF y el truco de cada verbo.
 - **Datos de la app:** `src/data/verbs.json`. Lo genera `scripts/generar-verbos.cjs`, que comprueba cada fila (formas y significado original) contra el texto del PDF.
 
