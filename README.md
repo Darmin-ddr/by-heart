@@ -2,7 +2,9 @@
 
 **Aprende de memoria los verbos irregulares en inglés, unos minutos al día.**
 
-> **En construcción.** La app ya abre con su nombre y su aspecto, pero todavía no tiene verbos. El plan está en [`SPEC.md`](SPEC.md), sección 13.
+### 👉 [Abrir By Heart](https://darmin-ddr.github.io/by-heart/)
+
+> **En pruebas.** Funciona con 79 verbos de 3º de ESO de un listado de referencia; falta revisar los trucos y la traducción. El plan está en [`SPEC.md`](SPEC.md), sección 13.
 
 ## Qué será
 
@@ -45,7 +47,7 @@ npm test         # tests de la lógica
 npm run build    # compilación para publicar (carpeta dist/)
 ```
 
-La publicación en GitHub Pages (`.github/workflows/pages.yml`) está de momento **solo a mano**, hasta que la app tenga contenido.
+Se publica en GitHub Pages con cada push a `main` (`.github/workflows/pages.yml`).
 
 Documentación del proyecto:
 

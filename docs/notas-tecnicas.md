@@ -27,7 +27,8 @@ By Heart parte de una copia de Capitalia 1.3.2. Desde el 16/11/2026 el código y
 - `npm test`, `npm run build`, `npm run dev`.
 - En Windows el repositorio tiene saltos de línea CRLF: al editar ficheros con scripts, normalizar o usar el editor para no ensuciar el diff.
 - Icono: `pwsh scripts/generar-iconos.ps1` escribe `public/icono.svg` y los PNG (provisional).
-- GitHub: repositorio privado `Darmin-ddr/by-heart`. La publicación en Pages está solo a mano (`workflow_dispatch`) hasta el hito de publicación; para GitHub Pages en un plan gratuito el repositorio tendrá que ser público.
+- GitHub: repositorio público `Darmin-ddr/by-heart` (desde el 16/11/2026). Se publica en https://darmin-ddr.github.io/by-heart/ con cada push a `main`.
+- **El PDF del listado no se sube** (`.gitignore`: `*.pdf`). Se quitó del historial antes de hacer público el repositorio (`git filter-branch`); la copia anterior está en un `git bundle` fuera del repositorio.
 - **No hay pruebas automáticas en navegador.** Las de Capitalia (Playwright) se retiraron porque buscaban países y mapas; están en su historial si hace falta rehacerlas. Mientras, se prueba a mano en el navegador.
 
 ## Guardado
