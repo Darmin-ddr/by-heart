@@ -1,3 +1,5 @@
+import { partesQueCambian } from '../logic/verbos';
+
 type Hijo = Node | string | null | undefined | false;
 
 /** Crea un elemento con clase y contenido. El texto se inserta siempre como texto, nunca como HTML. */
@@ -41,3 +43,9 @@ export function enterPulsaPrincipal(dialogo: HTMLDialogElement): void {
 }
 
 export const reduceMovimiento = (): boolean => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Una forma con lo que cambia respecto al infinitivo resaltado (Explorar): s<mark>a</mark>ng. */
+export function formaResaltada(infinitivo: string, forma: string): HTMLElement {
+  const p = partesQueCambian(infinitivo, forma);
+  return el('span', 'forma', p.antes, p.cambio ? el('mark', 'cambio', p.cambio) : '', p.despues);
+}

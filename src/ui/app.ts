@@ -268,10 +268,10 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   }
 
   /** Monta la cuadrícula con estos verbos (o la quita, con `null`: el examen no la usa). */
-  function montarTablero(lista: readonly Verbo[] | null): void {
+  function montarTablero(lista: readonly Verbo[] | null, conFormas = false): void {
     tablero?.destruir();
     verbosTablero = lista ?? [];
-    tablero = lista ? crearTablero({ contenedor: contenedorTablero, verbos: lista, colorDe: () => COLOR_CASILLA, alTocar: (id) => modo?.alTocarVerbo(id) }) : null;
+    tablero = lista ? crearTablero({ contenedor: contenedorTablero, verbos: lista, colorDe: () => COLOR_CASILLA, alTocar: (id) => modo?.alTocarVerbo(id), conFormas }) : null;
     contenedorTablero.hidden = !tablero;
     actualizarNiveles();
   }
@@ -308,8 +308,8 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
       );
       return;
     }
-    // Explorar y la portada de Hoy: todos los verbos.
-    montarTablero(verbos);
+    // Explorar y la portada de Hoy: todos los verbos. En Explorar, con las tres formas (hace de tabla).
+    montarTablero(verbos, nueva === 'explorar');
     modo = nueva === 'explorar' ? iniciarExplorar(panel, tablero!, verbos, trucos) : iniciarHoy(panel, serviciosHoy());
   }
 

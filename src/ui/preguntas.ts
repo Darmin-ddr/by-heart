@@ -66,11 +66,10 @@ export const preguntaElegir: Renderizador = (a) => {
     // Ya respondida: se enseña el verbo con sus formas (primer contacto con ellas).
     tablero.mostrarFormas(verbo.id);
     botones[pregunta.correcta].classList.add('correcta');
-    const formas = el('p', 'feedback-texto', el('strong', '', tresFormas(verbo)));
     if (acierto) {
       tablero.setEstado(verbo.id, 'acierto');
       pintarAcierto(feedback, recuperado, rng, a.siguiente);
-      feedback.querySelector('.feedback-titulo')?.after(formas);
+      conLasTresFormas(feedback, verbo);
       teclado.enterPara(a.siguiente);
       return;
     }
@@ -83,6 +82,11 @@ export const preguntaElegir: Renderizador = (a) => {
   }
   return {};
 };
+/** Tras acertar, las tres formas debajo del "¡Correcto!": cada acierto es una repetición más. */
+function conLasTresFormas(feedback: HTMLElement, verbo: Verbo): void {
+  feedback.querySelector('.feedback-titulo')?.after(el('p', 'feedback-texto', el('strong', '', tresFormas(verbo))));
+}
+
 /** Una forma correcta, con las letras de un "casi" señaladas. */
 export function formaCorregida(c: CorreccionForma): HTMLElement {
   if (c.estado === 'bien') return el('span', 'forma', c.correcta);
@@ -163,6 +167,7 @@ function preguntaFormas(a: ArgsPregunta, conInfinitivo: boolean): ControlPregunt
       const { recuperado } = a.responder('acierto');
       tablero.setEstado(verbo.id, 'acierto');
       pintarAcierto(feedback, recuperado, rng, a.siguiente);
+      conLasTresFormas(feedback, verbo);
       teclado.enterPara(a.siguiente);
       return;
     }
@@ -209,6 +214,7 @@ export const preguntaAlReves: Renderizador = (a) => {
         const { recuperado } = a.responder('acierto');
         tablero.setEstado(verbo.id, 'acierto');
         pintarAcierto(feedback, recuperado, rng, a.siguiente);
+        conLasTresFormas(feedback, verbo);
         teclado.enterPara(a.siguiente);
         return;
       }

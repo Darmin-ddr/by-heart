@@ -1,7 +1,6 @@
 import type { Verbo } from '../logic/types';
-import { formasDe } from '../logic/verbos';
 import type { Tablero } from './tablero';
-import { boton, el, rellenar } from './dom';
+import { boton, el, formaResaltada, rellenar } from './dom';
 
 export interface Modo {
   /** Se llama al tocar un verbo de la cuadrícula. */
@@ -52,7 +51,7 @@ export function iniciarExplorar(panel: HTMLElement, tablero: Tablero, verbos: re
     const predefinido = trucos.predefinido(verbo.id);
     const cabecera = [
       el('p', 'ficha-verbo', el('span', 'resaltado seleccion', verbo.infinitivo)),
-      el('p', 'ficha-formas', formasDe(verbo)),
+      el('p', 'ficha-formas', formaResaltada(verbo.infinitivo, verbo.pasado), ' · ', formaResaltada(verbo.infinitivo, verbo.participio)),
       el('p', 'ficha-significado', verbo.significado),
     ];
 

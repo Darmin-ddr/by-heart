@@ -1,6 +1,6 @@
 import type { Nivel } from '../logic/progreso';
 import { formasDe } from '../logic/verbos';
-import { el } from './dom';
+import { el, formaResaltada } from './dom';
 import type { EstadoCasilla, OpcionesTablero, Tablero } from './tablero';
 
 const ESTADOS: EstadoCasilla[] = ['objetivo', 'acierto', 'fallo', 'seleccion'];
@@ -20,8 +20,12 @@ export class Cuadricula implements Tablero {
     this.raiz = el('div', 'cuadricula');
     this.raiz.setAttribute('role', 'group');
     this.raiz.setAttribute('aria-label', 'Verbos');
+    this.raiz.classList.toggle('con-formas', Boolean(op.conFormas));
     for (const v of op.verbos) {
-      const casilla = el('button', 'cuadro', el('span', 'cuadro-infinitivo', v.infinitivo), el('span', 'cuadro-formas', formasDe(v)));
+      const formas = op.conFormas
+        ? el('span', 'cuadro-formas', formaResaltada(v.infinitivo, v.pasado), el('br'), formaResaltada(v.infinitivo, v.participio))
+        : el('span', 'cuadro-formas', formasDe(v));
+      const casilla = el('button', 'cuadro', el('span', 'cuadro-infinitivo', v.infinitivo), formas);
       casilla.type = 'button';
       casilla.dataset.id = v.id;
       const color = op.colorDe?.(v.id);

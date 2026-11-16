@@ -1907,3 +1907,24 @@ button {
     display: block;
   }
 }
+
+/* ---------- Explorar: la cuadrícula hace de tabla (tres formas, lo que cambia subrayado) ---------- */
+
+.cuadricula.con-formas {
+  grid-auto-rows: minmax(96px, auto);
+}
+
+.cuadricula.con-formas .cuadro-formas {
+  display: block;
+  line-height: 1.3;
+}
+
+/* Lo que cambia respecto al infinitivo: subrayado (no depende del color) y un poco más grueso. */
+mark.cambio {
+  background: none;
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}

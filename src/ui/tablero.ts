@@ -17,6 +17,8 @@ export interface OpcionesTablero {
   /** Color pastel de cada verbo cuando avanza. */
   colorDe?: (id: string) => string;
   alTocar?: (id: string) => void;
+  /** Enseñar siempre las tres formas, con lo que cambia resaltado (Explorar: la cuadrícula hace de tabla). */
+  conFormas?: boolean;
 }
 
 export interface Tablero {
