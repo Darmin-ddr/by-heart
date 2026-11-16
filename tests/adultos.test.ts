@@ -1,15 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  actividadReciente, comprobarPin, diasHastaExamen, dominioPorRegion, hashPin, paisesAtascados,
-  pinValido, regionesConExamen, seleccionarExamen,
+  actividadReciente, comprobarPin, diasHastaExamen, dominioPorGrupo, estadoMarcado, gruposConExamen, hashPin,
+  marcarVarios, pinValido, verbosAtascados,
 } from '../src/logic/adultos';
-import { estadoVacio, nivelDominio, registrarRespuesta } from '../src/logic/progreso';
-import type { Pais, Region } from '../src/logic/types';
-
-const pais = (id: string, region = 'r1', extra?: string[]): Pais => ({
-  id, isoNumerico: null, nombre: id, capital: id, variantes: [], antiguos: [], continentes: ['europa'],
-  region, ...(extra ? { regionesExtra: extra } : {}), capitalCoords: [0, 0], opcional: false, trucos: [],
-});
+import { estadoVacio, registrarRespuesta } from '../src/logic/progreso';
+import type { Grupo } from '../src/logic/types';
+import { verbo } from './ayuda';
 const D = (s: string) => new Date(s);
 
 describe('PIN', () => {
@@ -28,30 +24,30 @@ describe('PIN', () => {
 });
 
 describe('estadísticas', () => {
-  const r1: Region = { id: 'r1', nombre: 'Uno', continente: 'europa', orden: 1, color: '' };
-  const r2: Region = { id: 'r2', nombre: 'Dos', continente: 'asia', orden: 1, color: '' };
-  const paises = [pais('A'), pais('B'), pais('C', 'r2')];
+  const g1: Grupo = { id: 'g1', nombre: 'Uno', orden: 1, color: '' };
+  const g2: Grupo = { id: 'g2', nombre: 'Dos', orden: 2, color: '' };
+  const verbos = [verbo('A'), verbo('B'), verbo('C', 'g2')];
 
-  it('aprendidos por región, por escalones (como el mapa)', () => {
+  it('aprendidos por grupo, por escalones (como la cuadrícula)', () => {
     const e = estadoVacio();
     e.aprendizaje.A = { escalon: 1, aciertos: 0, aprendido: false };
     e.aprendizaje.B = { escalon: 3, aciertos: 0, aprendido: true };
     e.aprendizaje.C = { escalon: 2, aciertos: 0, aprendido: false };
-    const d = dominioPorRegion(e, [r2, r1], (id) => paises.filter((p) => p.region === id));
-    expect(d.map((x) => x.region.id)).toEqual(['r1', 'r2']); // Europa primero
+    const d = dominioPorGrupo(e, [g2, g1], (id) => verbos.filter((v) => v.grupo === id));
+    expect(d.map((x) => x.grupo.id)).toEqual(['g1', 'g2']); // en el orden del curso
     expect(d[0]).toMatchObject({ total: 2, porNivel: [0, 1, 0, 1] });
     expect(d[1]).toMatchObject({ total: 1, porNivel: [0, 0, 1, 0] });
   });
 
-  it('países que más se atascan (solo fallos recientes)', () => {
+  it('verbos que más se atascan (solo fallos recientes)', () => {
     const e = estadoVacio();
     registrarRespuesta(e, 'A', 'elegir', 'fallo', 3000, D('2026-11-01T10:00:00Z'));
     registrarRespuesta(e, 'B', 'elegir', 'fallo', 3000, D('2026-11-01T10:01:00Z'));
     registrarRespuesta(e, 'B', 'elegir', 'fallo', 3000, D('2026-11-01T10:02:00Z'));
     registrarRespuesta(e, 'C', 'elegir', 'fallo', 3000, D('2026-08-01T10:00:00Z')); // antiguo
     registrarRespuesta(e, 'C', 'elegir', 'acierto', 3000, D('2026-11-01T10:03:00Z'));
-    const a = paisesAtascados(e, paises, D('2026-11-02T10:00:00Z'));
-    expect(a.map((x) => [x.pais.id, x.fallos])).toEqual([['B', 2], ['A', 1]]);
+    const a = verbosAtascados(e, verbos, D('2026-11-02T10:00:00Z'));
+    expect(a.map((x) => [x.verbo.id, x.fallos])).toEqual([['B', 2], ['A', 1]]);
   });
 
   it('actividad de los últimos días', () => {
@@ -76,42 +72,23 @@ describe('modo examen', () => {
     expect(diasHastaExamen(null, new Date())).toBeNull();
   });
 
-  it('lo flojo primero', () => {
-    const e = estadoVacio();
-    const ps = ['A', 'B', 'C', 'D'].map((x) => pais(x));
-    // A: en repaso; B: nueva; C: aprendiendo; D: en repaso con más estabilidad
-    registrarRespuesta(e, 'A', 'elegir', 'acierto', 3000, D('2026-11-01T10:00:00Z'));
-    registrarRespuesta(e, 'A', 'elegir', 'acierto', 3000, D('2026-11-01T10:15:00Z'));
-    registrarRespuesta(e, 'C', 'elegir', 'acierto', 3000, D('2026-11-01T10:00:00Z'));
-    registrarRespuesta(e, 'D', 'escribir', 'acierto', 3000, D('2026-11-01T10:00:00Z'));
-    registrarRespuesta(e, 'D', 'escribir', 'acierto', 3000, D('2026-11-01T10:15:00Z'));
-    expect(nivelDominio(e.tarjetas.D)).toBeGreaterThanOrEqual(2);
-    const orden = seleccionarExamen(e, ps);
-    expect(orden[0]).toBe('B');
-    expect(orden[1]).toBe('C');
-    expect(orden.slice(2).sort()).toEqual(['A', 'D']);
-    expect(seleccionarExamen(e, ps, 2)).toHaveLength(2);
-  });
-
-  it('regiones con países de examen (incluye regiones extra)', () => {
-    const ps = [pais('A', 'r1'), pais('R', 'r1', ['r9']), pais('C', 'r2')];
-    expect([...regionesConExamen(['R'], ps)].sort()).toEqual(['r1', 'r9']);
-    expect(regionesConExamen(null, ps).size).toBe(0);
+  it('grupos con verbos del examen', () => {
+    const vs = [verbo('A', 'g1'), verbo('B', 'g1'), verbo('C', 'g2')];
+    expect([...gruposConExamen(['B', 'C'], vs)].sort()).toEqual(['g1', 'g2']);
+    expect(gruposConExamen(null, vs).size).toBe(0);
   });
 });
 
-import { estadoGrupo, marcarGrupo } from '../src/logic/adultos';
-
-describe('casillas de grupo del examen (región o continente)', () => {
+describe('casillas de la lista de examen (todos, o un grupo)', () => {
   it('todos, ninguno o parcial', () => {
-    expect(estadoGrupo(['A', 'B'], new Set(['A', 'B', 'X']))).toBe('todos');
-    expect(estadoGrupo(['A', 'B'], new Set(['X']))).toBe('ninguno');
-    expect(estadoGrupo(['A', 'B'], new Set(['A']))).toBe('parcial');
-    expect(estadoGrupo([], new Set(['A']))).toBe('ninguno');
+    expect(estadoMarcado(['A', 'B'], new Set(['A', 'B', 'X']))).toBe('todos');
+    expect(estadoMarcado(['A', 'B'], new Set(['X']))).toBe('ninguno');
+    expect(estadoMarcado(['A', 'B'], new Set(['A']))).toBe('parcial');
+    expect(estadoMarcado([], new Set(['A']))).toBe('ninguno');
   });
-  it('marcar y desmarcar un grupo no toca los demás países', () => {
-    const s = marcarGrupo(['A', 'B'], new Set(['X']), true);
+  it('marcar y desmarcar varios no toca los demás verbos', () => {
+    const s = marcarVarios(['A', 'B'], new Set(['X']), true);
     expect([...s].sort()).toEqual(['A', 'B', 'X']);
-    expect([...marcarGrupo(['A', 'X'], s, false)]).toEqual(['B']);
+    expect([...marcarVarios(['A', 'X'], s, false)]).toEqual(['B']);
   });
 });

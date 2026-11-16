@@ -1,4 +1,4 @@
-import type { Pais } from '../logic/types';
+import type { Verbo } from '../logic/types';
 import type { Rng } from '../logic/rng';
 import type { Resultado, ResumenRonda } from '../logic/sesion';
 import type { ModoId } from '../logic/config';
@@ -15,11 +15,11 @@ export const PAUSA_TRAS_ACIERTO_MS = 1300;
 export interface Contexto {
   /** Zona del panel donde dibuja el modo. */
   contenedor: HTMLElement;
-  mapa: Tablero;
-  /** Países de la región en juego. */
-  region: readonly Pais[];
-  /** Todos los países activos (para distractores y validación). */
-  candidatos: readonly Pais[];
+  tablero: Tablero;
+  /** Verbos en juego (los del grupo, o todos). */
+  verbos: readonly Verbo[];
+  /** Todos los verbos (para los distractores de Elegir). */
+  candidatos: readonly Verbo[];
   rng: Rng;
   alExplorar: () => void;
   motor: Motor;
@@ -29,23 +29,22 @@ export interface Contexto {
 export interface Motor {
   /**
    * Registra una respuesta en el progreso (FSRS, historial y escalón de
-   * aprendizaje) y lo guarda. Devuelve si el país ha subido de escalón.
+   * aprendizaje) y lo guarda. Devuelve si el verbo ha subido de escalón.
    */
-  registrar(paisId: string, modo: ModoId, resultado: Resultado, tiempoMs: number, opciones?: OpcionesRespuesta): CambioEscalon;
+  registrar(verboId: string, modo: ModoId, resultado: Resultado, tiempoMs: number, opciones?: OpcionesRespuesta): CambioEscalon;
   /** Truco a mostrar (el del alumno si lo inventó; null si no hay). */
-  truco(paisId: string): string | null;
+  truco(verboId: string): string | null;
 }
 
 export interface OpcionesRespuesta {
   /** Respuesta de examen (no mueve escalones). */
   examen?: boolean;
-  /** Resultado para el escalón y la cola, si es distinto (medio punto en mapa mudo: "repasar" para FSRS, fallo aquí). */
-  escalon?: Resultado;
 }
 
 /** Un modo de práctica en marcha. */
 export interface ModoPractica {
-  alSeleccionarPais(id: string): void;
+  /** Se ha tocado un verbo en la cuadrícula. */
+  alTocarVerbo(id: string): void;
   salir(): void;
 }
 
@@ -53,7 +52,7 @@ export interface ModoPractica {
 export class Teclado {
   private manejador: ((e: KeyboardEvent) => void) | null = null;
   private readonly oyente = (e: KeyboardEvent) => {
-    // Con un diálogo abierto (guías, panel, regiones...), las teclas son suyas:
+    // Con un diálogo abierto (guías, panel, grupos...), las teclas son suyas:
     // la pregunta de detrás no debe responder ni avanzar.
     if (document.querySelector('dialog[open]')) return;
     this.manejador?.(e);
@@ -86,9 +85,9 @@ export function progreso(texto: string): HTMLElement {
   return el('p', 'progreso', texto);
 }
 
-/** Nombre resaltado con el color con el que se marca en el mapa. */
+/** Verbo (o significado) resaltado con el color con el que se marca en la cuadrícula. */
 export function nombreResaltado(texto: string, estado: 'objetivo' | 'seleccion'): HTMLElement {
-  return el('strong', `nombre-pais ${estado}`, texto);
+  return el('strong', `resaltado ${estado}`, texto);
 }
 
 /** Feedback de acierto. Devuelve el botón "Siguiente". */
@@ -128,19 +127,6 @@ export function pintarFallo(
   return seguir;
 }
 
-/** Aviso sin fallo: errata o nombre antiguo (SPEC 3.3). */
-export function pintarAviso(feedback: HTMLElement, titulo: (Node | string)[], alSeguir: () => void): HTMLButtonElement {
-  feedback.className = 'feedback aviso';
-  const seguir = boton('Siguiente', 'boton-principal', alSeguir);
-  rellenar(
-    feedback,
-    el('p', 'feedback-titulo', ...titulo),
-    el('p', 'feedback-texto', 'Volverá a salir dentro de un rato, para afianzarla.'),
-    seguir,
-  );
-  verFeedback(feedback);
-  return seguir;
-}
 
 /** En móvil el panel es bajo: que el feedback quede a la vista. */
 export function verFeedback(feedback: HTMLElement): void {

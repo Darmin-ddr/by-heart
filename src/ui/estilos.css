@@ -8,29 +8,22 @@
   --acento: #2f62a8;
   --acento-texto: #ffffff;
 
-  --mar: #dbe8f1;
-  --tierra: #efece6;
-  --tierra-borde: #d3ccbf;
-  --pais: #d8d4cc;
-  --pais-hover: #cbc6bc;
-  --pais-borde: #ffffff;
+  --fondo-tablero: #dbe8f1;
+  --casilla: #d8d4cc;
   --objetivo: #a9c9ef;
   --objetivo-borde: #2f62a8;
-  /* El color base de la región lo fija main.ts desde regions.json. */
-  --region-base: #c8b6e2;
-  --color-region: var(--region-base);
-  /* Texto sobre el color de la región: siempre oscuro, también en modo oscuro (el pastel es claro). */
-  --texto-sobre-region: #1f2a37;
+  /* El color base del grupo lo fija app.ts al montar la cuadrícula. */
+  --grupo-base: #c8b6e2;
+  --color-grupo-base: var(--grupo-base);
+  /* Texto sobre el color del grupo: siempre oscuro, también en modo oscuro (el pastel es claro). */
+  --texto-sobre-grupo: #1f2a37;
 
   --acierto: #1f7d5c;
   --acierto-fondo: #dcf3e9;
-  --acierto-mapa: #9ad9c0;
+  --acierto-casilla: #9ad9c0;
   --fallo: #a8492f;
   --fallo-fondo: #fde8df;
-  --fallo-mapa: #f5bca7;
-
-  --estrella: #1f2a37;
-  --halo: #ffffff;
+  --fallo-casilla: #f5bca7;
   --radio: 14px;
   --sombra: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.05);
 }
@@ -46,24 +39,17 @@
     --acento: #7fa8e6;
     --acento-texto: #10161e;
 
-    --mar: #13202e;
-    --tierra: #242c37;
-    --tierra-borde: #36404d;
-    --pais: #3a4452;
-    --pais-hover: #465263;
-    --pais-borde: #161b22;
+    --fondo-tablero: #13202e;
+    --casilla: #3a4452;
     --objetivo: #3d5f8f;
     --objetivo-borde: #9cc0f0;
 
     --acierto: #7fdcb7;
     --acierto-fondo: #17352b;
-    --acierto-mapa: #2f7f62;
+    --acierto-casilla: #2a7259;
     --fallo: #f4ad94;
     --fallo-fondo: #3a2620;
-    --fallo-mapa: #9a5a45;
-
-    --estrella: #f3f5f8;
-    --halo: #13202e;
+    --fallo-casilla: #965643;
     --sombra: none;
   }
 }
@@ -77,24 +63,17 @@
   --acento: #7fa8e6;
   --acento-texto: #10161e;
 
-  --mar: #13202e;
-  --tierra: #242c37;
-  --tierra-borde: #36404d;
-  --pais: #3a4452;
-  --pais-hover: #465263;
-  --pais-borde: #161b22;
+  --fondo-tablero: #13202e;
+  --casilla: #3a4452;
   --objetivo: #3d5f8f;
   --objetivo-borde: #9cc0f0;
 
   --acierto: #7fdcb7;
   --acierto-fondo: #17352b;
-  --acierto-mapa: #2f7f62;
+  --acierto-casilla: #2a7259;
   --fallo: #f4ad94;
   --fallo-fondo: #3a2620;
-  --fallo-mapa: #9a5a45;
-
-  --estrella: #f3f5f8;
-  --halo: #13202e;
+  --fallo-casilla: #965643;
   --sombra: none;
 }
 
@@ -168,7 +147,7 @@ button {
   letter-spacing: 0.01em;
 }
 
-.region-actual {
+.grupo-actual {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
@@ -184,13 +163,13 @@ button {
   cursor: pointer;
 }
 
-.region-nombre {
+.grupo-nombre {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.region-flecha {
+.grupo-flecha {
   color: var(--texto-suave);
   font-size: 0.8em;
 }
@@ -206,7 +185,7 @@ button {
   .modo {
     padding: 0 14px;
   }
-  /* En pantallas estrechas se oculta el nombre de la app para que quepan pestañas y región. */
+  /* En pantallas estrechas se oculta el nombre de la app para que quepan pestañas y grupo. */
   .marca {
     display: none;
   }
@@ -218,11 +197,11 @@ button {
     padding: 0 11px;
     font-size: 0.95rem;
   }
-  .mapa {
+  .tablero {
     --reserva-superior: 48px;
   }
-  /* El selector de región va sobre la esquina del mapa: en la barra no cabe. */
-  .region-actual {
+  /* El selector de grupo va sobre la esquina de la cuadrícula: en la barra no cabe. */
+  .grupo-actual {
     position: absolute;
     top: calc(env(safe-area-inset-top) + 72px);
     left: calc(env(safe-area-inset-left) + 24px);
@@ -263,7 +242,7 @@ button {
   color: var(--acento-texto);
 }
 
-/* Móvil: mapa arriba, tarjeta abajo. */
+/* Móvil: cuadrícula arriba, tarjeta abajo. */
 .contenido {
   flex: 1;
   min-height: 0;
@@ -273,7 +252,7 @@ button {
   padding: 0 16px 16px;
 }
 
-/* iPad horizontal y PC: mapa a la izquierda, panel a la derecha. */
+/* iPad horizontal y PC: cuadrícula a la izquierda, panel a la derecha. */
 @media (min-width: 900px), (min-width: 700px) and (orientation: landscape) {
   .contenido {
     grid-template-rows: 1fr;
@@ -281,24 +260,24 @@ button {
   }
 }
 
-/* Sin tablero (aún no hay cuadrícula de verbos): el panel ocupa todo el sitio. */
-.contenido:has(> .mapa[hidden]) {
+/* Sin cuadrícula (el examen): el panel ocupa todo el sitio. */
+.contenido:has(> .tablero[hidden]) {
   grid-template-rows: 1fr;
   grid-template-columns: minmax(0, 1fr);
 }
 
-.contenido:has(> .mapa[hidden]) .panel {
+.contenido:has(> .tablero[hidden]) .panel {
   width: 100%;
   max-width: 640px;
   justify-self: center;
 }
 
-.mapa {
+.tablero {
   position: relative;
   min-height: 0;
   border-radius: var(--radio);
   overflow: hidden;
-  background: var(--mar);
+  background: var(--fondo-tablero);
   box-shadow: var(--sombra);
 }
 
@@ -321,165 +300,7 @@ button {
   color: var(--texto-suave);
 }
 
-/* ---------- Mapa ---------- */
-
-.mapa-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  /* Los gestos (pellizco, arrastre) los gestiona el mapa. */
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.mar {
-  fill: var(--mar);
-}
-
-.tierra,
-.pais {
-  /* El grosor de los bordes no cambia con el zoom. */
-  vector-effect: non-scaling-stroke;
-}
-
-.tierra {
-  fill: var(--tierra);
-  stroke: var(--tierra-borde);
-  stroke-width: 0.6;
-}
-
-.pais {
-  fill: var(--pais);
-  stroke: var(--pais-borde);
-  stroke-width: 1.4;
-  stroke-linejoin: round;
-  transition: fill 0.2s ease;
-}
-
-.pais.tocable {
-  cursor: pointer;
-}
-
-@media (hover: hover) {
-  .pais.tocable:not(.seleccion):hover {
-    fill: var(--pais-hover);
-  }
-}
-
-.pais:focus {
-  outline: none;
-}
-
-.pais:focus-visible {
-  stroke: var(--acento);
-  stroke-width: 3;
-}
-
-/* Progreso: el mapa se colorea según el dominio (SPEC 10). */
-.pais.nivel-1 {
-  fill: color-mix(in srgb, var(--color-pais, var(--color-region)) 35%, var(--pais));
-}
-
-.pais.nivel-2 {
-  fill: color-mix(in srgb, var(--color-pais, var(--color-region)) 65%, var(--pais));
-}
-
-.pais.nivel-3 {
-  fill: var(--color-pais, var(--color-region));
-}
-
-/* Países del continente fuera de la región: se ven, más apagados, y no se tocan. */
-.pais.contexto {
-  stroke: var(--tierra-borde);
-  stroke-width: 0.6;
-  opacity: 0.5;
-}
-
-.pais.contexto:not([class*='nivel-']) {
-  fill: var(--tierra);
-}
-
-/* Microestados: círculo visible y área tocable invisible más grande. */
-.microestado .toque {
-  fill: transparent;
-  pointer-events: all;
-}
-
-.microestado.tocable,
-.microestado.jugable {
-  cursor: pointer;
-}
-
-.pais.circulo {
-  stroke: var(--pais-borde);
-  stroke-width: 1.5;
-}
-
-.microestado.contexto {
-  pointer-events: none;
-}
-
-/* Los círculos de la región en juego, con borde marcado para que se vean en claro y en oscuro. */
-.microestado.jugable .pais.circulo {
-  stroke: var(--texto-suave);
-  stroke-width: 2;
-}
-
-.pais.seleccion {
-  fill: var(--color-region);
-}
-
-.pais.objetivo {
-  fill: var(--objetivo);
-  stroke: var(--objetivo-borde);
-  stroke-width: 2.2;
-}
-
-.pais.acierto {
-  fill: var(--acierto-mapa);
-  animation: latido 0.45s ease-out;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.pais.fallo {
-  fill: var(--fallo-mapa);
-}
-
-.estrella {
-  fill: var(--estrella);
-  stroke: var(--halo);
-  stroke-width: 1.5;
-  paint-order: stroke;
-}
-
-.estrella-fondo {
-  opacity: 0.55;
-}
-
-/* Examen: la estrella de la pregunta, más grande y en el color de acento. */
-.estrella.activa {
-  fill: var(--acento);
-  stroke-width: 2.5;
-}
-
-.etiqueta-capital {
-  font-weight: 800;
-  font-size: 16px;
-  fill: var(--texto);
-  stroke: var(--halo);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-  paint-order: stroke;
-  pointer-events: none;
-}
-
-.capa-capital {
-  pointer-events: none;
-}
-
-/* Poco alto (p. ej. con el teclado abierto en el móvil): el mapa cede sitio. */
+/* Poco alto (p. ej. con el teclado abierto en el móvil): la cuadrícula cede sitio. */
 @media (max-height: 560px) and (max-width: 899px) {
   .contenido {
     grid-template-rows: minmax(110px, 32%) 1fr;
@@ -502,7 +323,7 @@ button {
   min-height: 0;
 }
 
-.ficha-pais {
+.ficha-verbo {
   margin: 0 0 6px;
   font-size: 1.15rem;
 }
@@ -512,8 +333,8 @@ button {
   white-space: nowrap;
 }
 
-/* Nombre del país resaltado con el mismo color que tiene en el mapa. */
-.nombre-pais {
+/* Verbo (o significado) resaltado con el mismo color que tiene en la cuadrícula. */
+.resaltado {
   display: inline-block;
   padding: 0 0.4em;
   border-radius: 8px;
@@ -521,27 +342,23 @@ button {
   color: var(--texto);
 }
 
-.nombre-pais.objetivo {
+.resaltado.objetivo {
   background: var(--objetivo);
   box-shadow: inset 0 0 0 2px var(--objetivo-borde);
 }
 
-.nombre-pais.seleccion {
-  background: var(--color-region);
-  color: var(--texto-sobre-region);
+.resaltado.seleccion {
+  background: var(--color-grupo-base);
+  color: var(--texto-sobre-grupo);
 }
 
-.ficha-capital {
+.ficha-formas {
   margin: 0 0 12px;
   font-size: 2rem;
   font-weight: 800;
   line-height: 1.15;
 }
 
-.estrella-texto {
-  font-size: 0.7em;
-  vertical-align: 0.15em;
-}
 
 .truco {
   margin: 0 0 12px;
@@ -566,7 +383,7 @@ button {
   color: var(--texto-suave);
 }
 
-.lista-paises {
+.lista-verbos {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -584,9 +401,9 @@ button {
 }
 
 .chip[aria-pressed='true'] {
-  background: var(--color-region);
+  background: var(--color-grupo-base);
   border-color: transparent;
-  color: var(--texto-sobre-region);
+  color: var(--texto-sobre-grupo);
   font-weight: 700;
 }
 
@@ -629,13 +446,13 @@ button {
   margin-bottom: 4px;
 }
 
-.chip-capital {
+.chip-formas {
   font-weight: 700;
   font-size: 1.05rem;
   border-width: 2px;
 }
 
-.chip-capital[aria-pressed='true'] {
+.chip-formas[aria-pressed='true'] {
   background: var(--acento);
   border-color: var(--acento);
   color: var(--acento-texto);
@@ -645,7 +462,7 @@ button {
   color: var(--texto-suave);
 }
 
-.nombre-capital {
+.formas-destacadas {
   font-weight: 800;
   white-space: nowrap;
 }
@@ -950,9 +767,9 @@ button {
   border-color: var(--acento);
 }
 
-/* ---------- Selector de regiones ---------- */
+/* ---------- Diálogos y selector de grupos ---------- */
 
-.dialogo-regiones {
+.dialogo {
   width: min(92vw, 480px);
   max-height: 85dvh;
   overflow-y: auto;
@@ -964,7 +781,7 @@ button {
   color: var(--texto);
 }
 
-.dialogo-regiones::backdrop {
+.dialogo::backdrop {
   background: rgb(0 0 0 / 0.35);
 }
 
@@ -985,7 +802,7 @@ button {
   color: var(--texto-suave);
 }
 
-.lista-regiones {
+.lista-grupos {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -993,7 +810,7 @@ button {
   gap: 6px;
 }
 
-.region-item {
+.grupo-item {
   width: 100%;
   display: flex;
   align-items: center;
@@ -1007,33 +824,33 @@ button {
   cursor: pointer;
 }
 
-.region-item.actual {
+.grupo-item.actual {
   border-color: var(--acento);
 }
 
-.region-item:disabled {
+.grupo-item:disabled {
   cursor: default;
   opacity: 0.6;
 }
 
-.region-muestra {
+.grupo-muestra {
   flex: none;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--color-pais);
+  background: var(--color-grupo);
 }
 
-.region-textos {
+.grupo-textos {
   flex: 1;
   display: grid;
 }
 
-.region-titulo {
+.grupo-titulo {
   font-weight: 800;
 }
 
-.region-detalle {
+.grupo-detalle {
   font-size: 0.85rem;
   color: var(--texto-suave);
 }
@@ -1109,7 +926,7 @@ button {
   height: 14px;
   border-radius: 7px;
   overflow: hidden;
-  background: var(--pais);
+  background: var(--casilla);
 }
 
 .tramo,
@@ -1122,24 +939,24 @@ button {
   height: 12px;
   border-radius: 3px;
   vertical-align: -1px;
-  /* Color fijo: el de la región del mapa puede ser casi gris (el continente entero) y la leyenda no se leería. */
-  --color-pais: #e0a93e;
+  /* Color fijo: el del grupo puede ser casi gris ("Todos los verbos") y la leyenda no se leería. */
+  --color-grupo: #e0a93e;
 }
 
 .nivel-tramo-0 {
-  background: var(--pais);
+  background: var(--casilla);
 }
 
 .nivel-tramo-1 {
-  background: color-mix(in srgb, var(--color-pais) 35%, var(--pais));
+  background: color-mix(in srgb, var(--color-grupo) 35%, var(--casilla));
 }
 
 .nivel-tramo-2 {
-  background: color-mix(in srgb, var(--color-pais) 65%, var(--pais));
+  background: color-mix(in srgb, var(--color-grupo) 65%, var(--casilla));
 }
 
 .nivel-tramo-3 {
-  background: var(--color-pais);
+  background: var(--color-grupo);
 }
 
 .leyenda {
@@ -1253,36 +1070,6 @@ button {
   grid-template-columns: 1fr 1fr;
 }
 
-/* ---------- Controles del mapa (zoom) ---------- */
-
-.controles-mapa {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  display: grid;
-  gap: 6px;
-  z-index: 4;
-}
-
-.control-mapa {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid var(--borde);
-  background: var(--superficie);
-  color: var(--texto);
-  font-size: 1.3rem;
-  font-weight: 800;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
-}
-
-/* "Ver toda la región" solo tiene sentido con zoom. */
-.controles-mapa:not(.con-zoom) .control-mapa:last-child {
-  display: none;
-}
-
 /* ---------- Guía y Acerca de ---------- */
 
 .dialogo-guia {
@@ -1350,13 +1137,13 @@ button {
   line-height: 1.45;
 }
 
-.bloque-continente {
+.bloque-todos {
   display: grid;
   gap: 6px;
   margin-bottom: 10px;
 }
 
-.casilla-continente {
+.casilla-todos {
   font-weight: 800;
   font-size: 1.05rem;
 }
@@ -1372,7 +1159,7 @@ button {
   font-size: 1.05rem;
 }
 
-/* --- Aprender: escalones de la región (SPEC 4.3) --- */
+/* --- Aprender: escalones del grupo (SPEC 4.3) --- */
 .escalera {
   list-style: none;
   margin: 12px 0;
@@ -1419,7 +1206,7 @@ button {
   color: var(--texto-suave);
 }
 
-.escalon-paises {
+.escalon-verbos {
   font-size: 0.9rem;
 }
 
@@ -1427,7 +1214,7 @@ button {
   margin: 6px 0 0;
 }
 
-/* --- Mapa mudo: país y capital --- */
+/* --- Campos con su etiqueta encima --- */
 .campo-etiquetado {
   display: grid;
   gap: 4px;
@@ -1456,8 +1243,8 @@ button {
   background: var(--superficie);
 }
 
-/* Rótulo con el nombre de la región cuando Hoy cambia el mapa. */
-.rotulo-region {
+/* Rótulo con el nombre del grupo cuando Hoy cambia de cuadrícula. */
+.rotulo-grupo {
   position: absolute;
   left: 50%;
   bottom: 16px;
@@ -1475,7 +1262,7 @@ button {
   transition: opacity 0.25s;
 }
 
-.rotulo-region.saliendo {
+.rotulo-grupo.saliendo {
   opacity: 0;
 }
 
@@ -1487,14 +1274,14 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rotulo-region {
+  .rotulo-grupo {
     animation: none;
     transition: none;
   }
 }
 
 /* --- Examen --- */
-.region-actual[hidden] {
+.grupo-actual[hidden] {
   display: none;
 }
 
@@ -1565,20 +1352,11 @@ button {
   font-size: 1.8rem;
 }
 
-.barras-continente {
-  display: grid;
-  gap: 6px;
-  margin-bottom: 8px;
-}
 
-.fila-continente {
-  display: grid;
-  grid-template-columns: 4.5em 1fr auto;
-  align-items: center;
-  gap: 10px;
-}
 
 .barra-progreso {
+  display: block;
+  margin: 4px 0 8px;
   height: 12px;
   border-radius: 999px;
   background: var(--fondo);
@@ -1589,7 +1367,7 @@ button {
 .barra-relleno {
   display: block;
   height: 100%;
-  background: var(--acierto-mapa);
+  background: var(--acierto-casilla);
 }
 
 .fila-cifra {
@@ -1597,7 +1375,7 @@ button {
   color: var(--texto-suave);
 }
 
-.region-item.region-entera .region-titulo {
+.grupo-item.grupo-todos .grupo-titulo {
   font-weight: 800;
 }
 
@@ -1691,47 +1469,6 @@ button {
   margin-top: 4px;
 }
 
-/* --- Qué estudia Hoy: continente en pausa --- */
-.aviso-pausa {
-  display: grid;
-  gap: 8px;
-  margin: 4px 0 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--acento);
-  background: color-mix(in srgb, var(--acento) 10%, var(--superficie));
-}
-
-.aviso-pausa p {
-  margin: 0;
-}
-
-.aviso-pausa .boton-secundario {
-  justify-self: start;
-}
-
-.aviso-pausa-panel {
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--acento);
-  background: color-mix(in srgb, var(--acento) 10%, var(--superficie));
-}
-
-.bloque-foco {
-  margin-top: 12px;
-}
-
-.fila-continente.pausada .barra-progreso,
-.fila-continente.pausada .fila-cifra {
-  opacity: 0.5;
-}
-
-.etiqueta-pausa {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--texto-suave);
-}
-
 /* --- Instalar la app --- */
 .aviso-instalar {
   display: grid;
@@ -1749,39 +1486,6 @@ button {
 
 .pasos-instalar li {
   margin-bottom: 6px;
-}
-
-/* Aviso de pausa plegado ("Entendido"): solo el recordatorio, destacado; al tocarlo se despliega. */
-.aviso-pausa.plegado {
-  padding: 0;
-}
-
-.aviso-pausa-plegado {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  width: 100%;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--texto);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.aviso-pausa-detalle {
-  font-size: 0.9rem;
-  color: var(--texto-suave);
-}
-
-.aviso-pausa-plegado::after {
-  content: '▾';
-  margin-left: auto;
-  color: var(--texto-suave);
 }
 
 /* --- Alumnos (perfiles locales: nombre e imagen, sin fotos) --- */
@@ -2096,7 +1800,7 @@ button {
   }
 }
 
-/* ---------- Cuadrícula de verbos (el tablero: ocupa el sitio del mapa de Capitalia) ---------- */
+/* ---------- Cuadrícula de verbos (el tablero) ---------- */
 
 .cuadricula {
   height: 100%;
@@ -2109,7 +1813,7 @@ button {
   padding: 16px;
 }
 
-.casilla {
+.cuadro {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2119,7 +1823,7 @@ button {
   padding: 8px 10px;
   border: 2px solid transparent;
   border-radius: 12px;
-  background: var(--pais);
+  background: var(--casilla);
   color: var(--texto);
   font: inherit;
   text-align: center;
@@ -2127,74 +1831,74 @@ button {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.casilla-verbo {
+.cuadro-infinitivo {
   font-size: 1.15rem;
   font-weight: 800;
 }
 
 /* El pasado y el participio solo se ven cuando la app los enseña (respuesta o Explorar). */
-.casilla-formas {
+.cuadro-formas {
   display: none;
   font-size: 0.9rem;
   font-weight: 700;
 }
 
-.casilla.revelada .casilla-formas {
+.cuadro.revelada .cuadro-formas {
   display: block;
 }
 
-.cuadricula.tocable .casilla {
+.cuadricula.tocable .cuadro {
   cursor: pointer;
 }
 
 @media (hover: hover) {
-  .cuadricula.tocable .casilla:not(.seleccion):not(.objetivo):not(.acierto):not(.fallo):hover {
+  .cuadricula.tocable .cuadro:not(.seleccion):not(.objetivo):not(.acierto):not(.fallo):hover {
     border-color: var(--texto-suave);
   }
 }
 
-.casilla:focus {
+.cuadro:focus {
   outline: none;
 }
 
-.casilla:focus-visible {
+.cuadro:focus-visible {
   border-color: var(--acento);
 }
 
 /* Progreso: la casilla se colorea según el escalón del verbo (SPEC 10). */
-.casilla.nivel-1 {
-  background: color-mix(in srgb, var(--color-pais, var(--color-region)) 35%, var(--pais));
+.cuadro.nivel-1 {
+  background: color-mix(in srgb, var(--color-grupo, var(--color-grupo-base)) 35%, var(--casilla));
 }
 
-.casilla.nivel-2 {
-  background: color-mix(in srgb, var(--color-pais, var(--color-region)) 65%, var(--pais));
-  color: var(--texto-sobre-region);
+.cuadro.nivel-2 {
+  background: color-mix(in srgb, var(--color-grupo, var(--color-grupo-base)) 65%, var(--casilla));
+  color: var(--texto-sobre-grupo);
 }
 
-.casilla.nivel-3,
-.casilla.seleccion {
-  background: var(--color-pais, var(--color-region));
-  color: var(--texto-sobre-region);
+.cuadro.nivel-3,
+.cuadro.seleccion {
+  background: var(--color-grupo, var(--color-grupo-base));
+  color: var(--texto-sobre-grupo);
 }
 
-.casilla.seleccion {
+.cuadro.seleccion {
   border-color: var(--texto-suave);
 }
 
-.casilla.objetivo {
+.cuadro.objetivo {
   background: var(--objetivo);
   border-color: var(--objetivo-borde);
   color: var(--texto);
 }
 
-.casilla.acierto {
-  background: var(--acierto-mapa);
+.cuadro.acierto {
+  background: var(--acierto-casilla);
   color: var(--texto);
   animation: latido 0.45s ease-out;
 }
 
-.casilla.fallo {
-  background: var(--fallo-mapa);
+.cuadro.fallo {
+  background: var(--fallo-casilla);
   color: var(--texto);
 }
 
@@ -2224,7 +1928,7 @@ button {
 }
 
 /* Tabla muda: las casillas no dicen qué verbo son, salvo la que enseña su respuesta. */
-.cuadricula.muda .casilla:not(.revelada) .casilla-verbo {
+.cuadricula.muda .cuadro:not(.revelada) .cuadro-infinitivo {
   visibility: hidden;
 }
 
@@ -2239,4 +1943,118 @@ button {
 
 .formas-correctas .forma {
   white-space: nowrap;
+}
+
+/* ---------- Examen: tabla de verbos con huecos (SPEC 4.4) ---------- */
+
+.tabla-examen {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+/* PC y iPad: una fila por verbo, como la tabla de clase. */
+.fila-examen {
+  display: grid;
+  grid-template-columns: 2.2em repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr);
+  align-items: start;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.celda-cabecera {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--texto-suave);
+}
+
+.celda-numero {
+  align-self: center;
+  font-weight: 800;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.celda {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* La etiqueta de cada casilla solo hace falta en el móvil (en PC está la cabecera). */
+.celda-etiqueta {
+  display: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.celda-dada {
+  align-self: center;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.celda-significado {
+  font-weight: 400;
+  color: var(--texto-suave);
+}
+
+.campo-examen {
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: 1rem;
+}
+
+.celda-correcta {
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.celda-puntos {
+  display: inline-block;
+  min-width: 1.8em;
+  text-align: center;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.puntos-1 {
+  background: var(--acierto-fondo);
+  color: var(--acierto);
+}
+
+.puntos-0-5,
+.puntos-0 {
+  background: var(--fallo-fondo);
+  color: var(--fallo);
+}
+
+.aviso-blancos {
+  margin: 0;
+}
+
+/* Móvil: cada verbo, una tarjeta; el significado arriba y las tres casillas debajo. */
+@media (max-width: 640px) {
+  .fila-cabecera {
+    display: none;
+  }
+  .fila-examen {
+    grid-template-columns: 1.8em repeat(3, minmax(0, 1fr));
+    grid-template-areas: 'num sig sig sig' 'num inf pas par';
+    row-gap: 4px;
+  }
+  .fila-examen > .celda-numero {
+    grid-area: num;
+    align-self: start;
+  }
+  .fila-examen > .celda-significado {
+    grid-area: sig;
+  }
+  .celda-etiqueta {
+    display: block;
+  }
 }

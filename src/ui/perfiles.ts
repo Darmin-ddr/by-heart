@@ -16,7 +16,7 @@ export function nombreVisible(perfil: Perfil): string {
 }
 
 function dialogoBase(etiqueta: string, cerrable: boolean): HTMLDialogElement {
-  const d = el('dialog', 'dialogo-regiones dialogo-perfiles');
+  const d = el('dialog', 'dialogo dialogo-perfiles');
   d.setAttribute('aria-label', etiqueta);
   document.body.append(d);
   if (cerrable) {

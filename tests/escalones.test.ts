@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import {
-  aprendido, escalonDe, estadoVacio, migrarAprendizaje, registrarEscalon, registrarRespuesta, regionSuperada,
-} from '../src/logic/progreso';
+import { aprendido, escalonDe, estadoVacio, grupoSuperado, registrarEscalon } from '../src/logic/progreso';
 import { validarEstado } from '../src/logic/almacen';
-import type { Pais } from '../src/logic/types';
-
-const pais = (id: string): Pais => ({
-  id, isoNumerico: null, nombre: id, capital: id, variantes: [], antiguos: [],
-  continentes: ['europa'], region: 'r', capitalCoords: [0, 0], opcional: false, trucos: [],
-});
+import { verbo } from './ayuda';
 
 describe('escalones de aprendizaje', () => {
   it('sin empezar: Elegir', () => {
@@ -17,7 +10,7 @@ describe('escalones de aprendizaje', () => {
 
   it('dos aciertos suben de escalón; cuatro escalones y queda aprendido', () => {
     const e = estadoVacio();
-    const pasos = ['elegir', 'colocar', 'escribir', 'mapamudo'] as const;
+    const pasos = ['elegir', 'emparejar', 'completar', 'tablamuda'] as const;
     for (const [i, modo] of pasos.entries()) {
       expect(escalonDe(e, 'A')).toBe(modo);
       expect(registrarEscalon(e, 'A', modo, 'acierto')).toEqual({ subio: false, aprendido: false });
@@ -32,64 +25,55 @@ describe('escalones de aprendizaje', () => {
   it('un fallo reinicia el contador pero no baja de escalón', () => {
     const e = estadoVacio();
     registrarEscalon(e, 'A', 'elegir', 'acierto');
-    registrarEscalon(e, 'A', 'elegir', 'acierto'); // sube a colocar
-    registrarEscalon(e, 'A', 'colocar', 'acierto');
-    registrarEscalon(e, 'A', 'colocar', 'fallo');
-    expect(escalonDe(e, 'A')).toBe('colocar');
-    expect(registrarEscalon(e, 'A', 'colocar', 'acierto').subio).toBe(false); // empieza de cero
-    expect(registrarEscalon(e, 'A', 'colocar', 'acierto').subio).toBe(true);
+    registrarEscalon(e, 'A', 'elegir', 'acierto'); // sube a Emparejar
+    registrarEscalon(e, 'A', 'emparejar', 'acierto');
+    registrarEscalon(e, 'A', 'emparejar', 'fallo');
+    expect(escalonDe(e, 'A')).toBe('emparejar');
+    expect(registrarEscalon(e, 'A', 'emparejar', 'acierto').subio).toBe(false); // empieza de cero
+    expect(registrarEscalon(e, 'A', 'emparejar', 'acierto').subio).toBe(true);
   });
 
-  it('solo cuentan las respuestas en el modo del escalón (Colocar admite Al revés); la errata no cuenta', () => {
+  it('solo cuentan las respuestas en el modo del escalón (Emparejar admite Al revés); "repasar" no cuenta', () => {
     const e = estadoVacio();
-    registrarEscalon(e, 'A', 'escribir', 'acierto');
-    registrarEscalon(e, 'A', 'escribir', 'acierto');
+    registrarEscalon(e, 'A', 'completar', 'acierto');
+    registrarEscalon(e, 'A', 'completar', 'acierto');
     expect(escalonDe(e, 'A')).toBe('elegir');
     registrarEscalon(e, 'A', 'elegir', 'acierto');
     registrarEscalon(e, 'A', 'elegir', 'acierto');
     registrarEscalon(e, 'A', 'alreves', 'acierto');
     registrarEscalon(e, 'A', 'alreves', 'repasar');
-    expect(escalonDe(e, 'A')).toBe('colocar');
+    expect(escalonDe(e, 'A')).toBe('emparejar');
     registrarEscalon(e, 'A', 'alreves', 'acierto');
-    expect(escalonDe(e, 'A')).toBe('escribir');
+    expect(escalonDe(e, 'A')).toBe('completar');
   });
 
-  it('región superada cuando todos sus países llegan a Escribir', () => {
+  it('grupo superado cuando todos sus verbos llegan a Completar', () => {
     const e = estadoVacio();
-    const ps = [pais('A'), pais('B')];
+    const vs = [verbo('A'), verbo('B')];
     for (const id of ['A', 'B']) {
-      for (const modo of ['elegir', 'colocar'] as const) {
+      for (const modo of ['elegir', 'emparejar'] as const) {
         registrarEscalon(e, id, modo, 'acierto');
         registrarEscalon(e, id, modo, 'acierto');
       }
     }
-    expect(regionSuperada(e, ps)).toBe(true);
-    expect(regionSuperada(e, [...ps, pais('C')])).toBe(false);
+    expect(grupoSuperado(e, vs)).toBe(true);
+    expect(grupoSuperado(e, [...vs, verbo('C')])).toBe(false);
   });
 });
 
-describe('migración del progreso v1', () => {
-  it('dominado → aprendido; en repaso → Escribir; aprendiendo → Colocar', () => {
-    const e = estadoVacio();
-    const t0 = new Date('2026-11-01T10:00:00Z').getTime();
-    // A: aprendiendo (un acierto)
-    registrarRespuesta(e, 'A', 'elegir', 'acierto', 3000, new Date(t0));
-    // B: en repaso (dos aciertos)
-    registrarRespuesta(e, 'B', 'elegir', 'acierto', 3000, new Date(t0));
-    registrarRespuesta(e, 'B', 'elegir', 'acierto', 3000, new Date(t0 + 15 * 60000));
-    // C: dominado (muchos aciertos espaciados)
-    let t = t0;
-    for (let i = 0; i < 10; i++) {
-      registrarRespuesta(e, 'C', 'escribir', 'acierto', 6000, new Date(t));
-      t = Math.max(t + 60000, new Date(e.tarjetas.C.due).getTime());
-    }
-    const m = migrarAprendizaje(e.tarjetas);
-    expect(m.A).toEqual({ escalon: 1, aciertos: 0, aprendido: false });
-    expect(m.B).toEqual({ escalon: 2, aciertos: 0, aprendido: false });
-    expect(m.C.aprendido).toBe(true);
-    // Al cargar un estado v1 sin escalones, se convierte solo.
-    const cargado = validarEstado(JSON.parse(JSON.stringify({ version: 1, tarjetas: e.tarjetas })))!;
-    expect(cargado.aprendizaje).toEqual(m);
-    expect(cargado.prioridad).toEqual([]);
+describe('cargar un progreso guardado', () => {
+  it('se queda con los escalones y descarta los ajustes que ya no existen', () => {
+    const e = validarEstado({
+      version: 1,
+      tarjetas: {},
+      aprendizaje: { A: { escalon: 2, aciertos: 1, aprendido: false } },
+      ajustes: { maxNuevos: 7, focoHoy: 'europa' },
+      historial: [{ t: '2026-11-01T10:00:00Z', verbo: 'A', modo: 'elegir', res: 'acierto', ms: 1, nota: 3 }, { pais: 'X' }],
+    })!;
+    expect(e.aprendizaje.A.escalon).toBe(2);
+    expect(e.ajustes.maxNuevos).toBe(7);
+    expect('focoHoy' in e.ajustes).toBe(false);
+    // Las respuestas sin verbo (de otro formato) se descartan.
+    expect(e.historial).toHaveLength(1);
   });
 });

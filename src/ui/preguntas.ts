@@ -1,53 +1,45 @@
-import type { Pais } from '../logic/types';
+import type { Verbo } from '../logic/types';
 import type { Rng } from '../logic/rng';
 import type { Resultado } from '../logic/sesion';
 import { crearPreguntaOpciones } from '../logic/opciones';
 import { corregirVerbo, type CorreccionForma } from '../logic/formas';
-import { verboDe } from '../data';
+import { formasDe } from '../logic/verbos';
 import type { Tablero } from './tablero';
 import { boton, el } from './dom';
-import { nombreResaltado, pintarAcierto, pintarFallo, type OpcionesRespuesta, type Teclado } from './comun';
+import { nombreResaltado, pintarAcierto, pintarFallo, type Teclado } from './comun';
 
 /** Lo que recibe una pregunta suelta (Elegir, Al revés, Completar y Tabla muda). */
 export interface ArgsPregunta {
   zona: HTMLElement;
-  mapa: Tablero;
-  pais: Pais;
-  /** Países de la región (para nombrar el país tocado por error). */
-  region: readonly Pais[];
-  /** Países activos (distractores y validación de texto). */
-  candidatos: readonly Pais[];
+  tablero: Tablero;
+  verbo: Verbo;
+  /** Todos los verbos (distractores de Elegir; nombre del verbo tocado por error). */
+  candidatos: readonly Verbo[];
   rng: Rng;
   teclado: Teclado;
   /** Truco a mostrar en el fallo (el propio del alumno si lo tiene). */
   truco: string | null;
   /** Comunica el resultado; devuelve si es un fallo recuperado (para celebrarlo). */
-  responder(resultado: Resultado, opciones?: Pick<OpcionesRespuesta, 'escalon'>): { recuperado: boolean };
+  responder(resultado: Resultado): { recuperado: boolean };
   siguiente(): void;
 }
 
 export interface ControlPregunta {
-  alTocarPais?(id: string): void;
+  alTocarVerbo?(id: string): void;
 }
 
 export type Renderizador = (a: ArgsPregunta) => ControlPregunta;
 
-function enunciadoCapitalDe(pais: Pais): HTMLElement {
-  return el(
-    'p',
-    'enunciado',
-    '¿Cuál es el pasado y el participio de ',
-    el('span', 'sin-corte', nombreResaltado(pais.nombre, 'objetivo'), '?'),
-    pais.significado ? el('span', 'significado', ` (${pais.significado})`) : null,
-  );
+function significado(verbo: Verbo): HTMLElement {
+  return el('span', 'significado', ` (${verbo.significado})`);
 }
 
-/** Modo 2: 4 capitales posibles. */
+/** Elegir: el pasado y el participio entre cuatro. */
 export const preguntaElegir: Renderizador = (a) => {
-  const { zona, mapa, pais, rng, teclado } = a;
-  mapa.setInteractivo(false);
-  mapa.setEstado(pais.id, 'objetivo');
-  const pregunta = crearPreguntaOpciones(pais, a.candidatos, rng);
+  const { zona, tablero, verbo, rng, teclado } = a;
+  tablero.setInteractivo(false);
+  tablero.setEstado(verbo.id, 'objetivo');
+  const pregunta = crearPreguntaOpciones(verbo, a.candidatos, rng);
   const opciones = el('div', 'opciones');
   const feedback = el('div', 'feedback');
   const botones = pregunta.opciones.map((texto, i) => {
@@ -56,7 +48,11 @@ export const preguntaElegir: Renderizador = (a) => {
     opciones.append(b);
     return b;
   });
-  zona.append(enunciadoCapitalDe(pais), opciones, feedback);
+  zona.append(
+    el('p', 'enunciado', '¿Cuál es el pasado y el participio de ', el('span', 'sin-corte', nombreResaltado(verbo.infinitivo, 'objetivo'), '?'), significado(verbo)),
+    opciones,
+    feedback,
+  );
   botones[0].focus({ preventScroll: true });
   teclado.usar((e) => {
     const n = Number(e.key);
@@ -68,17 +64,17 @@ export const preguntaElegir: Renderizador = (a) => {
     for (const b of botones) b.disabled = true;
     const acierto = i === pregunta.correcta;
     const { recuperado } = a.responder(acierto ? 'acierto' : 'fallo');
-    mapa.mostrarCapital(pais.id);
+    tablero.mostrarFormas(verbo.id);
     botones[pregunta.correcta].classList.add('correcta');
     if (acierto) {
-      mapa.setEstado(pais.id, 'acierto');
+      tablero.setEstado(verbo.id, 'acierto');
       pintarAcierto(feedback, recuperado, rng, a.siguiente);
       teclado.enterPara(a.siguiente);
       return;
     }
     botones[i].classList.add('elegida-mal');
-    mapa.setEstado(pais.id, 'fallo');
-    pintarFallo(feedback, ['No es ', pregunta.opciones[i], '. Es ', el('strong', '', pais.capital), '.'], a.truco, a.siguiente)?.focus({
+    tablero.setEstado(verbo.id, 'fallo');
+    pintarFallo(feedback, ['No es ', pregunta.opciones[i], '. Es ', el('strong', '', formasDe(verbo)), '.'], a.truco, a.siguiente)?.focus({
       preventScroll: true,
     });
     teclado.enterPara(a.siguiente);
@@ -87,7 +83,7 @@ export const preguntaElegir: Renderizador = (a) => {
 };
 
 /** Una forma correcta, con las letras de un "casi" señaladas. */
-function formaCorregida(c: CorreccionForma): HTMLElement {
+export function formaCorregida(c: CorreccionForma): HTMLElement {
   if (c.estado === 'bien') return el('span', 'forma', c.correcta);
   const marca = c.casi?.marca;
   if (!marca) return el('strong', 'forma', c.correcta);
@@ -101,12 +97,10 @@ function formaCorregida(c: CorreccionForma): HTMLElement {
  * verbos para no chivar el infinitivo.
  */
 function preguntaFormas(a: ArgsPregunta, conInfinitivo: boolean): ControlPregunta {
-  const { zona, mapa, pais, rng, teclado } = a;
-  const verbo = verboDe(pais.id);
-  if (!verbo) return preguntaElegir(a);
-  mapa.setInteractivo(false);
-  if (conInfinitivo) mapa.setMudo(true);
-  else mapa.setEstado(pais.id, 'objetivo');
+  const { zona, tablero, verbo, rng, teclado } = a;
+  tablero.setInteractivo(false);
+  if (conInfinitivo) tablero.setMudo(true);
+  else tablero.setEstado(verbo.id, 'objetivo');
 
   const campos: { clave: 'infinitivo' | 'pasado' | 'participio'; etiqueta: string; campo: HTMLInputElement }[] = [
     ...(conInfinitivo ? [{ clave: 'infinitivo' as const, etiqueta: 'Infinitivo', campo: campoRespuesta('Infinitivo', '') }] : []),
@@ -136,17 +130,10 @@ function preguntaFormas(a: ArgsPregunta, conInfinitivo: boolean): ControlPregunt
     responder(false);
   });
   const feedback = el('div', 'feedback');
-  const significado = pais.significado ?? '';
   zona.append(
     conInfinitivo
-      ? el('p', 'enunciado', '¿Cómo se dice ', el('span', 'sin-corte', nombreResaltado(significado, 'objetivo'), '?'))
-      : el(
-          'p',
-          'enunciado',
-          'Escribe el pasado y el participio de ',
-          el('span', 'sin-corte', nombreResaltado(pais.nombre, 'objetivo')),
-          significado ? el('span', 'significado', ` (${significado})`) : null,
-        ),
+      ? el('p', 'enunciado', '¿Cómo se dice ', el('span', 'sin-corte', nombreResaltado(verbo.significado, 'objetivo'), '?'))
+      : el('p', 'enunciado', 'Escribe el pasado y el participio de ', el('span', 'sin-corte', nombreResaltado(verbo.infinitivo, 'objetivo')), significado(verbo)),
     ...(conInfinitivo ? [el('p', 'ayuda', 'Escribe las tres formas.')] : []),
     formulario,
     feedback,
@@ -160,7 +147,7 @@ function preguntaFormas(a: ArgsPregunta, conInfinitivo: boolean): ControlPregunt
       campos[0].campo.focus();
       return;
     }
-    const c = corregirVerbo(verbo!, {
+    const c = corregirVerbo(verbo, {
       ...(conInfinitivo ? { infinitivo: valor('infinitivo') } : {}),
       pasado: valor('pasado'),
       participio: valor('participio'),
@@ -169,18 +156,18 @@ function preguntaFormas(a: ArgsPregunta, conInfinitivo: boolean): ControlPregunt
     botonesForm.hidden = true;
     const correcciones = campos.map((k) => c[k.clave]!);
     campos.forEach((k, i) => k.campo.classList.add(correcciones[i].estado === 'bien' ? 'correcta' : 'elegida-mal'));
-    mapa.mostrarCapital(pais.id);
+    tablero.mostrarFormas(verbo.id);
 
     if (c.acierto) {
       const { recuperado } = a.responder('acierto');
-      mapa.setEstado(pais.id, 'acierto');
+      tablero.setEstado(verbo.id, 'acierto');
       pintarAcierto(feedback, recuperado, rng, a.siguiente);
       teclado.enterPara(a.siguiente);
       return;
     }
     // Un "casi" (una letra) cuenta como fallo, pero se dice con más suavidad y señalando la letra.
     a.responder('fallo');
-    mapa.setEstado(pais.id, 'fallo');
+    tablero.setEstado(verbo.id, 'fallo');
     const formas: (Node | string)[] = [];
     correcciones.forEach((k, i) => formas.push(i ? ' · ' : '', formaCorregida(k)));
     const sobra = correcciones.some((k) => k.casi?.tipo === 'sobra');
@@ -198,38 +185,39 @@ export const preguntaCompletar: Renderizador = (a) => preguntaFormas(a, false);
 
 /** Tabla muda: se da solo el significado; hay que escribir las tres formas. */
 export const preguntaTablaMuda: Renderizador = (a) => preguntaFormas(a, true);
-/** Modo 5: se muestra la capital y hay que tocar el país. */
+
+/** Al revés (solo en Hoy): se muestran el pasado y el participio y hay que tocar su verbo. */
 export const preguntaAlReves: Renderizador = (a) => {
-  const { zona, mapa, pais, rng, teclado } = a;
-  mapa.setInteractivo(true);
+  const { zona, tablero, verbo, rng, teclado } = a;
+  tablero.setInteractivo(true);
   let esperando = true;
   const feedback = el('div', 'feedback');
   zona.append(
-    el('p', 'enunciado', '¿De qué verbo son estas formas? ', el('span', 'sin-corte', el('strong', 'nombre-capital', pais.capital))),
+    el('p', 'enunciado', '¿De qué verbo son estas formas? ', el('span', 'sin-corte', el('strong', 'formas-destacadas', formasDe(verbo)))),
     el('p', 'ayuda', 'Tócalo en la cuadrícula.'),
     feedback,
   );
   teclado.usar(null);
 
   return {
-    alTocarPais(tocado: string) {
+    alTocarVerbo(tocado: string) {
       if (!esperando) return;
       esperando = false;
-      mapa.mostrarCapital(pais.id);
-      if (tocado === pais.id) {
+      tablero.mostrarFormas(verbo.id);
+      if (tocado === verbo.id) {
         const { recuperado } = a.responder('acierto');
-        mapa.setEstado(pais.id, 'acierto');
+        tablero.setEstado(verbo.id, 'acierto');
         pintarAcierto(feedback, recuperado, rng, a.siguiente);
         teclado.enterPara(a.siguiente);
         return;
       }
       a.responder('fallo');
-      const nombreTocado = a.candidatos.find((p) => p.id === tocado)?.nombre ?? 'otro verbo';
-      mapa.setEstado(tocado, 'fallo');
-      mapa.setEstado(pais.id, 'objetivo');
+      const nombreTocado = a.candidatos.find((v) => v.id === tocado)?.infinitivo ?? 'otro verbo';
+      tablero.setEstado(tocado, 'fallo');
+      tablero.setEstado(verbo.id, 'objetivo');
       pintarFallo(
         feedback,
-        ['Has tocado ', el('strong', '', nombreTocado), '. ', pais.capital, ' son las formas de ', el('strong', '', pais.nombre), '.'],
+        ['Has tocado ', el('strong', '', nombreTocado), '. ', formasDe(verbo), ' son las formas de ', el('strong', '', verbo.infinitivo), '.'],
         a.truco,
         a.siguiente,
       )?.focus({ preventScroll: true });
@@ -250,3 +238,11 @@ export function campoRespuesta(etiqueta: string, placeholder: string): HTMLInput
   campo.placeholder = placeholder;
   return campo;
 }
+
+/** Renderizador de cada tipo de pregunta suelta (Emparejar va aparte, por tandas). */
+export const RENDERIZADORES: Partial<Record<string, Renderizador>> = {
+  elegir: preguntaElegir,
+  completar: preguntaCompletar,
+  tablamuda: preguntaTablaMuda,
+  alreves: preguntaAlReves,
+};

@@ -1,43 +1,36 @@
-import type { Pais } from './types';
+import type { Verbo } from './types';
 import { barajar, type Rng } from './rng';
+import { formasDe } from './verbos';
 
 export interface PreguntaOpciones {
-  paisId: string;
+  verboId: string;
   opciones: string[];
   /** Índice de la opción correcta dentro de `opciones`. */
   correcta: number;
 }
 
-function normalizar(texto: string): string {
-  return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-}
-
 /**
- * Pregunta del modo 2: la capital correcta y distractores, preferentemente de
- * la misma región. Si la región no da para tantos, completa con el resto.
- * Nunca repite una capital (comparando sin tildes ni mayúsculas).
+ * Pregunta de Elegir (SPEC 4.2): el pasado y el participio correctos y tres
+ * distractores, que son siempre formas reales de otros verbos (nunca
+ * inventadas), preferentemente del mismo grupo. Nunca repite una opción.
  */
-export function crearPreguntaOpciones(
-  objetivo: Pais,
-  candidatos: readonly Pais[],
-  rng: Rng,
-  numOpciones = 4,
-): PreguntaOpciones {
-  const usadas = new Set([normalizar(objetivo.capital)]);
+export function crearPreguntaOpciones(objetivo: Verbo, candidatos: readonly Verbo[], rng: Rng, numOpciones = 4): PreguntaOpciones {
+  const correcta = formasDe(objetivo);
+  const usadas = new Set([correcta]);
   const distractores: string[] = [];
 
-  const otros = candidatos.filter((p) => p.id !== objetivo.id);
-  const mismaRegion = barajar(otros.filter((p) => p.region === objetivo.region), rng);
-  const resto = barajar(otros.filter((p) => p.region !== objetivo.region), rng);
+  const otros = candidatos.filter((v) => v.id !== objetivo.id);
+  const mismoGrupo = barajar(otros.filter((v) => v.grupo === objetivo.grupo), rng);
+  const resto = barajar(otros.filter((v) => v.grupo !== objetivo.grupo), rng);
 
-  for (const p of [...mismaRegion, ...resto]) {
+  for (const v of [...mismoGrupo, ...resto]) {
     if (distractores.length >= numOpciones - 1) break;
-    const clave = normalizar(p.capital);
-    if (usadas.has(clave)) continue;
-    usadas.add(clave);
-    distractores.push(p.capital);
+    const formas = formasDe(v);
+    if (usadas.has(formas)) continue;
+    usadas.add(formas);
+    distractores.push(formas);
   }
 
-  const opciones = barajar([objetivo.capital, ...distractores], rng);
-  return { paisId: objetivo.id, opciones, correcta: opciones.indexOf(objetivo.capital) };
+  const opciones = barajar([correcta, ...distractores], rng);
+  return { verboId: objetivo.id, opciones, correcta: opciones.indexOf(correcta) };
 }

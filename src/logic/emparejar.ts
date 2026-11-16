@@ -1,9 +1,9 @@
 import { barajar, type Rng } from './rng';
 import type { ResumenRonda } from './sesion';
 
-export interface ResultadoColocar {
+export interface ResultadoEmparejar {
   acierto: boolean;
-  /** Acierto de una capital que se había colocado mal antes en esta ronda. */
+  /** Acierto de unas formas que se habían emparejado mal antes en esta ronda. */
   recuperado: boolean;
   /** Se ha vaciado la tanda (y, si quedan, ya hay otra preparada). */
   tandaTerminada: boolean;
@@ -11,12 +11,12 @@ export interface ResultadoColocar {
 }
 
 /**
- * Ronda del modo 3 ("pool de capitales"): tandas de capitales que hay que
- * colocar en su país. Una capital mal colocada sale de la tanda y vuelve en
- * una tanda posterior (SPEC 4). Los ids son los de los países: la capital
- * del país X se coloca bien si se toca el país X.
+ * Ronda de Emparejar (SPEC 4.2): tandas de formas (pasado y participio) que hay
+ * que unir con su verbo. Unas formas mal emparejadas salen de la tanda y vuelven
+ * en una tanda posterior. Los ids son los de los verbos: las formas del verbo X
+ * están bien emparejadas si se toca el verbo X.
  */
-export class RondaColocar {
+export class RondaEmparejar {
   private pendientes: string[];
   private tandaActual: string[] = [];
   private fallados = new Set<string>();
@@ -34,7 +34,7 @@ export class RondaColocar {
     this.nuevaTanda();
   }
 
-  /** Capitales (ids de país) de la tanda en curso, en orden de presentación. */
+  /** Formas (ids de verbo) de la tanda en curso, en orden de presentación. */
   tanda(): readonly string[] {
     return this.tandaActual;
   }
@@ -48,18 +48,18 @@ export class RondaColocar {
     return this.tandaActual.length === 0 && this.pendientes.length === 0;
   }
 
-  /** Colocar la capital del país `capitalDe` sobre el país `paisTocado`. */
-  colocar(capitalDe: string, paisTocado: string): ResultadoColocar {
-    const i = this.tandaActual.indexOf(capitalDe);
-    if (i === -1) throw new Error(`La capital de ${capitalDe} no está en la tanda`);
+  /** Unir las formas del verbo `formasDe` con el verbo `verboTocado`. */
+  emparejar(formasDe: string, verboTocado: string): ResultadoEmparejar {
+    const i = this.tandaActual.indexOf(formasDe);
+    if (i === -1) throw new Error(`Las formas de ${formasDe} no están en la tanda`);
     this.tandaActual.splice(i, 1);
 
-    const acierto = capitalDe === paisTocado;
-    const recuperado = acierto && this.fallados.has(capitalDe);
+    const acierto = formasDe === verboTocado;
+    const recuperado = acierto && this.fallados.has(formasDe);
     if (!acierto) {
       this.fallos++;
-      this.fallados.add(capitalDe);
-      this.pendientes.push(capitalDe);
+      this.fallados.add(formasDe);
+      this.pendientes.push(formasDe);
     }
 
     const tandaTerminada = this.tandaActual.length === 0;

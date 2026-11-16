@@ -2,17 +2,17 @@ import { CONFIG, type ModoId } from './config';
 import { barajar, type Rng } from './rng';
 import { aprendido, empezado, escalonDe, type EstadoProgreso } from './progreso';
 import type { Resultado, ResumenRonda } from './sesion';
-import type { Pais } from './types';
+import type { Verbo } from './types';
 
 /**
- * Sesión de Hoy (SPEC 4.1 y 7): repasos de lo aprendido, países en
- * aprendizaje y países nuevos intercalados, como Anki. Lógica pura.
+ * Sesión de Hoy (SPEC 4.1 y 7): repasos de lo aprendido, verbos en
+ * aprendizaje y verbos nuevos intercalados, como Anki. Lógica pura.
  */
 
 export type TipoItem = 'repaso' | 'aprendiendo' | 'nuevo';
 
 export interface ItemHoy {
-  paisId: string;
+  verboId: string;
   tipo: TipoItem;
 }
 
@@ -20,15 +20,15 @@ function diaLocal(fecha: Date): string {
   return `${fecha.getFullYear()}-${fecha.getMonth()}-${fecha.getDate()}`;
 }
 
-/** Repasos pendientes: países aprendidos cuya tarjeta FSRS ya ha vencido. */
-export function repasosPendientes(estado: EstadoProgreso, paises: readonly Pais[], ahora: Date): Pais[] {
-  return paises.filter((p) => aprendido(estado, p.id) && estado.tarjetas[p.id] && new Date(estado.tarjetas[p.id].due) <= ahora);
+/** Repasos pendientes: verbos aprendidos cuya tarjeta FSRS ya ha vencido. */
+export function repasosPendientes(estado: EstadoProgreso, verbos: readonly Verbo[], ahora: Date): Verbo[] {
+  return verbos.filter((v) => aprendido(estado, v.id) && estado.tarjetas[v.id] && new Date(estado.tarjetas[v.id].due) <= ahora);
 }
 
 /**
  * Nuevos que tocan hoy (SPEC 7): entre el mínimo y el máximo según el
  * porcentaje de aciertos de las últimas respuestas; el mínimo si hay muchos
- * repasos pendientes. Se descuentan los países ya empezados hoy.
+ * repasos pendientes. Se descuentan los verbos ya empezados hoy.
  */
 export function nuevosDeHoy(estado: EstadoProgreso, pendientes: number, ahora: Date, config = CONFIG): number {
   const maximo = Math.max(config.nuevosMinimo, Math.min(estado.ajustes.maxNuevos ?? config.nuevosMaximo, 20));
@@ -39,25 +39,32 @@ export function nuevosDeHoy(estado: EstadoProgreso, pendientes: number, ahora: D
     if (recientes.length < 10) objetivo = Math.round((config.nuevosMinimo + maximo) / 2);
     else {
       const tasa = recientes.filter((r) => r.res !== 'fallo').length / recientes.length;
-      objetivo = tasa >= 0.9 ? maximo : tasa >= 0.8 ? Math.round(config.nuevosMinimo + (maximo - config.nuevosMinimo) * 0.6) : tasa >= 0.7 ? config.nuevosMinimo + 1 : config.nuevosMinimo;
+      objetivo =
+        tasa >= 0.9
+          ? maximo
+          : tasa >= 0.8
+            ? Math.round(config.nuevosMinimo + (maximo - config.nuevosMinimo) * 0.6)
+            : tasa >= 0.7
+              ? config.nuevosMinimo + 1
+              : config.nuevosMinimo;
     }
   }
   objetivo = Math.min(maximo, Math.max(config.nuevosMinimo, objetivo));
-  // Países cuya primera respuesta fue hoy: ya cuentan como nuevos del día.
+  // Verbos cuya primera respuesta fue hoy: ya cuentan como nuevos del día.
   const hoy = diaLocal(ahora);
   const primera = new Map<string, string>();
-  for (const r of estado.historial) if (!primera.has(r.pais)) primera.set(r.pais, diaLocal(new Date(r.t)));
+  for (const r of estado.historial) if (!primera.has(r.verbo)) primera.set(r.verbo, diaLocal(new Date(r.t)));
   const yaHoy = [...primera.values()].filter((d) => d === hoy).length;
   return Math.max(0, objetivo - yaHoy);
 }
 
 export interface ParametrosHoy {
   estado: EstadoProgreso;
-  /** Países disponibles: activos de las regiones abiertas (de los dos continentes). */
-  disponibles: readonly Pais[];
-  /** Orden preferido de regiones para sacar nuevos (la actual primero). */
-  ordenRegiones: readonly string[];
-  /** Países a priorizar (examen configurado, fallados en un examen). */
+  /** Verbos con los que trabaja Hoy: todos, también los de grupos aún cerrados. */
+  disponibles: readonly Verbo[];
+  /** Orden de los grupos para sacar nuevos (el del curso). */
+  ordenGrupos: readonly string[];
+  /** Verbos a priorizar (lista de examen, fallados en un examen). */
   prioridad: ReadonlySet<string>;
   nuevos: number;
   ahora: Date;
@@ -73,60 +80,60 @@ export interface ParametrosHoy {
 export function crearSesionHoy(p: ParametrosHoy): ItemHoy[] {
   const tam = p.tam ?? CONFIG.preguntasSesion;
   const t = p.estado.tarjetas;
-  const prio = (x: Pais) => (p.prioridad.has(x.id) ? 0 : 1);
+  const prio = (v: Verbo) => (p.prioridad.has(v.id) ? 0 : 1);
 
   const repasos = repasosPendientes(p.estado, p.disponibles, p.ahora)
     .sort((a, b) => prio(a) - prio(b) || new Date(t[a.id].due).getTime() - new Date(t[b.id].due).getTime())
-    .map((x): ItemHoy => ({ paisId: x.id, tipo: 'repaso' }));
-  // Los países en aprendizaje salen una vez al día: si ya se han respondido hoy, esperan a mañana.
+    .map((v): ItemHoy => ({ verboId: v.id, tipo: 'repaso' }));
+  // Los verbos en aprendizaje salen una vez al día: si ya se han respondido hoy, esperan a mañana.
   const hoy = diaLocal(p.ahora);
-  const respondidosHoy = new Set(p.estado.historial.filter((r) => diaLocal(new Date(r.t)) === hoy).map((r) => r.pais));
+  const respondidosHoy = new Set(p.estado.historial.filter((r) => diaLocal(new Date(r.t)) === hoy).map((r) => r.verbo));
   const aprendiendo = barajar(
-    p.disponibles.filter((x) => empezado(p.estado, x.id) && !aprendido(p.estado, x.id) && !respondidosHoy.has(x.id)),
+    p.disponibles.filter((v) => empezado(p.estado, v.id) && !aprendido(p.estado, v.id) && !respondidosHoy.has(v.id)),
     p.rng,
   )
     .sort((a, b) => prio(a) - prio(b))
-    .map((x): ItemHoy => ({ paisId: x.id, tipo: 'aprendiendo' }));
+    .map((v): ItemHoy => ({ verboId: v.id, tipo: 'aprendiendo' }));
 
-  const ordenRegion = (x: Pais) => {
-    const i = p.ordenRegiones.indexOf(x.region);
-    return i === -1 ? p.ordenRegiones.length : i;
+  const ordenGrupo = (v: Verbo) => {
+    const i = p.ordenGrupos.indexOf(v.grupo);
+    return i === -1 ? p.ordenGrupos.length : i;
   };
   const nuevos = barajar(
-    p.disponibles.filter((x) => !empezado(p.estado, x.id)),
+    p.disponibles.filter((v) => !empezado(p.estado, v.id)),
     p.rng,
   )
-    .sort((a, b) => prio(a) - prio(b) || ordenRegion(a) - ordenRegion(b))
+    .sort((a, b) => prio(a) - prio(b) || ordenGrupo(a) - ordenGrupo(b))
     .slice(0, Math.max(0, Math.min(p.nuevos, Math.floor(tam / 2))))
-    .map((x): ItemHoy => ({ paisId: x.id, tipo: 'nuevo' }));
+    .map((v): ItemHoy => ({ verboId: v.id, tipo: 'nuevo' }));
 
   const base = [...repasos, ...aprendiendo].slice(0, Math.max(0, tam - nuevos.length * 2));
   if (!base.length && !nuevos.length) return [];
 
-  // Agrupar por región para que el mapa salte lo menos posible: primero las
-  // regiones sin nuevos (por urgencia), después las que tienen nuevos (la
-  // preferida antes), cada una con sus nuevos intercalados.
-  const regionDe = new Map(p.disponibles.map((x) => [x.id, x.region]));
-  const grupos = new Map<string, { base: ItemHoy[]; nuevos: ItemHoy[] }>();
-  const grupo = (id: string) => {
-    const r = regionDe.get(id) ?? '';
-    if (!grupos.has(r)) grupos.set(r, { base: [], nuevos: [] });
-    return grupos.get(r)!;
+  // Por bloques de grupo, para que la cuadrícula cambie lo menos posible: primero
+  // los grupos sin nuevos (por urgencia), después los que tienen nuevos (en el
+  // orden del curso), cada uno con sus nuevos intercalados.
+  const grupoDe = new Map(p.disponibles.map((v) => [v.id, v.grupo]));
+  const bloques = new Map<string, { base: ItemHoy[]; nuevos: ItemHoy[] }>();
+  const bloque = (id: string) => {
+    const g = grupoDe.get(id) ?? '';
+    if (!bloques.has(g)) bloques.set(g, { base: [], nuevos: [] });
+    return bloques.get(g)!;
   };
-  for (const item of base) grupo(item.paisId).base.push(item);
-  for (const item of nuevos) grupo(item.paisId).nuevos.push(item);
-  const ordenGrupo = ([r, g]: [string, { nuevos: ItemHoy[] }]) => {
-    if (!g.nuevos.length) return -1;
-    const i = p.ordenRegiones.indexOf(r);
-    return i === -1 ? p.ordenRegiones.length : i;
+  for (const item of base) bloque(item.verboId).base.push(item);
+  for (const item of nuevos) bloque(item.verboId).nuevos.push(item);
+  const ordenBloque = ([g, b]: [string, { nuevos: ItemHoy[] }]) => {
+    if (!b.nuevos.length) return -1;
+    const i = p.ordenGrupos.indexOf(g);
+    return i === -1 ? p.ordenGrupos.length : i;
   };
-  const ordenados = [...grupos.entries()].sort((a, b) => ordenGrupo(a) - ordenGrupo(b));
-  return ordenados.flatMap(([, g]) => intercalar(g.base, g.nuevos));
+  const ordenados = [...bloques.entries()].sort((a, b) => ordenBloque(a) - ordenBloque(b));
+  return ordenados.flatMap(([, b]) => intercalar(b.base, b.nuevos));
 }
 
 /**
  * Tres de calentamiento, luego un nuevo cada `cada` elementos; la segunda
- * aparición de cada nuevo, tres elementos después (o al final del grupo).
+ * aparición de cada nuevo, tres elementos después (o al final del bloque).
  */
 function intercalar(base: readonly ItemHoy[], nuevos: readonly ItemHoy[]): ItemHoy[] {
   const salida: ItemHoy[] = base.slice(0, 3);
@@ -149,43 +156,43 @@ function intercalar(base: readonly ItemHoy[], nuevos: readonly ItemHoy[]): ItemH
 }
 
 /** Repaso adelantado (cuando Hoy ya está hecho): aprendidos que vencen antes. */
-export function repasoAdelantado(estado: EstadoProgreso, disponibles: readonly Pais[], n = 10): ItemHoy[] {
+export function repasoAdelantado(estado: EstadoProgreso, disponibles: readonly Verbo[], n = 10): ItemHoy[] {
   return disponibles
-    .filter((x) => aprendido(estado, x.id) && estado.tarjetas[x.id])
+    .filter((v) => aprendido(estado, v.id) && estado.tarjetas[v.id])
     .sort((a, b) => new Date(estado.tarjetas[a.id].due).getTime() - new Date(estado.tarjetas[b.id].due).getTime())
     .slice(0, n)
-    .map((x) => ({ paisId: x.id, tipo: 'repaso' }));
+    .map((v) => ({ verboId: v.id, tipo: 'repaso' }));
 }
 
 /**
- * Tipo de pregunta en Hoy: los países en aprendizaje, el de su escalón
- * (Colocar se pregunta como Al revés, que es su versión suelta); los
- * aprendidos, variado: Mapa mudo, Escribir o Al revés (más Mapa mudo
+ * Tipo de pregunta en Hoy: los verbos en aprendizaje, el de su escalón
+ * (Emparejar se pregunta como Al revés, que es su versión suelta); los
+ * aprendidos, variado: Tabla muda, Completar o Al revés (más Tabla muda
  * cuanto más estable).
  */
-export function modoHoy(estado: EstadoProgreso, paisId: string, rng: Rng): ModoId {
-  const escalon = escalonDe(estado, paisId);
-  if (escalon) return escalon === 'colocar' ? 'alreves' : escalon;
-  const estable = (estado.tarjetas[paisId]?.stability ?? 0) >= CONFIG.estabilidadDominado;
+export function modoHoy(estado: EstadoProgreso, verboId: string, rng: Rng): ModoId {
+  const escalon = escalonDe(estado, verboId);
+  if (escalon) return escalon === 'emparejar' ? 'alreves' : escalon;
+  const estable = (estado.tarjetas[verboId]?.stability ?? 0) >= CONFIG.estabilidadDominado;
   const r = rng();
-  if (estable) return r < 0.5 ? 'mapamudo' : r < 0.75 ? 'escribir' : 'alreves';
-  return r < 0.3 ? 'mapamudo' : r < 0.7 ? 'escribir' : 'alreves';
+  if (estable) return r < 0.5 ? 'tablamuda' : r < 0.75 ? 'completar' : 'alreves';
+  return r < 0.3 ? 'tablamuda' : r < 0.7 ? 'completar' : 'alreves';
 }
 
 /**
  * Cola de la sesión de Hoy. Como ColaRonda (lo fallado vuelve a salir unas
- * preguntas después), pero sin sacar el mapa de la región: el reintento se
- * queda en el bloque de su región; si el bloque se acaba, va tras la última
- * pregunta de esa región o, si no hay más, al final.
+ * preguntas después), pero sin cambiar de grupo: el reintento se queda en el
+ * bloque de su grupo; si el bloque se acaba, va tras la última pregunta de ese
+ * grupo o, si no hay más, al final.
  */
 export class ColaHoy {
-  private cola: { id: string; region: string }[];
+  private cola: { id: string; grupo: string }[];
   private fallados = new Set<string>();
   private readonly total: number;
   private fallos = 0;
 
   constructor(
-    items: readonly { id: string; region: string }[],
+    items: readonly { id: string; grupo: string }[],
     private readonly hueco = 3,
   ) {
     this.cola = [...items];
@@ -209,11 +216,11 @@ export class ColaHoy {
       this.fallados.add(item.id);
     }
     let bloque = 0;
-    while (bloque < this.cola.length && this.cola[bloque].region === item.region) bloque++;
+    while (bloque < this.cola.length && this.cola[bloque].grupo === item.grupo) bloque++;
     let pos: number;
     if (bloque > 0) pos = Math.min(this.hueco, bloque);
     else {
-      const ultima = this.cola.map((x) => x.region).lastIndexOf(item.region);
+      const ultima = this.cola.map((x) => x.grupo).lastIndexOf(item.grupo);
       pos = ultima === -1 ? this.cola.length : ultima + 1;
     }
     this.cola.splice(pos, 0, item);

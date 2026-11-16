@@ -1,55 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import { crearPreguntaOpciones } from '../src/logic/opciones';
+import { formasDe } from '../src/logic/verbos';
 import { rngConSemilla } from '../src/logic/rng';
-import type { Pais } from '../src/logic/types';
+import { verbo } from './ayuda';
 
-function pais(id: string, capital: string, region: string): Pais {
-  return {
-    id, isoNumerico: null, nombre: id, capital, variantes: [], antiguos: [],
-    continentes: ['europa'], region, capitalCoords: [0, 0], opcional: false, trucos: [],
-  };
-}
+const ght = ['buy', 'think', 'teach', 'catch', 'bring'].map((id) => verbo(id, 'ght'));
+const otros = ['cut', 'let'].map((id) => verbo(id, 'iguales'));
 
-const balcanes = [
-  pais('A', 'Tirana', 'b'), pais('B', 'Sarajevo', 'b'), pais('C', 'Sofía', 'b'),
-  pais('D', 'Zagreb', 'b'), pais('E', 'Atenas', 'b'),
-];
-const nordicos = [pais('N', 'Oslo', 'n'), pais('S', 'Estocolmo', 'n'), pais('F', 'Helsinki', 'n')];
-
-describe('crearPreguntaOpciones', () => {
-  it('da 4 opciones distintas con la correcta en su índice', () => {
-    for (let s = 0; s < 50; s++) {
-      const p = crearPreguntaOpciones(balcanes[0], balcanes, rngConSemilla(s));
-      expect(p.opciones).toHaveLength(4);
-      expect(new Set(p.opciones).size).toBe(4);
-      expect(p.opciones[p.correcta]).toBe('Tirana');
+describe('Elegir: opciones', () => {
+  it('cuatro opciones distintas, una correcta, distractores del mismo grupo primero', () => {
+    for (let s = 1; s < 20; s++) {
+      const q = crearPreguntaOpciones(ght[0], [...ght, ...otros], rngConSemilla(s));
+      expect(q.opciones).toHaveLength(4);
+      expect(new Set(q.opciones).size).toBe(4);
+      expect(q.opciones[q.correcta]).toBe(formasDe(ght[0]));
+      const delGrupo = new Set(ght.map(formasDe));
+      expect(q.opciones.every((o) => delGrupo.has(o))).toBe(true);
     }
   });
 
-  it('prefiere distractores de la misma región', () => {
-    for (let s = 0; s < 50; s++) {
-      const p = crearPreguntaOpciones(balcanes[0], [...balcanes, ...nordicos], rngConSemilla(s));
-      for (const o of p.opciones) expect(['Oslo', 'Estocolmo', 'Helsinki']).not.toContain(o);
-    }
+  it('si el grupo no da para tanto, completa con otros verbos', () => {
+    const q = crearPreguntaOpciones(ght[0], [ght[0], ght[1], ...otros], rngConSemilla(1));
+    expect(q.opciones).toHaveLength(4);
+    expect(q.opciones).toContain(formasDe(otros[0]));
   });
 
-  it('completa con otras regiones si la región no da para tanto', () => {
-    const p = crearPreguntaOpciones(balcanes[0], [balcanes[0], balcanes[1], ...nordicos], rngConSemilla(1));
-    expect(p.opciones).toHaveLength(4);
-    expect(p.opciones).toContain('Sarajevo');
-  });
-
-  it('no repite capitales aunque cambien tildes o mayúsculas', () => {
-    const conDuplicado = [...balcanes, pais('X', 'sofia', 'b')];
-    for (let s = 0; s < 50; s++) {
-      const p = crearPreguntaOpciones(balcanes[2], conDuplicado, rngConSemilla(s));
-      expect(p.opciones.filter((o) => o.toLowerCase().startsWith('sof'))).toHaveLength(1);
-    }
-  });
-
-  it('la posición de la correcta varía', () => {
-    const posiciones = new Set<number>();
-    for (let s = 0; s < 50; s++) posiciones.add(crearPreguntaOpciones(balcanes[0], balcanes, rngConSemilla(s)).correcta);
-    expect(posiciones.size).toBe(4);
+  it('nunca repite unas formas (dos verbos con las mismas formas cuentan una vez)', () => {
+    const gemelo = verbo('gemelo', 'ght', { pasado: 'buy-pasado', participio: 'buy-participio' });
+    const q = crearPreguntaOpciones(ght[0], [ght[0], gemelo, ...otros], rngConSemilla(2));
+    expect(q.opciones.filter((o) => o === formasDe(ght[0]))).toHaveLength(1);
   });
 });

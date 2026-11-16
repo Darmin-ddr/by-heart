@@ -4,7 +4,7 @@ const COLORES = ['#9ad9c0', '#f6c58f', '#c8b6e2', '#a9c9ef', '#f3a99a'];
 
 /**
  * Confeti corto (algo más de un segundo). Solo para los momentos que marca el
- * SPEC: recuperar un fallo o dominar una región. Con "reducir movimiento"
+ * SPEC: recuperar un fallo o dominar un grupo. Con "reducir movimiento"
  * activado en el sistema no se muestra.
  */
 export function lanzarConfeti(): void {

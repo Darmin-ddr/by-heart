@@ -36,8 +36,10 @@ const PARES: [string, string, number, string][] = [
   ['fallo', 'superficie', 4.5, 'mensaje de fallo'],
   ['texto', 'acierto-fondo', 4.5, 'opción correcta'],
   ['texto', 'fallo-fondo', 4.5, 'opción fallada y avisos'],
-  ['texto', 'objetivo', 4.5, 'nombre del país resaltado'],
-  ['texto', 'pais', 4.5, 'etiqueta de capital sobre un país sin progreso'],
+  ['texto', 'objetivo', 4.5, 'verbo resaltado y casilla de la pregunta'],
+  ['texto', 'casilla', 4.5, 'verbo en una casilla sin progreso'],
+  ['texto', 'acierto-casilla', 4.5, 'verbo en una casilla acertada'],
+  ['texto', 'fallo-casilla', 4.5, 'verbo en una casilla fallada'],
   ['acierto', 'superficie', 3, 'borde de la opción correcta'],
   ['fallo', 'superficie', 3, 'borde de la opción fallada'],
 ];
@@ -53,8 +55,8 @@ describe('contraste (WCAG AA)', () => {
     }
   }
 
-  it('texto oscuro sobre el color de cada región (nombres resaltados y chips)', () => {
-    const regiones: { color: string; nombre: string }[] = JSON.parse(readFileSync(new URL('./fixtures/regiones.json', import.meta.url), 'utf8'));
-    for (const r of regiones) expect(contraste('#1f2a37', r.color), r.nombre).toBeGreaterThanOrEqual(4.5);
+  it('texto oscuro sobre el color de cada grupo (casillas aprendidas y chips)', () => {
+    const grupos: { color: string; nombre: string }[] = JSON.parse(readFileSync(new URL('../src/data/groups.json', import.meta.url), 'utf8'));
+    for (const g of grupos) expect(contraste('#1f2a37', g.color), g.nombre).toBeGreaterThanOrEqual(4.5);
   });
 });

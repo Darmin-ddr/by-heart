@@ -28,7 +28,7 @@ export interface DatosMas {
  * y acceso al panel de adultos.
  */
 export function prepararMas(disparador: HTMLButtonElement, datos: DatosMas): void {
-  const dialogo = el('dialog', 'dialogo-regiones dialogo-mas');
+  const dialogo = el('dialog', 'dialogo dialogo-mas');
   dialogo.setAttribute('aria-label', 'Más opciones');
   document.body.append(dialogo);
   dialogo.addEventListener('click', (e) => {

@@ -5,7 +5,7 @@ import { rngConSemilla } from '../src/logic/rng';
 const ids = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 describe('ColaRonda', () => {
-  it('termina tras acertar cada país una vez', () => {
+  it('termina tras acertar cada verbo una vez', () => {
     const cola = new ColaRonda(ids, rngConSemilla(1));
     const vistos: string[] = [];
     let r;
@@ -33,14 +33,14 @@ describe('ColaRonda', () => {
     const cola = new ColaRonda(['A', 'B'], rngConSemilla(3), 3);
     const primero = cola.actual()!;
     expect(cola.responder('fallo').recuperado).toBe(false);
-    expect(cola.responder('acierto').recuperado).toBe(false); // el otro país, a la primera
+    expect(cola.responder('acierto').recuperado).toBe(false); // el otro verbo, a la primera
     expect(cola.actual()).toBe(primero);
     const r = cola.responder('acierto');
     expect(r).toEqual({ recuperado: true, terminada: true });
     expect(cola.resumen()).toEqual({ total: 2, aLaPrimera: 1, fallos: 1 });
   });
 
-  it('si solo queda un país, el fallo vuelve enseguida', () => {
+  it('si solo queda un verbo, el fallo vuelve enseguida', () => {
     const cola = new ColaRonda(['A'], rngConSemilla(4));
     cola.responder('fallo');
     expect(cola.actual()).toBe('A');

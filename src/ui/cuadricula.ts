@@ -1,8 +1,9 @@
 import type { Nivel } from '../logic/progreso';
+import { formasDe } from '../logic/verbos';
 import { el } from './dom';
-import type { EstadoPais, OpcionesTablero, Tablero } from './tablero';
+import type { EstadoCasilla, OpcionesTablero, Tablero } from './tablero';
 
-const ESTADOS: EstadoPais[] = ['objetivo', 'acierto', 'fallo', 'seleccion'];
+const ESTADOS: EstadoCasilla[] = ['objetivo', 'acierto', 'fallo', 'seleccion'];
 
 /**
  * La cuadrícula de verbos (SPEC 10): una casilla por verbo, que se colorea a
@@ -19,14 +20,14 @@ export class Cuadricula implements Tablero {
     this.raiz = el('div', 'cuadricula');
     this.raiz.setAttribute('role', 'group');
     this.raiz.setAttribute('aria-label', 'Verbos');
-    for (const v of op.region) {
-      const casilla = el('button', 'casilla', el('span', 'casilla-verbo', v.nombre), el('span', 'casilla-formas', v.capital));
+    for (const v of op.verbos) {
+      const casilla = el('button', 'cuadro', el('span', 'cuadro-infinitivo', v.infinitivo), el('span', 'cuadro-formas', formasDe(v)));
       casilla.type = 'button';
       casilla.dataset.id = v.id;
       const color = op.colorDe?.(v.id);
-      if (color) casilla.style.setProperty('--color-pais', color);
+      if (color) casilla.style.setProperty('--color-grupo', color);
       casilla.addEventListener('click', () => {
-        if (this.interactivo) this.op.onSeleccion?.(v.id);
+        if (this.interactivo) this.op.alTocar?.(v.id);
       });
       this.casillas.set(v.id, casilla);
       this.raiz.append(casilla);
@@ -49,7 +50,7 @@ export class Cuadricula implements Tablero {
     }
   }
 
-  setEstado(id: string, estado: EstadoPais | null): void {
+  setEstado(id: string, estado: EstadoCasilla | null): void {
     const c = this.casillas.get(id);
     if (!c) return;
     c.classList.remove(...ESTADOS);
@@ -69,23 +70,14 @@ export class Cuadricula implements Tablero {
   }
 
   /** Enseña el pasado y el participio en la casilla de un verbo (de uno cada vez). */
-  mostrarCapital(id: string | null, conNombre = true): void {
+  mostrarFormas(id: string | null): void {
     if (this.revelada) this.casillas.get(this.revelada)?.classList.remove('revelada');
-    this.revelada = id && conNombre ? id : null;
-    if (this.revelada) this.casillas.get(this.revelada)?.classList.add('revelada');
+    this.revelada = id;
+    if (id) this.casillas.get(id)?.classList.add('revelada');
   }
 
-  /** Tabla muda: las casillas no dicen qué verbo son, salvo la que enseñe su respuesta. */
+  /** Tabla muda: las casillas no dicen qué verbo son, salvo la que enseñe sus formas. */
   setMudo(valor: boolean): void {
     this.raiz.classList.toggle('muda', valor);
-  }
-
-  enfocar(id: string | null): void {
-    if (id) this.casillas.get(id)?.scrollIntoView({ block: 'nearest' });
-  }
-
-  /** Aún sin uso: será la marca de los verbos de un examen. */
-  mostrarEstrellas(_ids: readonly string[]): void {
-    /* nada */
   }
 }

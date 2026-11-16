@@ -2,7 +2,7 @@
 
 Lee `SPEC.md` antes de empezar cualquier tarea. Es la fuente de verdad del producto; si una tarea la contradice, pregunta antes de implementar.
 
-By Heart nació de una copia de Capitalia. Todavía quedan en el código nombres y textos de capitales (`Pais`, `capital`, `region`...): se irán cambiando a medida que cada pantalla se adapte a los verbos. No son un modelo a seguir.
+By Heart nació de una copia de Capitalia, pero el código ya trabaja solo con verbos y grupos (`Verbo`, `Grupo`). La estructura está en `docs/notas-tecnicas.md`.
 
 ## Cómo trabajamos
 

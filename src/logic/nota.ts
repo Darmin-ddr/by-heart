@@ -11,10 +11,10 @@ export interface DatosRespuesta {
 /**
  * Nota FSRS deducida de la respuesta, nunca preguntada (SPEC 6):
  * - fallo: Again
- * - errata o nombre antiguo ("repasar"), o acierto lento: Hard
+ * - "repasar" (medio punto en el examen) o acierto lento: Hard
  * - acierto normal: Good
- * - acierto rápido en modos 4 (escribir) y 5 (al revés): Easy
- * - en modos 2 (elegir) y 3 (colocar), como máximo Good
+ * - acierto rápido escribiendo (Completar o Tabla muda): Easy
+ * - en Elegir, Emparejar y Al revés, como máximo Good
  */
 export function deducirNota(r: DatosRespuesta, config = CONFIG): Grade {
   if (r.resultado === 'fallo') return Rating.Again;

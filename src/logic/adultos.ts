@@ -1,5 +1,5 @@
-import { nivelDominio, nivelMapa, type EstadoProgreso } from './progreso';
-import type { Pais, Region } from './types';
+import { nivelCasilla, type EstadoProgreso } from './progreso';
+import type { Grupo, Verbo } from './types';
 
 /* ---------------- PIN ---------------- */
 
@@ -28,52 +28,47 @@ export async function comprobarPin(pin: string, hash: string | null): Promise<bo
 
 /* ---------------- Estadísticas ---------------- */
 
-export interface DominioRegion {
-  region: Region;
+export interface DominioGrupo {
+  grupo: Grupo;
   total: number;
-  /** Países por nivel: [sin empezar, aprendiendo, en repaso, dominados]. */
+  /** Verbos por nivel de la cuadrícula: [sin empezar, Elegir o Emparejar, Completar o Tabla muda, aprendidos]. */
   porNivel: [number, number, number, number];
 }
 
-export function dominioPorRegion(
-  estado: EstadoProgreso,
-  regiones: readonly Region[],
-  paisesDe: (regionId: string) => readonly Pais[],
-): DominioRegion[] {
-  return [...regiones]
-    .sort((a, b) => (a.continente === b.continente ? a.orden - b.orden : a.continente === 'europa' ? -1 : 1))
-    .map((region) => {
+export function dominioPorGrupo(estado: EstadoProgreso, grupos: readonly Grupo[], verbosDe: (grupoId: string) => readonly Verbo[]): DominioGrupo[] {
+  return [...grupos]
+    .sort((a, b) => a.orden - b.orden)
+    .map((grupo) => {
       const porNivel: [number, number, number, number] = [0, 0, 0, 0];
-      const paises = paisesDe(region.id);
-      // Por escalones, como el mapa y la portada de Hoy.
-      for (const p of paises) porNivel[nivelMapa(estado, p.id)]++;
-      return { region, total: paises.length, porNivel };
+      const verbos = verbosDe(grupo.id);
+      for (const v of verbos) porNivel[nivelCasilla(estado, v.id)]++;
+      return { grupo, total: verbos.length, porNivel };
     });
 }
 
-export interface PaisAtascado {
-  pais: Pais;
+export interface VerboAtascado {
+  verbo: Verbo;
   fallos: number;
   intentos: number;
 }
 
-/** Países que más se atascan: más fallos (en los últimos `dias`), y luego más olvidos FSRS. */
-export function paisesAtascados(estado: EstadoProgreso, paises: readonly Pais[], ahora: Date, dias = 30, max = 8): PaisAtascado[] {
+/** Verbos que más se atascan: más fallos (en los últimos `dias`), y luego más olvidos FSRS. */
+export function verbosAtascados(estado: EstadoProgreso, verbos: readonly Verbo[], ahora: Date, dias = 30, max = 8): VerboAtascado[] {
   const desde = ahora.getTime() - dias * 86400000;
   const cuenta = new Map<string, { fallos: number; intentos: number }>();
   for (const r of estado.historial) {
     if (new Date(r.t).getTime() < desde) continue;
-    const c = cuenta.get(r.pais) ?? { fallos: 0, intentos: 0 };
+    const c = cuenta.get(r.verbo) ?? { fallos: 0, intentos: 0 };
     c.intentos++;
     if (r.res === 'fallo') c.fallos++;
-    cuenta.set(r.pais, c);
+    cuenta.set(r.verbo, c);
   }
-  return paises
-    .map((pais) => ({ pais, ...(cuenta.get(pais.id) ?? { fallos: 0, intentos: 0 }), olvidos: estado.tarjetas[pais.id]?.lapses ?? 0 }))
+  return verbos
+    .map((verbo) => ({ verbo, ...(cuenta.get(verbo.id) ?? { fallos: 0, intentos: 0 }), olvidos: estado.tarjetas[verbo.id]?.lapses ?? 0 }))
     .filter((x) => x.fallos > 0)
-    .sort((a, b) => b.fallos - a.fallos || b.olvidos - a.olvidos || a.pais.nombre.localeCompare(b.pais.nombre, 'es'))
+    .sort((a, b) => b.fallos - a.fallos || b.olvidos - a.olvidos || a.verbo.infinitivo.localeCompare(b.verbo.infinitivo, 'en'))
     .slice(0, max)
-    .map(({ pais, fallos, intentos }) => ({ pais, fallos, intentos }));
+    .map(({ verbo, fallos, intentos }) => ({ verbo, fallos, intentos }));
 }
 
 export interface ActividadDia {
@@ -107,7 +102,7 @@ export function actividadReciente(estado: EstadoProgreso, ahora: Date, dias = 14
   return resultado;
 }
 
-/* ---------------- Modo examen ---------------- */
+/* ---------------- Examen ---------------- */
 
 /** Días que faltan para el examen (0 = hoy; negativo = ya pasó). null si no hay fecha. */
 export function diasHastaExamen(fechaExamen: string | null, ahora: Date): number | null {
@@ -118,46 +113,25 @@ export function diasHastaExamen(fechaExamen: string | null, ahora: Date): number
   return Math.round((examen - hoy) / 86400000);
 }
 
-/**
- * Países de una ronda de examen (SPEC 7): los de la lista de examen,
- * ordenados de más flojo a más sólido (nivel bajo, luego menos estabilidad,
- * luego más olvidos). Repasa sobre todo lo flojo, pero incluye todos.
- */
-export function seleccionarExamen(estado: EstadoProgreso, paises: readonly Pais[], tam = 20): string[] {
-  const t = estado.tarjetas;
-  return [...paises]
-    .sort((a, b) => {
-      const na = nivelDominio(t[a.id]);
-      const nb = nivelDominio(t[b.id]);
-      if (na !== nb) return na - nb;
-      const sa = t[a.id]?.stability ?? 0;
-      const sb = t[b.id]?.stability ?? 0;
-      if (sa !== sb) return sa - sb;
-      return (t[b.id]?.lapses ?? 0) - (t[a.id]?.lapses ?? 0);
-    })
-    .slice(0, tam)
-    .map((p) => p.id);
-}
-
-/** Regiones que contienen algún país de la lista de examen (se desbloquean para poder prepararlo). */
-export function regionesConExamen(lista: readonly string[] | null, paises: readonly Pais[]): Set<string> {
+/** Grupos que contienen algún verbo de la lista de examen (se desbloquean para poder prepararlo). */
+export function gruposConExamen(lista: readonly string[] | null, verbos: readonly Verbo[]): Set<string> {
   const ids = new Set(lista ?? []);
-  const regiones = new Set<string>();
-  for (const p of paises) if (ids.has(p.id)) [p.region, ...(p.regionesExtra ?? [])].forEach((r) => regiones.add(r));
-  return regiones;
+  return new Set(verbos.filter((v) => ids.has(v.id)).map((v) => v.grupo));
 }
 
-/** Estado de una casilla de grupo (región o continente) según los países marcados. */
-export type EstadoGrupo = 'todos' | 'ninguno' | 'parcial';
+/* ---------------- Casillas de la lista de examen ---------------- */
 
-export function estadoGrupo(ids: readonly string[], seleccion: ReadonlySet<string>): EstadoGrupo {
+/** Estado de una casilla que marca varios verbos a la vez (todos, o un grupo), según los verbos marcados. */
+export type EstadoMarcado = 'todos' | 'ninguno' | 'parcial';
+
+export function estadoMarcado(ids: readonly string[], seleccion: ReadonlySet<string>): EstadoMarcado {
   const marcados = ids.filter((id) => seleccion.has(id)).length;
   if (ids.length > 0 && marcados === ids.length) return 'todos';
   return marcados === 0 ? 'ninguno' : 'parcial';
 }
 
-/** Marca o desmarca de golpe todos los países de un grupo. Devuelve la selección nueva. */
-export function marcarGrupo(ids: readonly string[], seleccion: ReadonlySet<string>, marcar: boolean): Set<string> {
+/** Marca o desmarca de golpe varios verbos. Devuelve la selección nueva. */
+export function marcarVarios(ids: readonly string[], seleccion: ReadonlySet<string>, marcar: boolean): Set<string> {
   const nueva = new Set(seleccion);
   for (const id of ids) {
     if (marcar) nueva.add(id);

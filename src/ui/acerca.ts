@@ -8,7 +8,7 @@ export const AUTORIA = 'Creada por Darmin-ddr, con la ayuda de Claude (Anthropic
 
 /** Diálogo "Acerca de": versión, autoría y créditos de datos y librerías (licencias que piden atribución). */
 export function crearAcercaDe(): () => void {
-  const dialogo = el('dialog', 'dialogo-regiones dialogo-acerca');
+  const dialogo = el('dialog', 'dialogo dialogo-acerca');
   dialogo.setAttribute('aria-label', 'Acerca de By Heart');
   document.body.append(dialogo);
   dialogo.addEventListener('click', (e) => {

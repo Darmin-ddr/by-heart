@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { grupos, paises, regiones, verbos } from '../src/data';
-import { formasDe, verboComoPais } from '../src/logic/verbos';
+import { grupos, verbos } from '../src/data';
+import { formasDe, tresFormas, verbosDeGrupo } from '../src/logic/verbos';
 import { crearPreguntaOpciones } from '../src/logic/opciones';
 
 describe('verbs.json', () => {
@@ -30,27 +30,20 @@ describe('verbs.json', () => {
   });
 });
 
-describe('verbos para la lógica heredada', () => {
-  it('el infinitivo es el nombre y las formas, la capital', () => {
-    const buy = verboComoPais(verbos.find((v) => v.id === 'buy')!);
-    expect(buy.nombre).toBe('buy');
-    expect(buy.capital).toBe('bought · bought');
-    expect(buy.significado).toBe('comprar, mercar');
-    expect(buy.region).toBe('ght');
-    expect(formasDe({ pasado: 'sang', participio: 'sung' })).toBe('sang · sung');
-  });
-
-  it('hay un país por verbo y una región por grupo', () => {
-    expect(paises.map((p) => p.id)).toEqual(verbos.map((v) => v.id));
-    expect(regiones.map((r) => r.id)).toEqual(grupos.map((g) => g.id));
+describe('ayudas de los verbos', () => {
+  it('formas para enseñar', () => {
+    const buy = verbos.find((v) => v.id === 'buy')!;
+    expect(formasDe(buy)).toBe('bought · bought');
+    expect(tresFormas(buy)).toBe('buy · bought · bought');
+    expect(verbosDeGrupo(verbos, 'ght').map((v) => v.id)).toContain('buy');
   });
 
   it('Elegir: las opciones son formas reales de otros verbos, nunca inventadas (SPEC 4.2)', () => {
     const reales = new Set(verbos.map(formasDe));
-    for (const p of paises) {
-      const q = crearPreguntaOpciones(p, paises, Math.random);
+    for (const v of verbos) {
+      const q = crearPreguntaOpciones(v, verbos, Math.random);
       expect(q.opciones).toHaveLength(4);
-      expect(q.opciones[q.correcta]).toBe(p.capital);
+      expect(q.opciones[q.correcta]).toBe(formasDe(v));
       for (const o of q.opciones) expect(reales.has(o), o).toBe(true);
     }
   });

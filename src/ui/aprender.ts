@@ -6,32 +6,31 @@ import { barajar } from '../logic/rng';
 import { boton, el, rellenar } from './dom';
 import type { Contexto, ModoPractica, Motor } from './comun';
 import type { Modo } from './explorar';
-import { iniciarColocar } from './colocar';
+import { iniciarEmparejar } from './emparejar';
 import { iniciarRonda } from './ronda';
 
 export const NOMBRE_ESCALON: Record<Escalon, string> = {
   elegir: 'Elegir',
-  colocar: 'Emparejar',
-  escribir: 'Completar',
-  mapamudo: 'Tabla muda',
+  emparejar: 'Emparejar',
+  completar: 'Completar',
+  tablamuda: 'Tabla muda',
 };
 
 const QUE_SE_HACE: Record<Escalon, string> = {
   elegir: 'reconocer el pasado y el participio entre cuatro',
-  colocar: 'unir cada verbo con sus formas',
-  escribir: 'escribir el pasado y el participio',
-  mapamudo: 'escribir las tres formas a partir del significado',
+  emparejar: 'unir cada verbo con sus formas',
+  completar: 'escribir el pasado y el participio',
+  tablamuda: 'escribir las tres formas a partir del significado',
 };
-
 
 /** Verbos por tanda como mucho. */
 const TAM_TANDA = 16;
 /** En la escalera, cuántos nombres se listan por escalón antes de resumir "y N más". */
 const NOMBRES_MAX = 12;
 
-/** Modo de la pregunta suelta de cada escalón (Colocar, cuando va suelto, es Al revés). */
+/** Modo de la pregunta suelta de cada escalón (Emparejar, cuando va suelto, es Al revés). */
 function modoDeEscalon(e: Escalon): ModoId {
-  return e === 'colocar' ? 'alreves' : e;
+  return e === 'emparejar' ? 'alreves' : e;
 }
 
 /**
@@ -48,26 +47,26 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
   const aprendidos = new Set<string>();
   let resumen: ResumenRonda = { total: 0, aLaPrimera: 0, fallos: 0 };
 
-  const nombre = (id: string) => ctx.region.find((p) => p.id === id)?.nombre ?? id;
+  const nombre = (id: string) => ctx.verbos.find((v) => v.id === id)?.infinitivo ?? id;
 
   /** El motor de la app, apuntando quién sube de escalón en esta tanda. */
   const motor: Motor = {
     ...ctx.motor,
-    registrar(paisId, modo, resultado, tiempoMs, opciones) {
-      const cambio = ctx.motor.registrar(paisId, modo, resultado, tiempoMs, opciones);
+    registrar(verboId, modo, resultado, tiempoMs, opciones) {
+      const cambio = ctx.motor.registrar(verboId, modo, resultado, tiempoMs, opciones);
       if (cambio.aprendido) {
-        aprendidos.add(paisId);
-        subieron.delete(paisId);
+        aprendidos.add(verboId);
+        subieron.delete(verboId);
       } else if (cambio.subio) {
-        const e = escalonDe(estado(), paisId);
-        if (e) subieron.set(paisId, e);
+        const e = escalonDe(estado(), verboId);
+        if (e) subieron.set(verboId, e);
       }
       return cambio;
     },
   };
   const contexto = { ...ctx, contenedor, motor };
 
-  /** Los países de la región agrupados por escalón, más los aprendidos. */
+  /** Los verbos del grupo, por escalón, más los aprendidos. */
   function escalera(): HTMLElement {
     const e = estado();
     const lista = el('ol', 'escalera');
@@ -75,13 +74,13 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     const filas: { titulo: string; detalle: string; ids: string[]; clase: string }[] = ESCALONES.map((esc, i) => ({
       titulo: `${i + 1}. ${NOMBRE_ESCALON[esc]}`,
       detalle: QUE_SE_HACE[esc],
-      ids: ctx.region.filter((p) => escalonDe(e, p.id) === esc).map((p) => p.id),
+      ids: ctx.verbos.filter((v) => escalonDe(e, v.id) === esc).map((v) => v.id),
       clase: `escalon-${esc}`,
     }));
     filas.push({
       titulo: 'Aprendidos',
       detalle: 'ya te los sabes de memoria',
-      ids: ctx.region.filter((p) => escalonDe(e, p.id) === null).map((p) => p.id),
+      ids: ctx.verbos.filter((v) => escalonDe(e, v.id) === null).map((v) => v.id),
       clase: 'escalon-aprendido',
     });
     for (const f of filas) {
@@ -90,7 +89,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
         `escalon ${f.clase}${f.ids.length ? '' : ' vacio'}`,
         el('span', 'escalon-titulo', f.titulo, el('span', 'escalon-cuenta', String(f.ids.length))),
         el('span', 'escalon-detalle', f.detalle),
-        f.ids.length ? el('span', 'escalon-paises', listaNombres(f.ids)) : null,
+        f.ids.length ? el('span', 'escalon-verbos', listaNombres(f.ids)) : null,
       );
       lista.append(li);
     }
@@ -98,14 +97,14 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
   }
 
   function listaNombres(ids: string[]): string {
-    const nombres = ids.map(nombre).sort((a, b) => a.localeCompare(b, 'es'));
+    const nombres = ids.map(nombre).sort((a, b) => a.localeCompare(b, 'en'));
     if (nombres.length <= NOMBRES_MAX) return nombres.join(', ');
     return `${nombres.slice(0, NOMBRES_MAX).join(', ')} y ${nombres.length - NOMBRES_MAX} más`;
   }
 
   function pendientes(): string[] {
     const e = estado();
-    return ctx.region.filter((p) => escalonDe(e, p.id) !== null).map((p) => p.id);
+    return ctx.verbos.filter((v) => escalonDe(e, v.id) !== null).map((v) => v.id);
   }
 
   function pintarInicio(): void {
@@ -146,14 +145,14 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
       .sort((a, b) => nivel(a) - nivel(b))
       .slice(0, TAM_TANDA);
     const modos = new Map(ids.map((id) => [id, escalonDe(e, id)!]));
-    const enColocar = ids.filter((id) => modos.get(id) === 'colocar');
+    const aEmparejar = ids.filter((id) => modos.get(id) === 'emparejar');
     // Emparejar necesita al menos dos verbos para tener sentido; con uno solo, va suelto (Al revés).
-    if (enColocar.length >= 2) {
-      actual = iniciarColocar(contexto, {
-        ids: enColocar,
+    if (aEmparejar.length >= 2) {
+      actual = iniciarEmparejar(contexto, {
+        ids: aEmparejar,
         alTerminar(r) {
           acumular(r);
-          const resto = ids.filter((id) => modos.get(id) !== 'colocar');
+          const resto = ids.filter((id) => modos.get(id) !== 'emparejar');
           if (resto.length) rondaSuelta(resto, modos);
           else pintarFinal();
         },
@@ -182,8 +181,8 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     aprendidos.clear();
     resumen = { total: 0, aLaPrimera: 0, fallos: 0 };
     actual = iniciarRonda(contexto, {
-      ids: () => barajar(ctx.region.map((p) => p.id), ctx.rng).slice(0, TAM_TANDA),
-      modoPara: () => 'mapamudo',
+      ids: () => barajar(ctx.verbos.map((v) => v.id), ctx.rng).slice(0, TAM_TANDA),
+      modoPara: () => 'tablamuda',
       alTerminar(r) {
         acumular(r);
         pintarFinal();
@@ -194,8 +193,8 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
   function pintarFinal(): void {
     actual?.salir();
     actual = null;
-    ctx.mapa.limpiarEstados();
-    ctx.mapa.mostrarCapital(null);
+    ctx.tablero.limpiarEstados();
+    ctx.tablero.mostrarFormas(null);
     const listaNombres = (ids: string[]) => ids.map(nombre).join(', ');
     const sube = [...subieron.entries()];
     const seguir = boton(pendientes().length ? 'Seguir aprendiendo' : 'Ver el grupo', 'boton-principal', () =>
@@ -224,7 +223,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
   pintarInicio();
 
   return {
-    alSeleccionarPais: (id) => actual?.alSeleccionarPais(id),
+    alTocarVerbo: (id) => actual?.alTocarVerbo(id),
     salir: () => actual?.salir(),
   };
 }

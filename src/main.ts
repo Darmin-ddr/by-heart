@@ -15,7 +15,7 @@ prepararFranjaVersion(document.querySelector('.app') as HTMLElement);
 iniciarApp();
 
 // Teclado en pantalla (iPhone/Android): la app se ajusta al alto visible para
-// que el campo de texto y el mapa no queden tapados. Con zoom de pellizco no se toca.
+// que el campo de texto y la cuadrícula no queden tapados. Con zoom de pellizco no se toca.
 const vista = window.visualViewport;
 if (vista) {
   const ajustarAlto = () => {

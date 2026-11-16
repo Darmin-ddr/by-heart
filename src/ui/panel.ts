@@ -5,26 +5,27 @@ import {
   actividadReciente,
   comprobarPin,
   diasHastaExamen,
-  dominioPorRegion,
+  dominioPorGrupo,
+  estadoMarcado,
   hashPin,
-  paisesAtascados,
+  marcarVarios,
   pinValido,
-  estadoGrupo,
-  marcarGrupo,
+  verbosAtascados,
 } from '../logic/adultos';
 import { estadoVacio, type EstadoProgreso } from '../logic/progreso';
-import type { Pais, Region } from '../logic/types';
+import { formasDe } from '../logic/verbos';
+import type { Grupo, Verbo } from '../logic/types';
 import { boton, el } from './dom';
 
 export interface DatosPanel {
   estado(): EstadoProgreso;
   guardar(): void;
-  regiones: readonly Region[];
-  /** Países activos de una región. */
-  paisesDe(regionId: string): readonly Pais[];
-  /** Todos los países con datos (incluidos los opcionales desactivados). */
-  todos: readonly Pais[];
-  /** Aplica cambios que afectan a los datos (países opcionales, examen): reinicia la app. */
+  grupos: readonly Grupo[];
+  /** Verbos de un grupo. */
+  verbosDe(grupoId: string): readonly Verbo[];
+  /** Todos los verbos. */
+  verbos: readonly Verbo[];
+  /** Aplica cambios que afectan a lo que se ve (examen, desbloqueo): reinicia la app. */
   recargar(): void;
   /** Alumnos del dispositivo y cuál es el actual (el panel muestra y ajusta el actual). */
   alumnos(): { perfiles: readonly Perfil[]; actual: string };
@@ -39,16 +40,16 @@ export interface DatosPanel {
 type Seccion = 'resumen' | 'examen' | 'trucos' | 'ajustes';
 
 const NOMBRES: Record<Seccion, string> = { resumen: 'Resumen', examen: 'Examen', trucos: 'Trucos', ajustes: 'Ajustes' };
-/** Igual que los colores del mapa: por escalones (SPEC 4.3). */
-const NIVELES = ['Sin empezar', 'Elegir o Colocar', 'Escribir o Mapa mudo', 'Aprendidos'];
+/** Igual que los colores de la cuadrícula: por escalones (SPEC 4.3). */
+const NIVELES = ['Sin empezar', 'Elegir o Emparejar', 'Completar o Tabla muda', 'Aprendidos'];
 
 /**
- * Panel de adultos (SPEC 8), protegido con PIN: progreso por región, países
- * que más se atascan, actividad reciente, lista y fecha de examen, países
- * opcionales, edición de trucos y reinicio del progreso.
+ * Panel de adultos (SPEC 8), protegido con PIN: progreso por grupo, verbos
+ * que más se atascan, actividad reciente, lista y fecha de examen, edición de
+ * trucos, ajustes, alumnos y reinicio del progreso.
  */
 export function crearPanelAdultos(datos: DatosPanel): () => void {
-  const dialogo = el('dialog', 'dialogo-regiones dialogo-panel');
+  const dialogo = el('dialog', 'dialogo dialogo-panel');
   dialogo.setAttribute('aria-label', 'Panel para adultos');
   document.body.append(dialogo);
   let seccion: Seccion = 'resumen';
@@ -165,9 +166,9 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
   function pintarResumen(cuerpo: HTMLElement): void {
     const estado = datos.estado();
     const ahora = new Date();
-    const regiones = dominioPorRegion(estado, datos.regiones, datos.paisesDe);
+    const grupos = dominioPorGrupo(estado, datos.grupos, datos.verbosDe);
     const tabla = el('div', 'tabla-dominio');
-    for (const d of regiones) {
+    for (const d of grupos) {
       const barra = el('div', 'barra-dominio');
       barra.setAttribute('role', 'img');
       barra.setAttribute('aria-label', d.porNivel.map((n, i) => `${NIVELES[i]}: ${n}`).join(', '));
@@ -175,23 +176,23 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
         if (!n) return;
         const tramo = el('span', `tramo nivel-tramo-${i}`);
         tramo.style.flexGrow = String(n);
-        tramo.style.setProperty('--color-pais', d.region.color);
+        tramo.style.setProperty('--color-grupo', d.grupo.color);
         barra.append(tramo);
       });
       tabla.append(
-        el('div', 'fila-dominio', el('span', 'fila-nombre', d.region.nombre), barra, el('span', 'fila-cifra', `${d.porNivel[3]}/${d.total}`)),
+        el('div', 'fila-dominio', el('span', 'fila-nombre', d.grupo.nombre), barra, el('span', 'fila-cifra', `${d.porNivel[3]}/${d.total}`)),
       );
     }
     const leyenda = el(
       'p',
       'leyenda',
       ...NIVELES.flatMap((n, i) => [el('span', `muestra nivel-tramo-${i}`), ` ${n}  `]),
-      el('span', 'leyenda-nota', 'Cada región usa su propio color; lo que cuenta es el tono: cuanto más intenso, más avanzado.'),
+      el('span', 'leyenda-nota', 'Cada grupo usa su propio color; lo que cuenta es el tono: cuanto más intenso, más avanzado.'),
     );
 
-    const atascados = paisesAtascados(estado, datos.regiones.flatMap((r) => datos.paisesDe(r.id)).filter(unicos()), ahora);
+    const atascados = verbosAtascados(estado, datos.verbos, ahora);
     const listaAtascados = atascados.length
-      ? el('ul', 'lista-simple', ...atascados.map((a) => el('li', '', el('strong', '', a.pais.nombre), ` (${a.pais.capital}): ${plural(a.fallos, 'fallo', 'fallos')} de ${plural(a.intentos, 'intento', 'intentos')}`)))
+      ? el('ul', 'lista-simple', ...atascados.map((a) => el('li', '', el('strong', '', a.verbo.infinitivo), ` (${formasDe(a.verbo)}): ${plural(a.fallos, 'fallo', 'fallos')} de ${plural(a.intentos, 'intento', 'intentos')}`)))
       : el('p', 'ayuda', 'Ningún fallo en los últimos 30 días.');
 
     const act = actividadReciente(estado, ahora, 14);
@@ -210,18 +211,9 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
     const total = act.reduce((s, d) => s + d.respuestas, 0);
     const diasActivos = act.filter((d) => d.respuestas > 0).length;
 
-    const foco = estado.ajustes.focoHoy;
-    const nombreC = (c: string) => (c === 'europa' ? 'Europa' : c === 'asia' ? 'Asia' : c);
-    const otros = [...new Set(datos.regiones.map((r) => r.continente))].filter((c) => c !== foco).map(nombreC).join(' y ');
     cuerpo.append(
-      el(
-        'p',
-        foco ? 'aviso-pausa-panel' : 'ayuda',
-        el('strong', '', 'Qué estudia Hoy: '),
-        foco ? `solo ${nombreC(foco)}. ${otros} en pausa (no sale en Hoy). Se cambia en la portada de Hoy.` : 'todo. Se puede limitar a un continente desde la portada de Hoy.',
-      ),
       explicacionResumen(),
-      el('h3', 'dialogo-subtitulo', 'Aprendidos por región'),
+      el('h3', 'dialogo-subtitulo', 'Aprendidos por grupo'),
       tabla,
       leyenda,
       el('h3', 'dialogo-subtitulo', 'Los que más se atascan'),
@@ -241,68 +233,58 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
     const contador = el('p', 'ayuda');
     const actualizarContador = () => {
       const dias = diasHastaExamen(fecha.value || null, new Date());
-      contador.textContent = `${seleccion.size} países en el examen` + (dias !== null ? ` · ${textoDias(dias)}` : '');
+      contador.textContent = `${seleccion.size} verbos en el examen` + (dias !== null ? ` · ${textoDias(dias)}` : '');
     };
 
-    // Casillas de continente ("Europa", "Asia"), de región y de país, sincronizadas.
-    // Rusia y Turquía cuentan en los dos continentes (están en los dos listados).
+    // Casillas de "todos los verbos", de grupo y de verbo, sincronizadas.
     let seleccion = new Set(estado.ajustes.listaExamen ?? []);
-    const casillasPais = new Map<string, HTMLInputElement>();
-    const grupos: { ids: string[]; casilla: HTMLInputElement }[] = [];
-    const casillaGrupo = (ids: string[]) => {
+    const casillasVerbo = new Map<string, HTMLInputElement>();
+    const varios: { ids: string[]; casilla: HTMLInputElement }[] = [];
+    const casillaVarios = (ids: string[]) => {
       const c = el('input');
       c.type = 'checkbox';
       c.addEventListener('change', () => {
-        seleccion = marcarGrupo(ids, seleccion, c.checked);
+        seleccion = marcarVarios(ids, seleccion, c.checked);
         refrescar();
       });
-      grupos.push({ ids, casilla: c });
+      varios.push({ ids, casilla: c });
       return c;
     };
     const refrescar = () => {
-      for (const [id, c] of casillasPais) c.checked = seleccion.has(id);
-      for (const g of grupos) {
-        const e = estadoGrupo(g.ids, seleccion);
+      for (const [id, c] of casillasVerbo) c.checked = seleccion.has(id);
+      for (const g of varios) {
+        const e = estadoMarcado(g.ids, seleccion);
         g.casilla.checked = e === 'todos';
         g.casilla.indeterminate = e === 'parcial';
       }
       actualizarContador();
     };
 
-    const bloques = el('div', 'grupos-examen');
-    for (const continente of ['europa', 'asia'] as const) {
-      const regionesC = datos.regiones.filter((r) => r.continente === continente).sort((a, b) => a.orden - b.orden);
-      const idsContinente = [...new Set(regionesC.flatMap((r) => datos.paisesDe(r.id).map((p) => p.id)))];
-      const nombreC = continente === 'europa' ? 'Europa' : 'Asia';
-      const bloque = el(
-        'div',
-        'bloque-continente',
-        el('label', 'casilla casilla-continente', casillaGrupo(idsContinente), ` ${nombreC} entera (${idsContinente.length} países)`),
-      );
-      for (const r of regionesC) {
-        const paises = datos.paisesDe(r.id).filter((p) => p.region === r.id); // cada país en su región principal
-        if (!paises.length) continue;
-        const lista = el('div', 'casillas');
-        for (const p of paises) {
-          const c = el('input');
-          c.type = 'checkbox';
-          c.addEventListener('change', () => {
-            if (c.checked) seleccion.add(p.id);
-            else seleccion.delete(p.id);
-            refrescar();
-          });
-          casillasPais.set(p.id, c);
-          lista.append(el('label', 'casilla', c, ` ${p.nombre}`));
-        }
-        const detalles = el(
+    const todos = datos.verbos.map((v) => v.id);
+    const bloques = el('div', 'grupos-examen', el('label', 'casilla casilla-todos', casillaVarios(todos), ` Todos los verbos (${todos.length})`));
+    for (const g of [...datos.grupos].sort((a, b) => a.orden - b.orden)) {
+      const verbos = datos.verbosDe(g.id);
+      if (!verbos.length) continue;
+      const lista = el('div', 'casillas');
+      for (const v of verbos) {
+        const c = el('input');
+        c.type = 'checkbox';
+        c.addEventListener('change', () => {
+          if (c.checked) seleccion.add(v.id);
+          else seleccion.delete(v.id);
+          refrescar();
+        });
+        casillasVerbo.set(v.id, c);
+        lista.append(el('label', 'casilla', c, ` ${v.infinitivo}`));
+      }
+      bloques.append(
+        el(
           'details',
           'grupo-examen',
-          el('summary', '', el('label', 'casilla', casillaGrupo(paises.map((p) => p.id)), ` ${r.nombre}`)),
+          el('summary', '', el('label', 'casilla', casillaVarios(verbos.map((v) => v.id)), ` ${g.nombre} (${verbos.length})`)),
           lista,
-        );
-        bloque.append(detalles);
-      }
-      bloques.append(bloque);
+        ),
+      );
     }
     fecha.addEventListener('change', actualizarContador);
     refrescar();
@@ -312,7 +294,7 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
       estado.ajustes.fechaExamen = fecha.value || null;
       datos.guardar();
       cambiosQueRecargan = true;
-      aviso.textContent = 'Guardado. Hoy dará prioridad a estos países, y podrá hacer el Examen con esta lista.';
+      aviso.textContent = 'Guardado. Hoy dará prioridad a estos verbos, y se podrá hacer el Examen con esta lista.';
     });
     const quitar = boton('Quitar examen', 'boton-secundario', () => {
       estado.ajustes.listaExamen = null;
@@ -327,7 +309,7 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
       el(
         'p',
         'ayuda',
-        'Marca los países que entran en el examen (puedes marcar un continente o una región enteros) y su fecha. Hoy les dará prioridad y en la pestaña Examen se podrá elegir "Lista del examen" para hacer un examen de prueba solo con ellos.',
+        'Marca los verbos que entran en el examen (puedes marcarlos todos o un grupo entero) y su fecha. Hoy les dará prioridad, y en la pestaña Examen se podrá elegir «Lista del examen» para hacer un examen de prueba solo con ellos.',
       ),
       el('label', 'etiqueta-campo', 'Fecha del examen', fecha),
       contador,
@@ -340,22 +322,22 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
   function pintarTrucos(cuerpo: HTMLElement): void {
     const estado = datos.estado();
     const selector = el('select', 'campo-texto');
-    selector.setAttribute('aria-label', 'Región');
-    for (const r of datos.regiones) {
-      const o = el('option', '', r.nombre);
-      o.value = r.id;
+    selector.setAttribute('aria-label', 'Grupo');
+    for (const g of [...datos.grupos].sort((a, b) => a.orden - b.orden)) {
+      const o = el('option', '', g.nombre);
+      o.value = g.id;
       selector.append(o);
     }
     const lista = el('div', 'lista-trucos');
     const pintar = () => {
       lista.replaceChildren();
-      for (const p of datos.paisesDe(selector.value).filter((x) => x.region === selector.value)) {
+      for (const p of datos.verbosDe(selector.value)) {
         const original = p.trucos[0]?.texto ?? '';
         const area = el('textarea', 'campo-truco');
         area.rows = 2;
         area.value = estado.ajustes.trucosEditados[p.id] ?? original;
         area.placeholder = 'Sin truco';
-        area.setAttribute('aria-label', `Truco de ${p.nombre}`);
+        area.setAttribute('aria-label', `Truco de ${p.infinitivo}`);
         area.addEventListener('change', () => {
           const texto = area.value.trim();
           if (texto === original || (!texto && !original)) delete estado.ajustes.trucosEditados[p.id];
@@ -377,7 +359,7 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
           el(
             'div',
             'fila-truco',
-            el('p', 'fila-truco-titulo', el('strong', '', p.nombre), ` · ${p.capital}`),
+            el('p', 'fila-truco-titulo', el('strong', '', p.infinitivo), ` · ${formasDe(p)}`),
             area,
             el('label', 'casilla', desactivar, ' No mostrar este truco'),
             propio && el('p', 'nota', `Truco propio del alumno (tiene prioridad): «${propio}»`),
@@ -396,21 +378,6 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
 
   function pintarAjustes(cuerpo: HTMLElement): void {
     const estado = datos.estado();
-    const opcionales = datos.todos.filter((p) => p.opcional);
-    const casillas = opcionales.map((p) => {
-      const c = el('input');
-      c.type = 'checkbox';
-      c.checked = estado.ajustes.opcionalesActivados.includes(p.id);
-      c.addEventListener('change', () => {
-        const s = new Set(estado.ajustes.opcionalesActivados);
-        if (c.checked) s.add(p.id);
-        else s.delete(p.id);
-        estado.ajustes.opcionalesActivados = [...s];
-        datos.guardar();
-        cambiosQueRecargan = true;
-      });
-      return el('label', 'casilla', c, ` ${p.nombre} (${p.capital})`);
-    });
 
     const todas = el('input');
     todas.type = 'checkbox';
@@ -423,7 +390,7 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
 
     // Máximo de nuevos al día en Hoy: se autorregula entre 5 y este valor (SPEC 7).
     const maxNuevos = el('select', 'campo-texto campo-select');
-    maxNuevos.setAttribute('aria-label', 'Máximo de países nuevos al día');
+    maxNuevos.setAttribute('aria-label', 'Máximo de verbos nuevos al día');
     for (let n = CONFIG.nuevosMinimo; n <= CONFIG.nuevosMaximo; n++) {
       const o = el('option', '', String(n));
       o.value = String(n);
@@ -459,23 +426,20 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
       estado.historial = limpio.historial;
       estado.aprendizaje = limpio.aprendizaje;
       estado.prioridad = limpio.prioridad;
-      estado.regionesCelebradas = limpio.regionesCelebradas;
-      estado.ultimaRegion = null;
+      estado.gruposCelebrados = limpio.gruposCelebrados;
+      estado.ultimoGrupo = null;
       datos.guardar();
       cambiosQueRecargan = true;
       mensaje.textContent = 'Progreso reiniciado.';
     });
 
     cuerpo.append(
-      el('h3', 'dialogo-subtitulo', 'Países nuevos al día'),
+      el('h3', 'dialogo-subtitulo', 'Verbos nuevos al día'),
       el('label', 'casilla', 'Como mucho ', maxNuevos),
-      el('p', 'ayuda', 'Hoy mete entre 5 y este número de países nuevos cada día, según cómo vayan los aciertos recientes. Con muchos repasos pendientes, 5.'),
-      el('h3', 'dialogo-subtitulo', 'Regiones'),
-      el('label', 'casilla', todas, ' Desbloquear todas las regiones'),
-      el('p', 'ayuda', 'Normalmente se abren de una en una según el progreso. Útil si el examen o el curso van por otro orden.'),
-      el('h3', 'dialogo-subtitulo', 'Países opcionales'),
-      el('p', 'ayuda', 'No están en los listados de clase. Desactivados por defecto.'),
-      ...casillas,
+      el('p', 'ayuda', 'Hoy mete entre 5 y este número de verbos nuevos cada día, según cómo vayan los aciertos recientes. Con muchos repasos pendientes, 5.'),
+      el('h3', 'dialogo-subtitulo', 'Grupos'),
+      el('label', 'casilla', todas, ' Desbloquear todos los grupos'),
+      el('p', 'ayuda', 'Normalmente se abren de uno en uno según el progreso. Útil si el examen o el curso van por otro orden.'),
       el('h3', 'dialogo-subtitulo', 'PIN'),
       el('div', 'acciones', pin1, cambiarPin),
       el('h3', 'dialogo-subtitulo', 'Progreso'),
@@ -561,9 +525,6 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
   };
 }
 
-function unicos<T extends { id: string }>(): (x: T, i: number, a: T[]) => boolean {
-  return (x, i, a) => a.findIndex((y) => y.id === x.id) === i;
-}
 
 function plural(n: number, uno: string, varios: string): string {
   return `${n} ${n === 1 ? uno : varios}`;
@@ -580,12 +541,12 @@ function explicacionResumen(): HTMLElement {
       'ul',
       'lista-simple',
       punto(
-        'Aprendidos por región.',
-        'Cada país sube cuatro escalones: Elegir (reconocer la capital entre cuatro), Colocar (llevarla a su país en el mapa), Escribir (de memoria) y Mapa mudo (decir país y capital con solo la estrella, como en el examen). La barra muestra cuántos países hay en cada tramo, en el color de la región: cuanto más intenso el tono, más avanzado; la cifra de la derecha, cuántos están ya aprendidos, es decir, han pasado los cuatro escalones. Los aprendidos no se olvidan del todo: Hoy los vuelve a preguntar de vez en cuando, cada vez más espaciados.',
+        'Aprendidos por grupo.',
+        'Cada verbo sube cuatro escalones: Elegir (reconocer el pasado y el participio entre cuatro), Emparejar (unir cada verbo con sus formas), Completar (escribir el pasado y el participio) y Tabla muda (escribir las tres formas a partir del significado, como en el examen). La barra muestra cuántos verbos hay en cada tramo, en el color del grupo: cuanto más intenso el tono, más avanzado; la cifra de la derecha, cuántos están ya aprendidos, es decir, han pasado los cuatro escalones. Los aprendidos no se olvidan del todo: Hoy los vuelve a preguntar de vez en cuando, cada vez más espaciados.',
       ),
       punto(
         'Los que más se atascan.',
-        'Los países con más fallos en los últimos 30 días. Es buen sitio para inventar juntos un truco de memoria (en Explorar, "Inventa tu truco").',
+        'Los verbos con más fallos en los últimos 30 días. Es buen sitio para inventar juntos un truco de memoria (en Explorar, «Inventa tu truco»).',
       ),
       punto(
         'Actividad.',
@@ -593,7 +554,7 @@ function explicacionResumen(): HTMLElement {
       ),
       punto(
         'Cómo avanza.',
-        'Cada día, Hoy mezcla repasos con unos pocos países nuevos (entre 5 y 10, según cómo vayan los aciertos; el máximo se cambia en Ajustes). En Aprender se puede adelantar una región, y el Examen de prueba da una nota y permite mandar los fallos a Hoy.',
+        'Cada día, Hoy mezcla repasos con unos pocos verbos nuevos (entre 5 y 10, según cómo vayan los aciertos; el máximo se cambia en Ajustes). En Aprender se puede adelantar un grupo, y el Examen de prueba da una nota y permite mandar los fallos a Hoy.',
       ),
     ),
   );

@@ -68,10 +68,11 @@ Se asume que el examen de clase es una **tabla de verbos con huecos** (dan una f
 Cada verbo pasa por: **Elegir → Emparejar → Completar → Tabla muda**. Mismas reglas que en Capitalia: sube de escalón al **acertar dos veces con otras preguntas por medio**; un fallo reinicia el contador del escalón sin bajar de escalón. Al superar la Tabla muda, el verbo queda **aprendido** y pasa al repaso espaciado de Hoy.
 
 ### 4.4 Examen
-- Una **tabla con huecos**, como la de clase, sin colores de progreso.
-- Se elige qué entra (todo, un grupo o la lista del examen del panel) y cuántos verbos (10, 20 o todos).
-- Sin corrección en el momento: se responde todo y al final se ve la nota. Sin trucos ni repeticiones.
-- **Nota sobre 10:** 1 punto por verbo con todo bien, **medio punto** si falla una sola casilla, 0 si fallan más **(por confirmar: ajustarlo a cómo puntúa el profesor)**. Al final, lista de fallos y opción de priorizarlos en Hoy.
+- Una **tabla con huecos**, como la de clase (columnas Infinitivo, Pasado, Participio y Significado), a todo lo ancho y sin la cuadrícula, que delataría las respuestas.
+- En cada fila se da el **significado**, y en la mitad de las filas también el **infinitivo**: o se escriben pasado y participio, o las tres formas. Nunca se da el pasado ni el participio, porque varios verbos podrían compartirlos. El significado no se escribe nunca.
+- Se elige qué entra (todos los verbos, un grupo o la lista del examen del panel) y cuántos verbos (10, 20 o todos).
+- Sin corrección en el momento: se rellena la tabla entera y se corrige al final. Si quedan casillas en blanco, se avisa una vez antes de corregir. Sin trucos ni repeticiones.
+- **Nota sobre 10:** 1 punto por verbo con todo bien, **medio punto** si falla una sola casilla, 0 si fallan más; un "casi" (una letra) cuenta como mal **(por confirmar: ajustarlo a cómo puntúa el profesor)**. La corrección se ve en la propia tabla, con la forma correcta debajo de cada casilla mal, y se pueden mandar los fallos a Hoy.
 - Los resultados cuentan para la planificación: acierto completo como acierto, medio punto como "repasar", fallo como fallo.
 
 ## 5. Pedagogía y feedback
@@ -157,7 +158,7 @@ Progreso (local): como en Capitalia, por verbo en lugar de por país.
 
 ## 13. Hitos
 
-**Estado (15/11/2026):** hitos 0, 1 y 2 hechos en el ordenador: cuadrícula, los cuatro escalones (Elegir, Emparejar, Completar y Tabla muda) y Explorar. Del hito 3 están cargados los 79 verbos del listado de clase en 11 grupos; faltan confirmar los grupos y revisar los trucos. Falta probarlo todo en iPad y móvil. Hoy y Examen enseñan un aviso de "llega más adelante".
+**Estado (16/11/2026):** hitos 0, 1, 2 y 4 hechos y probados en el navegador del ordenador: cuadrícula, los cuatro escalones, Explorar, Hoy, Examen y panel de adultos. Del hito 3 están cargados los 79 verbos del listado de clase en 11 grupos; faltan confirmar los grupos y revisar los trucos. Del hito 5, las guías del alumno y de adultos ya hablan de verbos. Falta probarlo todo en iPad y móvil, y publicarlo.
 
 0. **Puesta a punto:** nombre, textos, icono provisional y claves de guardado propias; retirar el mapa. La app compila, pasa los tests y abre, aunque esté vacía de contenido. Adaptar también `CLAUDE.md` y el README, que aún hablan de capitales.
 1. **Prototipo de un grupo** (6 a 10 verbos): cuadrícula, Elegir y Emparejar, feedback. Probar en iPad y móvil.

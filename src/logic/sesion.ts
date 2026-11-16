@@ -2,17 +2,17 @@ import { barajar, type Rng } from './rng';
 
 /**
  * Cómo ha ido una respuesta:
- * - acierto: el país sale de la ronda.
+ * - acierto: el verbo sale de la ronda.
  * - fallo: vuelve a salir unas preguntas después.
- * - repasar: acertado con errata o con nombre antiguo. No es fallo, pero
- *   también vuelve a salir más tarde (SPEC 3.3).
+ * - repasar: medio punto en el examen. No es fallo, pero cuenta como
+ *   "repasar" para la planificación.
  */
 export type Resultado = 'acierto' | 'fallo' | 'repasar';
 
 export interface ResultadoRespuesta {
-  /** Acierto en un país que se había fallado antes en esta ronda (momento de celebrar). */
+  /** Acierto en un verbo que se había fallado antes en esta ronda (momento de celebrar). */
   recuperado: boolean;
-  /** La ronda ha terminado: todos los países se han acertado una vez. */
+  /** La ronda ha terminado: todos los verbos se han acertado una vez. */
   terminada: boolean;
 }
 
@@ -23,12 +23,10 @@ export interface ResumenRonda {
 }
 
 /**
- * Cola de una ronda. Cada país sale hasta que se acierta una vez.
+ * Cola de una ronda. Cada verbo sale hasta que se acierta una vez.
  * Lo fallado vuelve a salir unas preguntas después (no inmediatamente, si
- * quedan otros países), para que el alumno tenga otra oportunidad pronto.
- *
- * Versión mínima: solo en memoria y contando preguntas, no minutos.
- * La cola completa con FSRS llega en el hito 3.
+ * quedan otros verbos), para que el alumno tenga otra oportunidad pronto.
+
  */
 export class ColaRonda {
   private cola: string[];
@@ -46,12 +44,12 @@ export class ColaRonda {
     this.total = this.cola.length;
   }
 
-  /** País de la pregunta actual, o null si la ronda ha terminado. */
+  /** Verbo de la pregunta actual, o null si la ronda ha terminado. */
   actual(): string | null {
     return this.cola[0] ?? null;
   }
 
-  /** Países que faltan por acertar (incluido el actual). */
+  /** Verbos que faltan por acertar (incluido el actual). */
   pendientes(): number {
     return this.cola.length;
   }

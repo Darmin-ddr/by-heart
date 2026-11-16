@@ -3,7 +3,7 @@ import { ColaHoy, type ItemHoy } from '../logic/hoy';
 import { mensajeResumen } from '../logic/mensajes';
 import type { Rng } from '../logic/rng';
 import type { Resultado } from '../logic/sesion';
-import type { Continente, Pais } from '../logic/types';
+import type { Verbo } from '../logic/types';
 import type { ResumenPortada } from '../logic/portada';
 import type { Perfil } from '../logic/perfiles';
 import { avatar, nombreVisible } from './perfiles';
@@ -12,39 +12,29 @@ import type { Tablero } from './tablero';
 import { boton, el, rellenar } from './dom';
 import { PAUSA_TRAS_ACIERTO_MS, Teclado, progreso, type Motor } from './comun';
 import type { Modo } from './explorar';
-import { preguntaAlReves, preguntaElegir, preguntaCompletar, preguntaTablaMuda, type ControlPregunta, type Renderizador } from './preguntas';
-
-const RENDERIZADORES: Partial<Record<ModoId, Renderizador>> = {
-  elegir: preguntaElegir,
-  escribir: preguntaCompletar,
-  alreves: preguntaAlReves,
-  mapamudo: preguntaTablaMuda,
-};
+import { preguntaElegir, RENDERIZADORES, type ControlPregunta } from './preguntas';
 
 /** Lo que Hoy necesita de la app. */
 export interface ServiciosHoy {
   motor: Motor;
-  /** Todos los países activos (distractores y validación). */
-  candidatos: readonly Pais[];
+  /** Todos los verbos (distractores de Elegir). */
+  candidatos: readonly Verbo[];
   rng: Rng;
   /** Sesión de hoy (vacía si no queda nada) y repaso adelantado. */
   sesion: () => ItemHoy[];
   adelantado: () => ItemHoy[];
-  /** Tipo de pregunta de un país en este momento (según su escalón o, si está aprendido, variado). */
-  modoPara: (paisId: string) => ModoId;
-  /** Mapa con la región del país (lo cambia si hace falta) y cuánto dura el rótulo de la región nueva (0 si no cambia). */
-  mapaPara: (pais: Pais) => { mapa: Tablero; region: readonly Pais[]; transicionMs: number };
-  /** Mapa actual (para limpiarlo al salir). */
-  mapaActual: () => Tablero | null;
+  /** Tipo de pregunta de un verbo en este momento (según su escalón o, si está aprendido, variado). */
+  modoPara: (verboId: string) => ModoId;
+  /** Cuadrícula del grupo del verbo (la cambia si hace falta) y cuánto dura el rótulo del grupo nuevo (0 si no cambia). */
+  tableroPara: (verbo: Verbo) => { tablero: Tablero; transicionMs: number };
+  /** Cuadrícula actual (para limpiarla al salir). */
+  tableroActual: () => Tablero | null;
+  /** Vuelve a la cuadrícula de todos los verbos (la de la portada). */
+  verTodos: () => void;
   /** Cifras de la portada. */
   resumen: () => ResumenPortada;
   /** Días hasta el examen del panel (null si no hay lista de examen o fecha). */
   diasExamen: () => number | null;
-  /** Continentes del curso, su nombre, cuál muestra el mapa y cómo cambiarlo (portada). */
-  continentes: readonly Continente[];
-  nombreContinente: (c: Continente) => string;
-  continenteMapa: () => Continente;
-  verContinente: (c: Continente) => void;
   /** Alumno actual si hay varios en el dispositivo (null si solo hay uno) y cómo cambiarlo. */
   alumno: () => Perfil | null;
   cambiarAlumno: () => void;
@@ -54,9 +44,6 @@ export interface ServiciosHoy {
   descartarInstalar: () => void;
   instalada: () => boolean;
   alCambiarInstalacion: (f: () => void) => () => void;
-  /** "Qué estudia Hoy": continente al que se limita (el resto, en pausa) o null para todo. */
-  foco: () => Continente | null;
-  ponerFoco: (c: Continente | null) => void;
   irAAprender: () => void;
   alExplorar: () => void;
 }
@@ -64,26 +51,6 @@ export interface ServiciosHoy {
 const TIPOS: Record<ItemHoy['tipo'], string> = { repaso: 'repasos', aprendiendo: 'en aprendizaje', nuevo: 'nuevos' };
 /** Segundos por pregunta para estimar la duración de la sesión. */
 const SEGUNDOS_PREGUNTA = 25;
-
-/** El alumno plegó el aviso de pausa (con "Entendido") para este continente: se recuerda en este dispositivo. */
-const CLAVE_AVISO_PAUSA = 'byheart-aviso-pausa-plegado';
-
-function avisoPausaPlegado(foco: Continente): boolean {
-  try {
-    return localStorage.getItem(CLAVE_AVISO_PAUSA) === foco;
-  } catch {
-    return false;
-  }
-}
-
-function plegarAvisoPausa(foco: Continente | null): void {
-  try {
-    if (foco) localStorage.setItem(CLAVE_AVISO_PAUSA, foco);
-    else localStorage.removeItem(CLAVE_AVISO_PAUSA);
-  } catch {
-    // Sin almacenamiento: el aviso saldrá desplegado la próxima vez. No es grave.
-  }
-}
 
 function textoDiasExamen(dias: number): string {
   if (dias > 1) return `faltan ${dias} días`;
@@ -94,9 +61,9 @@ function textoDiasExamen(dias: number): string {
 
 /**
  * Pestaña "Hoy" (SPEC 4.1 y 7): la rutina diaria. Repasos de lo aprendido,
- * países en aprendizaje y nuevos intercalados (cada nuevo sale dos veces).
- * Las preguntas pueden ser de cualquier región abierta: el mapa salta a la
- * región del país con un rótulo, y el tiempo cuenta desde que el mapa está quieto.
+ * verbos en aprendizaje y nuevos intercalados (cada nuevo sale dos veces).
+ * Las preguntas pueden ser de cualquier grupo: la cuadrícula cambia al grupo
+ * del verbo con un rótulo, y el tiempo cuenta desde que está quieta.
  */
 export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
   const contenedor = el('div', 'contenido-modo');
@@ -106,25 +73,18 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
   let control: ControlPregunta = {};
   let temporizador: number | undefined;
   let nuevosVistos = new Set<string>();
-  let tiposPorPais = new Map<string, ItemHoy['tipo']>();
+  let tiposPorVerbo = new Map<string, ItemHoy['tipo']>();
   let adelantando = false;
 
-  function limpiarMapa(): void {
-    const mapa = s.mapaActual();
-    mapa?.limpiarEstados();
-    mapa?.mostrarCapital(null);
+  function limpiarTablero(): void {
+    const tablero = s.tableroActual();
+    tablero?.limpiarEstados();
+    tablero?.mostrarFormas(null);
+    tablero?.setMudo(false);
   }
 
   function nombre(id: string): string {
-    return s.candidatos.find((p) => p.id === id)?.nombre ?? id;
-  }
-
-  /** Los continentes que quedan fuera cuando Hoy se limita a uno ("Asia", "Asia y América"...). */
-  function enPausa(foco: Continente): string {
-    return s.continentes
-      .filter((c) => c !== foco)
-      .map(s.nombreContinente)
-      .join(' y ');
+    return s.candidatos.find((v) => v.id === id)?.infinitivo ?? id;
   }
 
   let dejarDeEscuchar: (() => void) | null = null;
@@ -188,123 +148,26 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
     return aviso;
   }
 
-  /** Aviso fijo mientras hay continentes en pausa: no es una preferencia, es que no salen. */
-  function avisoPausa(): HTMLElement | null {
-    const foco = s.foco();
-    if (!foco) return null;
-    const caja = el('div', 'aviso-pausa');
-    caja.setAttribute('role', 'status');
-    const pintar = (plegado: boolean) => {
-      if (plegado) {
-        // Plegado: solo el recordatorio, destacado; tocarlo vuelve a desplegar el aviso.
-        const recordatorio = el(
-          'button',
-          'aviso-pausa-plegado',
-          el('strong', '', `Solo ${s.nombreContinente(foco)}`),
-          el('span', 'aviso-pausa-detalle', `${enPausa(foco)} en pausa`),
-        );
-        recordatorio.type = 'button';
-        recordatorio.setAttribute('aria-expanded', 'false');
-        recordatorio.setAttribute('aria-label', `Solo ${s.nombreContinente(foco)}; ${enPausa(foco)} en pausa. Ver el aviso`);
-        recordatorio.addEventListener('click', () => {
-          plegarAvisoPausa(null);
-          pintar(false);
-        });
-        caja.className = 'aviso-pausa plegado';
-        caja.replaceChildren(recordatorio);
-        return;
-      }
-      caja.className = 'aviso-pausa';
-      caja.replaceChildren(
-        el('p', '', el('strong', '', `Solo ${s.nombreContinente(foco)}.`), ` ${enPausa(foco)}: en pausa. Hoy no te pregunta sus países, ni repasos ni nuevos, hasta que vuelvas a «Todo». No se pierde nada.`),
-        el(
-          'div',
-          'acciones',
-          boton('Volver a Todo', 'boton-secundario', () => {
-            plegarAvisoPausa(null);
-            s.ponerFoco(null);
-          }),
-          boton('Entendido', 'boton-secundario', () => {
-            plegarAvisoPausa(foco);
-            pintar(true);
-          }),
-        ),
-      );
-    };
-    pintar(avisoPausaPlegado(foco));
-    return caja;
-  }
-
-  /** "Qué estudia Hoy": Todo o un solo continente. Sin confirmación: el aviso fijo explica el efecto y deshacerlo es un toque. */
-  function bloqueFoco(): HTMLElement {
-    const foco = s.foco();
-    const opciones: { valor: Continente | null; texto: string }[] = [
-      { valor: null, texto: 'Todo' },
-      ...s.continentes.map((c) => ({ valor: c, texto: `Solo ${s.nombreContinente(c)}` })),
-    ];
-    const selector = el('div', 'selector-practica selector-foco');
-    selector.setAttribute('role', 'group');
-    selector.setAttribute('aria-label', 'Qué estudia Hoy');
-    for (const o of opciones) {
-      const b = boton(o.texto, 'selector-opcion', () => {
-        if (o.valor === foco) return;
-        // Situación nueva: el aviso vuelve a salir completo.
-        plegarAvisoPausa(null);
-        s.ponerFoco(o.valor);
-      });
-      b.setAttribute('aria-pressed', String(o.valor === foco));
-      selector.append(b);
-    }
-    return el('div', 'campo-etiquetado bloque-foco', el('span', 'etiqueta-campo', 'Qué estudia Hoy'), selector);
-  }
-
-  /** Portada: cifras de lo aprendido (logros, sin rachas) y el continente que se ve en el mapa. */
+  /** Portada: cifras de lo aprendido (logros, sin rachas). La cuadrícula de al lado los enseña coloreados. */
   function bloqueProgreso(): HTMLElement {
     const r = s.resumen();
-    const foco = s.foco();
-    const barras = el('div', 'barras-continente');
-    for (const c of r.porContinente) {
-      const porcentaje = c.total ? Math.round((c.aprendidos / c.total) * 100) : 0;
-      const relleno = el('span', 'barra-relleno');
-      relleno.style.width = `${porcentaje}%`;
-      const barra = el('span', 'barra-progreso', relleno);
-      barra.setAttribute('role', 'img');
-      barra.setAttribute('aria-label', `${s.nombreContinente(c.continente)}: ${c.aprendidos} de ${c.total} aprendidos`);
-      barras.append(
-        el(
-          'div',
-          `fila-continente${foco && foco !== c.continente ? ' pausada' : ''}`,
-          el('span', 'fila-nombre', s.nombreContinente(c.continente), foco && foco !== c.continente ? el('span', 'etiqueta-pausa', 'en pausa') : null),
-          barra,
-          el('span', 'fila-cifra', `${c.aprendidos}/${c.total}`),
-        ),
-      );
-    }
     const dias = s.diasExamen();
-    const selector = el('div', 'selector-practica selector-mapa-portada');
-    selector.setAttribute('role', 'group');
-    selector.setAttribute('aria-label', 'Continente en el mapa');
-    const botones = s.continentes.map((c) => {
-      const b = boton(s.nombreContinente(c), 'selector-opcion', () => {
-        s.verContinente(c);
-        for (const x of botones) x.setAttribute('aria-pressed', String(x === b));
-      });
-      b.setAttribute('aria-pressed', String(s.continenteMapa() === c));
-      return b;
-    });
-    selector.append(...botones);
+    const porcentaje = r.total ? Math.round((r.aprendidos / r.total) * 100) : 0;
+    const relleno = el('span', 'barra-relleno');
+    relleno.style.width = `${porcentaje}%`;
+    const barra = el('span', 'barra-progreso', relleno);
+    barra.setAttribute('role', 'img');
+    barra.setAttribute('aria-label', `${r.aprendidos} de ${r.total} verbos aprendidos`);
     return el(
       'section',
       'portada-progreso',
       el('h3', 'dialogo-subtitulo', 'Tu progreso'),
-      el('p', 'cifra-portada', el('strong', '', String(r.aprendidos)), ` de ${r.total} países aprendidos`),
-      barras,
-      r.aprendidosSemana > 0 ? el('p', 'ayuda', `Esta semana: ${r.aprendidosSemana} ${r.aprendidosSemana === 1 ? 'país aprendido' : 'países aprendidos'}.`) : null,
+      el('p', 'cifra-portada', el('strong', '', String(r.aprendidos)), ` de ${r.total} verbos aprendidos`),
+      barra,
+      r.aprendidosSemana > 0 ? el('p', 'ayuda', `Esta semana: ${r.aprendidosSemana} ${r.aprendidosSemana === 1 ? 'verbo aprendido' : 'verbos aprendidos'}.`) : null,
       r.examen
-        ? el('p', 'ayuda', `Examen${dias !== null ? ` (${textoDiasExamen(dias)})` : ''}: ${r.examen.aprendidos} de ${r.examen.total} países aprendidos.`)
+        ? el('p', 'ayuda', `Examen${dias !== null ? ` (${textoDiasExamen(dias)})` : ''}: ${r.examen.aprendidos} de ${r.examen.total} verbos aprendidos.`)
         : null,
-      el('div', 'campo-etiquetado', el('span', 'etiqueta-campo', 'Ver en el mapa'), selector),
-      bloqueFoco(),
     );
   }
 
@@ -319,7 +182,7 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
     const cuenta = new Map<ItemHoy['tipo'], Set<string>>();
     for (const i of items) {
       const c = cuenta.get(i.tipo) ?? new Set();
-      c.add(i.paisId);
+      c.add(i.verboId);
       cuenta.set(i.tipo, c);
     }
     const partes = (['repaso', 'aprendiendo', 'nuevo'] as const)
@@ -331,12 +194,11 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
       contenedor,
       el('div', 'cabecera-hoy', el('h2', 'titulo-panel', 'Hoy'), chipAlumno()),
       avisoVersion(),
-      avisoPausa(),
       el('p', 'resumen', `Hoy toca: ${items.length} preguntas, unos ${minutos} minutos.`),
       el('ul', 'hoy-cuentas', ...partes),
       el('div', 'acciones', empezar),
       // Secundario: debajo del botón, para que Empezar quepa en la pantalla del móvil.
-      cuenta.get('nuevo')?.size ? el('p', 'ayuda', 'Los países nuevos salen dos veces, para fijarlos.') : null,
+      cuenta.get('nuevo')?.size ? el('p', 'ayuda', 'Los verbos nuevos salen dos veces, para fijarlos.') : null,
       avisoInstalar(),
       bloqueProgreso(),
     );
@@ -353,7 +215,6 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
       contenedor,
       el('div', 'cabecera-hoy', el('h2', 'titulo-panel', 'Hoy'), chipAlumno()),
       avisoVersion(),
-      avisoPausa(),
       el('p', 'resumen', 'Lo de hoy ya está hecho.'),
       el(
         'p',
@@ -372,47 +233,46 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
   function empezarSesion(items: ItemHoy[], adelantado: boolean): void {
     enPortada = false;
     adelantando = adelantado;
-    nuevosVistos = new Set(items.filter((i) => i.tipo === 'nuevo').map((i) => i.paisId));
-    tiposPorPais = new Map(items.map((i) => [i.paisId, i.tipo]));
-    // La sesión ya viene ordenada (por regiones, con los nuevos intercalados): no se baraja.
-    cola = new ColaHoy(items.map((i) => ({ id: i.paisId, region: s.candidatos.find((p) => p.id === i.paisId)?.region ?? '' })));
+    nuevosVistos = new Set(items.filter((i) => i.tipo === 'nuevo').map((i) => i.verboId));
+    tiposPorVerbo = new Map(items.map((i) => [i.verboId, i.tipo]));
+    // La sesión ya viene ordenada (por grupos, con los nuevos intercalados): no se baraja.
+    cola = new ColaHoy(items.map((i) => ({ id: i.verboId, grupo: s.candidatos.find((v) => v.id === i.verboId)?.grupo ?? '' })));
     siguiente();
   }
 
   function siguiente(): void {
     window.clearTimeout(temporizador);
-    limpiarMapa();
+    limpiarTablero();
     control = {};
     const id = cola?.actual();
     if (!cola || !id) {
       pintarFinal();
       return;
     }
-    const pais = s.candidatos.find((p) => p.id === id)!;
-    const { mapa, region, transicionMs } = s.mapaPara(pais);
+    const verbo = s.candidatos.find((v) => v.id === id)!;
+    const { tablero, transicionMs } = s.tableroPara(verbo);
     const modo = s.modoPara(id);
     const renderizar = RENDERIZADORES[modo] ?? preguntaElegir;
     const { total } = cola.resumen();
-    const etiqueta = tiposPorPais.get(id) === 'nuevo' ? ' · nuevo' : '';
+    const etiqueta = tiposPorVerbo.get(id) === 'nuevo' ? ' · nuevo' : '';
     contenedor.replaceChildren(progreso(`${total - cola.pendientes() + 1} de ${total}${etiqueta}`));
-    // El tiempo cuenta desde que el mapa está quieto (tras el rótulo de la región nueva).
+    // El tiempo cuenta desde que la cuadrícula está quieta (tras el rótulo del grupo nuevo).
     const inicio = performance.now() + transicionMs;
     let respondida = false;
     const actual = cola;
     control = renderizar({
       zona: contenedor,
-      mapa,
-      pais,
-      region,
+      tablero,
+      verbo,
       candidatos: s.candidatos,
       rng: s.rng,
       teclado,
       truco: s.motor.truco(id),
-      responder(resultado: Resultado, opciones) {
+      responder(resultado: Resultado) {
         if (respondida) return { recuperado: false };
         respondida = true;
-        const r = actual.responder(opciones?.escalon ?? resultado);
-        s.motor.registrar(id, modo, resultado, Math.max(0, performance.now() - inicio), { escalon: opciones?.escalon });
+        const r = actual.responder(resultado);
+        s.motor.registrar(id, modo, resultado, Math.max(0, performance.now() - inicio));
         if (resultado === 'acierto') temporizador = window.setTimeout(siguiente, PAUSA_TRAS_ACIERTO_MS + (r.recuperado ? 500 : 0));
         return { recuperado: r.recuperado };
       },
@@ -423,11 +283,11 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
   function pintarFinal(): void {
     enPortada = true;
     teclado.usar(null);
-    s.mapaActual()?.setInteractivo(false);
+    s.tableroActual()?.setInteractivo(false);
     const resumen = cola?.resumen() ?? { total: 0, aLaPrimera: 0, fallos: 0 };
     cola = null;
-    // Al terminar, vuelta al continente entero: se ve lo que se ha coloreado.
-    s.verContinente(s.continenteMapa());
+    // Al terminar, vuelta a todos los verbos: se ve lo que se ha coloreado.
+    s.verTodos();
     const hayAdelantado = s.adelantado().length > 0;
     const seguir = hayAdelantado
       ? boton('Adelantar repasos', 'boton-principal', () => empezarSesion(s.adelantado(), true))
@@ -440,7 +300,7 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
       nuevosVistos.size
         ? el('p', 'resumen-escalones', el('strong', '', 'Nuevos de hoy: '), [...nuevosVistos].map(nombre).join(', '), '.')
         : null,
-      el('div', 'acciones', seguir, hayAdelantado ? boton('Ir a Aprender', 'boton-secundario', s.irAAprender) : boton('Explorar el mapa', 'boton-secundario', s.alExplorar)),
+      el('div', 'acciones', seguir, hayAdelantado ? boton('Ir a Aprender', 'boton-secundario', s.irAAprender) : boton('Ver la tabla', 'boton-secundario', s.alExplorar)),
       bloqueProgreso(),
     );
     seguir.focus({ preventScroll: true });
@@ -449,13 +309,13 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
   pintarInicio();
 
   return {
-    alSeleccionarPais: (id) => control.alTocarPais?.(id),
+    alTocarVerbo: (id) => control.alTocarVerbo?.(id),
     salir() {
       dejarDeEscuchar?.();
       dejarDeEscucharVersion();
       window.clearTimeout(temporizador);
       teclado.quitar();
-      limpiarMapa();
+      limpiarTablero();
     },
   };
 }

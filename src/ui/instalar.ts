@@ -85,7 +85,7 @@ export function descartarAviso(): void {
 
 /** Abre la instalación: la del navegador si la ofrece; si no, los pasos para este dispositivo. */
 export function crearInstalar(): () => void {
-  const dialogo = el('dialog', 'dialogo-regiones dialogo-instalar');
+  const dialogo = el('dialog', 'dialogo dialogo-instalar');
   dialogo.setAttribute('aria-label', 'Instalar la app');
   document.body.append(dialogo);
   dialogo.addEventListener('click', (e) => {

@@ -1,44 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import { corregirMapaMudo, notaExamen, paisesDeAmbito, prepararExamen } from '../src/logic/examen';
-import { paises } from './fixtures';
-import { paisesActivos } from '../src/logic/datos';
+import { corregirFila, notaExamen, prepararExamen, verbosDeAmbito } from '../src/logic/examen';
 import { rngConSemilla } from '../src/logic/rng';
+import { verbo } from './ayuda';
 
-const activos = paisesActivos(paises);
-const p = (id: string) => paises.find((x) => x.id === id)!;
+const teach = verbo('teach', 'g1', { pasado: 'taught', participio: 'taught', significado: 'enseñar' });
+const verbos = [teach, verbo('B', 'g1'), verbo('C', 'g2'), verbo('D', 'g2'), verbo('E', 'g2')];
 
 describe('examen', () => {
-  it('ámbitos: Europa, Asia, todo y lista (Rusia y Turquía en los dos continentes)', () => {
-    expect(paisesDeAmbito('europa', activos, null)).toHaveLength(46);
-    expect(paisesDeAmbito('asia', activos, null)).toHaveLength(49);
-    expect(paisesDeAmbito('todo', activos, null)).toHaveLength(93);
-    expect(paisesDeAmbito('lista', activos, ['FRA', 'JPN']).map((x) => x.id).sort()).toEqual(['FRA', 'JPN']);
-    expect(paisesDeAmbito('lista', activos, null)).toHaveLength(0);
+  it('qué entra: todos, la lista del examen o un grupo', () => {
+    expect(verbosDeAmbito('todo', verbos, null)).toHaveLength(5);
+    expect(verbosDeAmbito('lista', verbos, ['B', 'D']).map((v) => v.id)).toEqual(['B', 'D']);
+    expect(verbosDeAmbito('lista', verbos, null)).toHaveLength(0);
+    expect(verbosDeAmbito({ grupo: 'g2' }, verbos, null).map((v) => v.id)).toEqual(['C', 'D', 'E']);
   });
 
-  it('preguntas: n distintas al azar, o todas', () => {
-    const eu = paisesDeAmbito('europa', activos, null);
-    const diez = prepararExamen(eu, 10, rngConSemilla(1));
-    expect(new Set(diez).size).toBe(10);
-    expect(prepararExamen(eu, null, rngConSemilla(1))).toHaveLength(46);
+  it('filas: n verbos distintos, con el dato repartido entre infinitivo y significado', () => {
+    const filas = prepararExamen(verbos, 4, rngConSemilla(3));
+    expect(filas).toHaveLength(4);
+    expect(new Set(filas.map((f) => f.verboId)).size).toBe(4);
+    expect(filas.filter((f) => f.dato === 'infinitivo')).toHaveLength(2);
+    expect(prepararExamen(verbos, null, rngConSemilla(3))).toHaveLength(5);
   });
 
-  it('corrección: punto entero, medio punto y cero', () => {
-    const c = (pais: string, capital: string) => corregirMapaMudo(pais, capital, p('FRA'), paises);
-    expect(c('Francia', 'París')).toMatchObject({ puntos: 1, resultado: 'acierto' });
-    expect(c('francia', 'Madrid')).toMatchObject({ puntos: 0.5, resultado: 'repasar' });
-    expect(c('España', 'París')).toMatchObject({ puntos: 0.5, resultado: 'repasar' });
-    expect(c('', '')).toMatchObject({ puntos: 0, resultado: 'fallo' });
+  it('dado el infinitivo: pasado y participio; un punto, medio punto o nada', () => {
+    const fila = { verboId: 'teach', dato: 'infinitivo' as const };
+    expect(corregirFila(teach, fila, { pasado: 'taught', participio: 'taught' })).toMatchObject({ casillas: 2, mal: 0, puntos: 1, resultado: 'acierto' });
+    // Un "casi" cuenta como mal: la ortografía es exacta.
+    expect(corregirFila(teach, fila, { pasado: 'taught', participio: 'tought' })).toMatchObject({ mal: 1, puntos: 0.5, resultado: 'repasar' });
+    expect(corregirFila(teach, fila, { pasado: '', participio: 'teached' })).toMatchObject({ mal: 2, puntos: 0, resultado: 'fallo' });
+    // Lo que se escriba en el infinitivo, si se da hecho, no cuenta.
+    expect(corregirFila(teach, fila, { infinitivo: 'xxx', pasado: 'taught', participio: 'taught' }).puntos).toBe(1);
   });
 
-  it('erratas y avisos valen el punto, pero se repasan', () => {
-    expect(corregirMapaMudo('Holanda', 'Ámsterdam', p('NLD'), paises)).toMatchObject({ puntos: 1, resultado: 'repasar' });
-    expect(corregirMapaMudo('Francia', 'Pari', p('FRA'), paises)).toMatchObject({ puntos: 1, resultado: 'repasar' });
+  it('dado el significado: las tres formas', () => {
+    const fila = { verboId: 'teach', dato: 'significado' as const };
+    expect(corregirFila(teach, fila, { infinitivo: 'to teach', pasado: 'taught', participio: 'taught' })).toMatchObject({ casillas: 3, puntos: 1 });
+    expect(corregirFila(teach, fila, { infinitivo: '', pasado: 'taught', participio: 'taught' })).toMatchObject({ mal: 1, puntos: 0.5 });
+    expect(corregirFila(teach, fila, { infinitivo: '', pasado: '', participio: 'taught' }).puntos).toBe(0);
   });
 
-  it('nota sobre 10 con un decimal', () => {
+  it('nota sobre 10, con un decimal', () => {
     expect(notaExamen([1, 1, 0.5, 0])).toBe(6.3);
-    expect(notaExamen([1, 1])).toBe(10);
+    expect(notaExamen([1, 1, 1])).toBe(10);
     expect(notaExamen([])).toBe(0);
   });
 });

@@ -19,7 +19,7 @@ const lista = (...items: (Node | string)[][]) => el('ul', 'lista-guia', ...items
  * Devuelve las funciones para abrir la bienvenida y la guía de adultos.
  */
 export function crearBienvenida(datos: DatosBienvenida): { abrirBienvenida(): void; abrirGuiaAdultos(): void } {
-  const dialogo = el('dialog', 'dialogo-regiones dialogo-guia');
+  const dialogo = el('dialog', 'dialogo dialogo-guia');
   dialogo.setAttribute('aria-label', 'Bienvenida');
   document.body.append(dialogo);
   enterPulsaPrincipal(dialogo);
@@ -56,8 +56,8 @@ export function crearBienvenida(datos: DatosBienvenida): { abrirBienvenida(): vo
     {
       titulo: 'Cómo funciona',
       cuerpo: () => [
-        p('En la pestaña ', fuerte('Hoy'), ' la app pregunta cada día lo que conviene repasar (repetición espaciada) y mete unos pocos países nuevos: lo que el alumno sabe sale cada vez menos, lo que le cuesta, más a menudo. Con ', fuerte('unos diez minutos al día'), ' es suficiente.'),
-        p('Además, en ', fuerte('Aprender'), ' puede adelantar una región a su ritmo, y en ', fuerte('Examen'), ' hacer un examen de prueba con un mapa mudo como el de clase, con nota.'),
+        p('En la pestaña ', fuerte('Hoy'), ' la app pregunta cada día lo que conviene repasar (repetición espaciada) y mete unos pocos verbos nuevos: lo que el alumno sabe sale cada vez menos, lo que le cuesta, más a menudo. Con ', fuerte('unos diez minutos al día'), ' es suficiente.'),
+        p('Además, en ', fuerte('Aprender'), ' puede adelantar un grupo de verbos a su ritmo, y en ', fuerte('Examen'), ' hacer un examen de prueba con una tabla de verbos con huecos, como la de clase, con nota.'),
         p('El progreso se guarda solo en este dispositivo. No hay cuentas, anuncios ni datos que salgan de aquí.'),
         p('El alumno tiene su propia guía, con técnicas de estudio y trucos de memoria. Se le abrirá la primera vez que use la app.'),
       ],
@@ -67,11 +67,11 @@ export function crearBienvenida(datos: DatosBienvenida): { abrirBienvenida(): vo
       cuerpo: () => [
         p('Está en el botón ', fuerte('⋯'), ' (arriba a la derecha) → ', fuerte('Panel para adultos'), ', protegido con un PIN que crearás al entrar por primera vez. Desde ahí puedes:'),
         lista(
-          [fuerte('Resumen'), ': cómo va cada región, qué países se le atascan y cuántos días ha practicado.'],
-          [fuerte('Examen'), ': marcar los países que entran (hay casillas para Europa o Asia enteras, y para cada región) y la fecha. Hoy les dará prioridad y el Examen de prueba podrá hacerse solo con ellos.'],
+          [fuerte('Resumen'), ': cómo va cada grupo de verbos, cuáles se le atascan y cuántos días ha practicado.'],
+          [fuerte('Examen'), ': marcar los verbos que entran (hay casillas para todos y para cada grupo) y la fecha. Hoy les dará prioridad y el Examen de prueba podrá hacerse solo con ellos.'],
           [fuerte('Trucos'), ': revisar, cambiar o desactivar los trucos de memoria que trae la app.'],
           [fuerte('Alumnos'), ': si estudia más de uno en este dispositivo, se añaden en ⋯ → Añadir alumno; cada uno tiene su progreso y sus ajustes de examen, y la app pregunta quién va a estudiar al abrirla. El PIN es el mismo para todos. Borrar un alumno se hace desde Ajustes.'],
-          [fuerte('Ajustes'), ': cuántos países nuevos al día como mucho, desbloquear todas las regiones si el curso va en otro orden, cambiar el PIN o reiniciar el progreso.'],
+          [fuerte('Ajustes'), ': cuántos verbos nuevos al día como mucho, desbloquear todos los grupos si el curso va en otro orden, cambiar el PIN o reiniciar el progreso.'],
         ),
       ],
     },
@@ -91,7 +91,7 @@ export function crearBienvenida(datos: DatosBienvenida): { abrirBienvenida(): vo
         lista(
           ['Mejor ', fuerte('poco y a menudo'), ' que un atracón antes del examen.'],
           ['La app ', fuerte('no castiga'), ' saltarse días ni fallar: no hay rachas. Conviene no añadir presión desde fuera.'],
-          ['Si un país se le resiste, anímale a inventar su propio truco (en Explorar).'],
+          ['Si un verbo se le resiste, anímale a inventar su propio truco (en Explorar).'],
           ['Un vistazo al Resumen de vez en cuando basta para saber cómo va.'],
         ),
       ],

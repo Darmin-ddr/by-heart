@@ -7,10 +7,10 @@ import { estadoVacio, registrarRespuesta } from '../src/logic/progreso';
 
 function estadoConDatos() {
   const e = estadoVacio();
-  registrarRespuesta(e, 'ESP', 'elegir', 'acierto', 3000, new Date('2026-11-01T10:00:00Z'));
-  registrarRespuesta(e, 'FRA', 'escribir', 'fallo', 9000, new Date('2026-11-01T10:01:00Z'));
-  e.trucosPropios.ESP = 'Madrid, en el centro: como el ombligo de España ñ á';
-  e.ajustes.listaExamen = ['ESP', 'FRA'];
+  registrarRespuesta(e, 'buy', 'elegir', 'acierto', 3000, new Date('2026-11-01T10:00:00Z'));
+  registrarRespuesta(e, 'teach', 'completar', 'fallo', 9000, new Date('2026-11-01T10:01:00Z'));
+  e.trucosPropios.buy = 'Compré pan: bought, con ou (y una eñe y una tilde: ñ á)';
+  e.ajustes.listaExamen = ['buy', 'teach'];
   return e;
 }
 
@@ -35,7 +35,7 @@ describe('copia de seguridad', () => {
     if (r.ok) {
       expect(r.incluyeHistorial).toBe(false);
       expect(r.estado.tarjetas).toEqual(e.tarjetas);
-      expect(r.estado.trucosPropios.ESP).toBe(e.trucosPropios.ESP);
+      expect(r.estado.trucosPropios.buy).toBe(e.trucosPropios.buy);
       expect(r.estado.historial).toEqual([]);
     }
   });
@@ -43,7 +43,7 @@ describe('copia de seguridad', () => {
   it('aplicar: el código conserva el historial local; el fichero lo sustituye', () => {
     const local = estadoConDatos();
     const otro = estadoVacio();
-    otro.tarjetas.ITA = local.tarjetas.ESP;
+    otro.tarjetas.cut = local.tarjetas.buy;
     expect(aplicarImportacion(local, otro, false).historial).toEqual(local.historial);
     expect(aplicarImportacion(local, otro, true).historial).toEqual([]);
     expect(aplicarImportacion(local, otro, false).tarjetas).toEqual(otro.tarjetas);
@@ -77,13 +77,13 @@ describe('copia de todos los alumnos', () => {
   it('ida y vuelta con el progreso de cada uno', () => {
     const e1 = estadoConDatos();
     const e2 = estadoVacio();
-    e2.trucosPropios.FRA = 'de Pablo';
+    e2.trucosPropios.teach = 'de Pablo';
     const r = importarCasa(exportarCasa(perfiles, { p1: e1, p2: e2 }));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.perfiles.map((p) => p.nombre)).toEqual(['Lucía', 'Pablo']);
     expect(r.progresos.p1.historial).toHaveLength(2);
-    expect(r.progresos.p2.trucosPropios.FRA).toBe('de Pablo');
+    expect(r.progresos.p2.trucosPropios.teach).toBe('de Pablo');
     expect(nombreFicheroCasa(new Date('2026-11-02T10:00:00Z'))).toBe('byheart-todos-los-alumnos-2026-11-02.json');
   });
 

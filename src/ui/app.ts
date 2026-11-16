@@ -1,21 +1,25 @@
-import { paises as todos, regiones } from '../data';
-import { paisesActivos, paisesDeRegion as filtrarRegion } from '../logic/datos';
+import { grupos, verbos } from '../data';
+import { ordenCurso, verbosDeGrupo } from '../logic/verbos';
 import { Almacen, CLAVE, almacenDelNavegador, type AlmacenTexto } from '../logic/almacen';
 import {
   borrarPerfil, cargarIndice, claveProgreso, crearPerfil, faltaNombre, guardarIndice, perfilDe, type IndicePerfiles,
 } from '../logic/perfiles';
 import { editarAlumno, elegirAlumno, nuevoAlumno } from './perfiles';
-import { estadoVacio, type EstadoProgreso } from '../logic/progreso';
-import { exportarCasa, importarCasa, nombreFicheroCasa } from '../logic/copia';
 import {
+  estadoVacio,
+  grupoDominado,
+  gruposDesbloqueados,
+  nivelCasilla,
   nivelesDe,
   registrarEscalon,
   registrarRespuesta,
-  regionDominada,
-  regionesDesbloqueadas,
+  type EstadoProgreso,
 } from '../logic/progreso';
+import { exportarCasa, importarCasa, nombreFicheroCasa } from '../logic/copia';
 import { crearSesionHoy, modoHoy, nuevosDeHoy, repasoAdelantado, repasosPendientes } from '../logic/hoy';
-import type { Continente, Pais, Region } from '../logic/types';
+import { resumenPortada } from '../logic/portada';
+import { diasHastaExamen, gruposConExamen } from '../logic/adultos';
+import type { Grupo, Verbo } from '../logic/types';
 import { crearTablero, type Tablero } from './tablero';
 import { lanzarConfeti } from './confeti';
 import { el } from './dom';
@@ -25,37 +29,20 @@ import { iniciarAprender } from './aprender';
 import { iniciarHoy } from './hoy';
 import { iniciarExamen } from './examen';
 import { alCambiarInstalacion, avisoDescartado, crearInstalar, descartarAviso, formaInstalar } from './instalar';
-import { prepararSelectorRegiones } from './regiones';
+import { prepararSelectorGrupos } from './grupos';
 import { prepararMas } from './mas';
 import { crearGuia } from './guia';
 import { crearAcercaDe } from './acerca';
 import { crearBienvenida } from './bienvenida';
 import { crearPanelAdultos } from './panel';
-import { diasHastaExamen, regionesConExamen } from '../logic/adultos';
-import { nivelMapa } from '../logic/progreso';
-import { continenteQueToca, continentesCurso, ordenCurso, paisesDeHoy, resumenPortada } from '../logic/portada';
 
 type Pestana = 'hoy' | 'aprender' | 'examen' | 'explorar';
 
-/**
- * Prototipo (SPEC 13, hito 1): solo Aprender y Explorar están adaptadas a los
- * verbos. Hoy y Examen enseñan un aviso, y las guías (que aún hablan de
- * capitales) no se abren ni se ofrecen. Se quita cuando todo esté adaptado.
- */
-const PROTOTIPO = true;
+/** Duración del rótulo con el nombre del grupo cuando Hoy cambia de grupo. */
+const ROTULO_GRUPO_MS = 1100;
 
-/** Duración del rótulo con el nombre de la región cuando Hoy cambia el mapa de región. */
-const ROTULO_REGION_MS = 1100;
-
-const NOMBRE_CONTINENTE: Record<Continente, string> = { europa: 'Europa', asia: 'Asia' };
-/** Prefijo de las "regiones" que son un continente entero (Aprender y Explorar, y la portada de Hoy). */
-const PREFIJO_CONTINENTE = 'continente-';
-const esContinente = (r: Region) => r.id.startsWith(PREFIJO_CONTINENTE);
-
-/**
- * Estado y orquestación de la app: progreso guardado, región actual, mapa,
- * pestañas y avisos (región dominada, región desbloqueada).
- */
+/** "Todos los verbos": se usa como un grupo más en Aprender y Explorar, y es la cuadrícula de la portada de Hoy. */
+const TODOS: Grupo = { id: 'todos', nombre: 'Todos los verbos', orden: 0, color: '#cfd8e3' };
 /** Alumno elegido en esta visita (al abrir de nuevo la app, se vuelve a preguntar si hay varios). */
 const CLAVE_ELEGIDO = 'byheart-perfil-elegido';
 
@@ -214,79 +201,37 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
       },
     });
   const panel = document.getElementById('panel')!;
-  const contenedorMapa = document.getElementById('mapa')!;
+  const contenedorTablero = document.getElementById('tablero')!;
   const avisos = document.getElementById('avisos')!;
   const botonesPestana = document.querySelectorAll<HTMLButtonElement>('.modo');
+  const botonGrupo = document.getElementById('grupo-actual') as HTMLButtonElement;
 
-  /** Hay verbos que estudiar. Mientras no, las pestañas enseñan un aviso y no se monta nada más. */
-  const hayContenido = todos.length > 0 && regiones.length > 0;
-  let activos: Pais[] = [];
-  /** Región del mapa en este momento (Hoy la mueve; el examen pone el suyo). */
-  let region: Region = regiones[0];
-  /** Región que ha elegido el alumno en el selector (Aprender y Explorar vuelven a ella). */
-  let regionElegida: Region = regiones[0];
-  /** El tablero (lo que ocupa el sitio del mapa de Capitalia): null mientras no exista la cuadrícula. */
-  let mapa: Tablero | null = null;
+  /** Grupo que enseña la cuadrícula en este momento (Hoy lo cambia). */
+  let grupo: Grupo = TODOS;
+  /** Grupo que ha elegido el alumno en el selector (Aprender y Explorar vuelven a él). */
+  let grupoElegido: Grupo = ordenCurso(grupos)[0] ?? TODOS;
+  let tablero: Tablero | null = null;
   let modo: Modo | null = null;
   let pestana: Pestana = 'hoy';
   let actualizarSelector: (() => void) | null = null;
-  /** El mapa montado es el mudo del examen (continente entero), no el de la región. */
-  let mapaDeExamen = false;
-  const botonRegion = document.getElementById('region-actual') as HTMLButtonElement;
 
-  /** "Europa entera" y "Asia entera": se usan como una región más (SPEC 4.1). */
-  const regionesContinente: Region[] = continentesCurso(regiones).map((c) => ({
-    id: PREFIJO_CONTINENTE + c,
-    nombre: 'Todos los verbos',
-    continente: c,
-    orden: 0,
-    color: '#cfd8e3',
-  }));
-  const regionDe = (id: string) => regiones.find((r) => r.id === id) ?? regionesContinente.find((r) => r.id === id);
-  const regionContinente = (c: Continente) => regionesContinente.find((r) => r.continente === c)!;
-  const paisesDeRegion = (regionId: string) => {
-    const r = regionDe(regionId);
-    return r && esContinente(r) ? activos.filter((p) => p.continentes.includes(r.continente)) : filtrarRegion(activos, regionId);
+  const grupoDe = (id: string) => (id === TODOS.id ? TODOS : grupos.find((g) => g.id === id));
+  const verbosDe = (grupoId: string) => (grupoId === TODOS.id ? [...verbos] : verbosDeGrupo(verbos, grupoId));
+  /** Desbloqueados por progreso, más los que tienen verbos del examen (para poder prepararlo). */
+  const desbloqueados = () => {
+    if (estado.ajustes.todasDesbloqueadas) return new Set(grupos.map((g) => g.id));
+    const abiertos = gruposDesbloqueados(estado, grupos, verbosDe);
+    for (const id of gruposConExamen(estado.ajustes.listaExamen, verbos)) abiertos.add(id);
+    return abiertos;
   };
-  const regionesDe = (c: Continente) => regiones.filter((r) => r.continente === c).sort((a, b) => a.orden - b.orden);
-  /** Desbloqueadas por progreso, más las que tienen países del examen (para poder prepararlo). */
-  const desbloqueadas = (c: Continente) => {
-    if (estado.ajustes.todasDesbloqueadas) return new Set(regionesDe(c).map((r) => r.id));
-    const abiertas = regionesDesbloqueadas(estado, regionesDe(c), paisesDeRegion);
-    for (const id of regionesConExamen(estado.ajustes.listaExamen, activos)) if (regionDe(id)?.continente === c) abiertas.add(id);
-    return abiertas;
+  /** "Todos los verbos" se abre cuando lo están todos los grupos. */
+  const todosAbiertos = () => {
+    const abiertos = desbloqueados();
+    return grupos.every((g) => abiertos.has(g.id));
   };
-  /** El continente entero se abre cuando lo están todas sus regiones. */
-  const continenteAbierto = (c: Continente) => {
-    const abiertas = desbloqueadas(c);
-    return regionesDe(c).every((r) => abiertas.has(r.id));
-  };
-  const regionAbierta = (r: Region) => (esContinente(r) ? continenteAbierto(r.continente) : desbloqueadas(r.continente).has(r.id));
-  const enExamen = (p: Pais) => estado.ajustes.listaExamen?.includes(p.id) ?? false;
-  /**
-   * Países de Hoy: todos, también los de regiones aún cerradas en el selector y los de
-   * continentes que se añadan en el futuro. Los nuevos salen por orden del curso, y
-   * empezar un país abre su región (`regionesDesbloqueadas`).
-   */
-  const disponibles = () => paisesDeHoy(activos, estado.ajustes.focoHoy);
-  /** Todas las regiones abiertas, de todos los continentes. */
-  const todasAbiertas = () => new Set(continentesCurso(regiones).flatMap((c) => [...desbloqueadas(c)]));
-  /** Orden en que Hoy saca países nuevos: el del curso (Europa y luego Asia, cada una por regiones). */
-  const ordenRegiones = () => {
-    const foco = estado.ajustes.focoHoy;
-    // Con un solo continente, solo sus regiones: Rusia y Turquía (de región principal europea) van al final, no primero.
-    return ordenCurso(regiones)
-      .filter((r) => !foco || r.continente === foco)
-      .map((r) => r.id);
-  };
-  /** Región en cuyo mapa se pregunta un país en Hoy: la principal o, con un solo continente, la suya de ese continente. */
-  const regionEnHoy = (pais: Pais) => {
-    const foco = estado.ajustes.focoHoy;
-    const ids = [pais.region, ...(pais.regionesExtra ?? [])];
-    return (foco && ids.map(regionDe).find((r) => r?.continente === foco)) || regionDe(pais.region);
-  };
-  /** Países del continente de la región actual (el mapa los colorea por dominio). */
-  const paisesContinente = () => activos.filter((p) => p.continentes.includes(region.continente));
+  const grupoAbierto = (g: Grupo) => (g.id === TODOS.id ? todosAbiertos() : desbloqueados().has(g.id));
+  const enExamen = (v: Verbo) => estado.ajustes.listaExamen?.includes(v.id) ?? false;
+  const colorDe = (verboId: string) => grupoDe(verbos.find((v) => v.id === verboId)?.grupo ?? '')?.color ?? '#cccccc';
 
   function guardar(): void {
     if (!almacen.guardar(estado)) mostrarAvisoAlmacen();
@@ -311,15 +256,13 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   }
 
   function actualizarNiveles(): void {
-    // El mapa mudo del examen no lleva colores de progreso (SPEC 4.4): delatarían las respuestas.
-    if (mapaDeExamen) return;
-    mapa?.setNiveles(nivelesDe(estado, paisesContinente()));
+    tablero?.setNiveles(nivelesDe(estado, verbosDe(grupo.id)));
   }
 
   const trucos: ServicioTrucos = {
     predefinido(id) {
       if (estado.ajustes.trucosDesactivados.includes(id)) return null;
-      return estado.ajustes.trucosEditados[id] ?? todos.find((p) => p.id === id)?.trucos[0]?.texto ?? null;
+      return estado.ajustes.trucosEditados[id] ?? verbos.find((v) => v.id === id)?.trucos[0]?.texto ?? null;
     },
     propio: (id) => estado.trucosPropios[id] ?? null,
     guardarPropio(id, texto) {
@@ -330,15 +273,13 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   };
 
   const motor: Motor = {
-    registrar(paisId, modoId, resultado, tiempoMs, opciones) {
-      const antes = todasAbiertas();
-      registrarRespuesta(estado, paisId, modoId, resultado, tiempoMs, new Date(), opciones);
-      // Un país priorizado (fallado en un examen) deja de serlo al acertarlo fuera del examen.
-      if (resultado === 'acierto' && !opciones?.examen) estado.prioridad = estado.prioridad.filter((x) => x !== paisId);
+    registrar(verboId, modoId, resultado, tiempoMs, opciones) {
+      const antes = desbloqueados();
+      registrarRespuesta(estado, verboId, modoId, resultado, tiempoMs, new Date(), opciones);
+      // Un verbo priorizado (fallado en un examen) deja de serlo al acertarlo fuera del examen.
+      if (resultado === 'acierto' && !opciones?.examen) estado.prioridad = estado.prioridad.filter((x) => x !== verboId);
       // El examen mide; no hace subir de escalón (SPEC 4.4).
-      const cambio = opciones?.examen
-        ? { subio: false, aprendido: false }
-        : registrarEscalon(estado, paisId, modoId, opciones?.escalon ?? resultado);
+      const cambio = opciones?.examen ? { subio: false, aprendido: false } : registrarEscalon(estado, verboId, modoId, resultado);
       guardar();
       actualizarNiveles();
       comprobarHitos(antes);
@@ -347,138 +288,61 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
     truco: (id) => trucos.propio(id) ?? trucos.predefinido(id),
   };
 
-  /** Celebraciones grandes solo al dominar una región (SPEC 5.1) y aviso de región nueva. */
+  /** Celebraciones grandes solo al dominar un grupo (SPEC 5.1), y aviso de grupo nuevo. */
   function comprobarHitos(antes: Set<string>): void {
-    for (const r of regiones) {
-      if (!estado.regionesCelebradas.includes(r.id) && regionDominada(estado, paisesDeRegion(r.id))) {
-        estado.regionesCelebradas.push(r.id);
+    for (const g of grupos) {
+      if (!estado.gruposCelebrados.includes(g.id) && grupoDominado(estado, verbosDe(g.id))) {
+        estado.gruposCelebrados.push(g.id);
         guardar();
         lanzarConfeti();
-        avisar(`¡Has dominado el grupo «${r.nombre}»!`);
+        avisar(`¡Has dominado el grupo «${g.nombre}»!`);
       }
     }
-    for (const id of todasAbiertas()) {
-      if (!antes.has(id)) avisar(`Nuevo grupo disponible: ${regionDe(id)?.nombre ?? id}`);
+    for (const id of desbloqueados()) {
+      if (!antes.has(id)) avisar(`Nuevo grupo disponible: ${grupoDe(id)?.nombre ?? id}`);
     }
   }
 
-  /** Color del país en el mapa del continente actual (Rusia y Turquía cambian según el mapa). */
-  function colorEnContinente(id: string): string {
-    const p = activos.find((x) => x.id === id);
-    if (!p) return '#cccccc';
-    const ids = [p.region, ...(p.regionesExtra ?? [])];
-    const r = ids.map(regionDe).find((x) => x?.continente === region.continente);
-    return r?.color ?? '#cccccc';
-  }
-
-  function montarMapa(): void {
-    mapa?.destruir();
-    mapaDeExamen = false;
-    mapa = null;
-    contenedorMapa.hidden = true;
-    if (!hayContenido) return;
-    mapa = crearTablero({
-      contenedor: contenedorMapa,
-      region: paisesDeRegion(region.id),
-      contexto: paisesContinente(),
-      colorDe: (id) => colorEnContinente(id),
-      onSeleccion: (id) => modo?.alSeleccionarPais(id),
-    });
-    contenedorMapa.hidden = !mapa;
-    if (!mapa) return;
+  /** Monta la cuadrícula del grupo actual (o la quita, si se pasa `null`: el examen no la usa). */
+  function montarTablero(visible = true): void {
+    tablero?.destruir();
+    tablero = visible ? crearTablero({ contenedor: contenedorTablero, verbos: verbosDe(grupo.id), colorDe, alTocar: (id) => modo?.alTocarVerbo(id) }) : null;
+    contenedorTablero.hidden = !tablero;
     actualizarNiveles();
-    document.documentElement.style.setProperty('--region-base', region.color);
+    document.documentElement.style.setProperty('--grupo-base', grupo.color);
     actualizarSelector?.();
   }
 
   function cambiarPestana(nueva: Pestana): void {
     modo?.salir();
     pestana = nueva;
-    const enConstruccion = PROTOTIPO && (nueva === 'hoy' || nueva === 'examen');
-    if (!hayContenido || enConstruccion) {
-      modo = null;
-      mapa?.limpiarEstados();
-      mapa?.mostrarCapital(null);
-      mapa?.setInteractivo(false);
-      for (const b of botonesPestana) b.setAttribute('aria-pressed', String(b.dataset.modo === nueva));
-      pintarSinContenido(nueva, hayContenido ? 'Esta parte llega más adelante. De momento, prueba Aprender y Explorar.' : undefined);
-      return;
-    }
-    // Hoy y el examen no usan el selector: eligen ellos el mapa. Con un solo grupo, no hay nada que elegir.
-    botonRegion.hidden = nueva === 'hoy' || nueva === 'examen' || regiones.length < 2;
-    if (nueva === 'hoy') {
-      // Portada: el continente que toca, coloreado según lo aprendido.
-      region = regionContinente(estado.ajustes.focoHoy ?? continenteQueToca(estado, activos, regiones));
-      montarMapa();
-    } else if (nueva !== 'examen' && (mapaDeExamen || region.id !== regionElegida.id)) {
-      // Aprender y Explorar vuelven a la región elegida, aunque Hoy haya movido el mapa.
-      region = regionElegida;
-      montarMapa();
-    }
     for (const b of botonesPestana) b.setAttribute('aria-pressed', String(b.dataset.modo === nueva));
-    if (!mapa) {
-      modo = null;
-      pintarSinContenido(nueva);
+    // Hoy y el examen no usan el selector de grupo.
+    botonGrupo.hidden = nueva === 'hoy' || nueva === 'examen';
+    if (nueva === 'examen') {
+      // Una tabla con huecos a todo lo ancho: sin cuadrícula, que delataría las respuestas.
+      montarTablero(false);
+      modo = iniciarExamen(panel, {
+        motor,
+        verbos,
+        grupos,
+        rng: Math.random,
+        listaExamen: () => estado.ajustes.listaExamen,
+        priorizar(ids: readonly string[]) {
+          estado.prioridad = [...new Set([...estado.prioridad, ...ids])];
+          guardar();
+        },
+      });
       return;
     }
-    const paisesRegion = paisesDeRegion(region.id);
-    const ctx = {
-      mapa,
-      region: paisesRegion,
-      candidatos: activos,
-      rng: Math.random,
-      alExplorar: () => cambiarPestana('explorar'),
-      motor,
-    };
-    if (nueva === 'explorar') modo = iniciarExplorar(panel, mapa, paisesRegion, trucos);
+    // Portada de Hoy: todos los verbos, coloreados según lo aprendido. Aprender y Explorar: el grupo elegido.
+    grupo = nueva === 'hoy' ? TODOS : grupoElegido;
+    montarTablero();
+    const verbosGrupo = verbosDe(grupo.id);
+    const ctx = { tablero: tablero!, verbos: verbosGrupo, candidatos: verbos, rng: Math.random, alExplorar: () => cambiarPestana('explorar'), motor };
+    if (nueva === 'explorar') modo = iniciarExplorar(panel, tablero!, verbosGrupo, trucos);
     else if (nueva === 'aprender') modo = iniciarAprender(panel, ctx, () => estado);
-    else if (nueva === 'examen') modo = iniciarExamen(panel, serviciosExamen());
     else modo = iniciarHoy(panel, serviciosHoy());
-  }
-
-  /** Lo que se ve en cada pestaña mientras la app no tiene verbos (SPEC 13, hito 0). */
-  function pintarSinContenido(nueva: Pestana, titular = 'By Heart está en construcción: todavía no hay verbos.'): void {
-    const titulos: Record<Pestana, string> = { hoy: 'Hoy', aprender: 'Aprender', examen: 'Examen', explorar: 'Explorar' };
-    const textos: Record<Pestana, string> = {
-      hoy: 'Aquí estará el repaso de cada día: lo que toca hoy y los verbos que ya te sabes.',
-      aprender: 'Aquí irás subiendo cada verbo por sus escalones, grupo a grupo.',
-      examen: 'Aquí podrás hacer un examen de prueba, con nota, como el de clase.',
-      explorar: 'Aquí estará la tabla de verbos, para consultarla sin que nadie te pregunte.',
-    };
-    botonRegion.hidden = true;
-    panel.replaceChildren(
-      el(
-        'div',
-        'contenido-modo',
-        el('h2', 'titulo-panel', titulos[nueva]),
-        el('p', 'resumen', titular),
-        el('p', 'ayuda', textos[nueva]),
-      ),
-    );
-  }
-
-  function serviciosExamen() {
-    return {
-      motor,
-      candidatos: activos,
-      rng: Math.random,
-      listaExamen: () => estado.ajustes.listaExamen,
-      ambitoInicial: () => estado.ajustes.focoHoy,
-      mapaContinente(continente: Continente, paises: readonly Pais[]) {
-        // Mapa mudo del continente: sin colores de región ni de progreso (SPEC 4.4).
-        const cambio = mapaDeExamen;
-        mapa?.destruir();
-        // Al examen solo se llega con un tablero montado, así que aquí siempre lo hay.
-        mapa = crearTablero({ contenedor: contenedorMapa, region: paises, onSeleccion: () => undefined });
-        mapaDeExamen = true;
-        botonRegion.hidden = true;
-        return { mapa: mapa!, transicionMs: cambio ? mostrarRotuloRegion(continente === 'europa' ? 'Europa' : 'Asia') : 0 };
-      },
-      priorizar(ids: readonly string[]) {
-        estado.prioridad = [...new Set([...estado.prioridad, ...ids])];
-        guardar();
-      },
-    };
   }
 
   const abrirInstalar = crearInstalar();
@@ -493,31 +357,24 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
     const prioridad = () => new Set([...estado.prioridad, ...(estado.ajustes.listaExamen ?? [])]);
     return {
       motor,
-      candidatos: activos,
+      candidatos: verbos,
       rng: Math.random,
       sesion() {
         const ahora = new Date();
-        const pendientes = repasosPendientes(estado, disponibles(), ahora).length;
+        const pendientes = repasosPendientes(estado, verbos, ahora).length;
         return crearSesionHoy({
           estado,
-          disponibles: disponibles(),
-          ordenRegiones: ordenRegiones(),
+          disponibles: verbos,
+          ordenGrupos: ordenCurso(grupos).map((g) => g.id),
           prioridad: prioridad(),
           nuevos: nuevosDeHoy(estado, pendientes, ahora),
           ahora,
           rng: Math.random,
         });
       },
-      adelantado: () => repasoAdelantado(estado, disponibles()),
-      resumen: () => resumenPortada(estado, activos, continentesCurso(regiones), new Date()),
+      adelantado: () => repasoAdelantado(estado, verbos),
+      resumen: () => resumenPortada(estado, verbos, new Date()),
       diasExamen: () => (estado.ajustes.listaExamen?.length ? diasHastaExamen(estado.ajustes.fechaExamen, new Date()) : null),
-      continentes: continentesCurso(regiones),
-      nombreContinente: (c: Continente) => NOMBRE_CONTINENTE[c],
-      continenteMapa: () => region.continente,
-      verContinente(c: Continente) {
-        region = regionContinente(c);
-        montarMapa();
-      },
       alumno: () => (variosAlumnos() ? perfil : null),
       cambiarAlumno,
       avisoInstalar: tocaAvisoInstalar,
@@ -525,88 +382,72 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
       descartarInstalar: descartarAviso,
       instalada: () => formaInstalar() === 'instalada',
       alCambiarInstalacion,
-      foco: () => estado.ajustes.focoHoy,
-      ponerFoco(c: Continente | null) {
-        estado.ajustes.focoHoy = c;
-        guardar();
-        cambiarPestana('hoy');
-        // Que se vea el aviso de arriba (en el móvil, el selector queda abajo del todo).
-        panel.scrollTop = 0;
-      },
       modoPara: (id: string) => modoHoy(estado, id, Math.random),
-      mapaPara(pais: Pais) {
-        // En Hoy las preguntas van siempre en el mapa de su región (no en el del continente entero de la portada).
-        const enEsta = !esContinente(region) && paisesDeRegion(region.id).some((p) => p.id === pais.id);
+      tableroPara(verbo: Verbo) {
+        // En Hoy las preguntas van en la cuadrícula de su grupo (no en la de todos los verbos de la portada).
         let transicionMs = 0;
-        const destino = regionEnHoy(pais);
-        if (!enEsta && destino) {
-          region = destino;
-          montarMapa();
-          transicionMs = mostrarRotuloRegion(region.nombre);
+        if (grupo.id !== verbo.grupo) {
+          grupo = grupoDe(verbo.grupo) ?? TODOS;
+          montarTablero();
+          transicionMs = mostrarRotuloGrupo(grupo.nombre);
         }
-        return { mapa: mapa!, region: paisesDeRegion(region.id), transicionMs };
+        return { tablero: tablero!, transicionMs };
       },
-      mapaActual: () => mapa,
+      tableroActual: () => tablero,
+      verTodos() {
+        grupo = TODOS;
+        montarTablero();
+      },
       irAAprender: () => cambiarPestana('aprender'),
       alExplorar: () => cambiarPestana('explorar'),
     };
   }
 
-  /** Rótulo con el nombre de la región sobre el mapa recién cambiado. Devuelve cuánto dura. */
-  function mostrarRotuloRegion(nombre: string): number {
-    contenedorMapa.querySelector('.rotulo-region')?.remove();
-    const rotulo = el('div', 'rotulo-region', nombre);
+  /** Rótulo con el nombre del grupo sobre la cuadrícula recién cambiada. Devuelve cuánto dura. */
+  function mostrarRotuloGrupo(nombre: string): number {
+    contenedorTablero.querySelector('.rotulo-grupo')?.remove();
+    const rotulo = el('div', 'rotulo-grupo', nombre);
     rotulo.setAttribute('aria-hidden', 'true');
-    contenedorMapa.append(rotulo);
-    window.setTimeout(() => rotulo.classList.add('saliendo'), ROTULO_REGION_MS - 250);
-    window.setTimeout(() => rotulo.remove(), ROTULO_REGION_MS);
-    return ROTULO_REGION_MS;
+    contenedorTablero.append(rotulo);
+    window.setTimeout(() => rotulo.classList.add('saliendo'), ROTULO_GRUPO_MS - 250);
+    window.setTimeout(() => rotulo.remove(), ROTULO_GRUPO_MS);
+    return ROTULO_GRUPO_MS;
   }
 
-  /** Cambia la región en estudio (la recuerda para la próxima vez). */
-  function irARegion(id: string): void {
-    const r = regionDe(id);
-    if (!r) return;
-    modo?.salir();
-    modo = null;
-    region = r;
-    regionElegida = r;
-    estado.ultimaRegion = id;
+  /** Cambia el grupo en estudio (lo recuerda para la próxima vez). */
+  function irAGrupo(id: string): void {
+    const g = grupoDe(id);
+    if (!g) return;
+    grupoElegido = g;
+    estado.ultimoGrupo = id;
     guardar();
-    montarMapa();
     cambiarPestana(pestana);
   }
 
-  function recalcularActivos(): void {
-    activos = paisesActivos(todos, new Set(estado.ajustes.opcionalesActivados));
-  }
-
   // --- Arranque ---
-  recalcularActivos();
-  const guardada = estado.ultimaRegion ? regionDe(estado.ultimaRegion) : undefined;
-  if (guardada && regionAbierta(guardada)) region = regionElegida = guardada;
+  const guardado = estado.ultimoGrupo ? grupoDe(estado.ultimoGrupo) : undefined;
+  if (guardado && grupoAbierto(guardado)) grupoElegido = guardado;
   if (!almacen.disponible) mostrarAvisoAlmacen();
   // Pedir almacenamiento persistente (Safari puede borrar datos de webs poco visitadas).
   void navigator.storage?.persist?.().catch(() => undefined);
 
   for (const b of botonesPestana) b.addEventListener('click', () => cambiarPestana(b.dataset.modo as Pestana));
-  if (!hayContenido) botonRegion.hidden = true;
-  else actualizarSelector = prepararSelectorRegiones(botonRegion, {
-    regiones,
-    entero: (c) => ({ region: regionContinente(c), abierto: continenteAbierto(c) }),
-    paisesDe: paisesDeRegion,
-    desbloqueadas,
-    nivel: (id) => nivelMapa(estado, id),
-    actual: () => region,
-    elegir: irARegion,
-    conExamen: (id) => paisesDeRegion(id).filter(enExamen).length,
+  actualizarSelector = prepararSelectorGrupos(botonGrupo, {
+    grupos,
+    todos: () => ({ grupo: TODOS, abierto: todosAbiertos() }),
+    verbosDe,
+    desbloqueados,
+    nivel: (id) => nivelCasilla(estado, id),
+    actual: () => grupoElegido,
+    elegir: irAGrupo,
+    conExamen: (id) => verbosDe(id).filter(enExamen).length,
   });
   const abrirPanel = crearPanelAdultos({
     estado: () => estado,
     guardar,
-    regiones,
-    paisesDe: paisesDeRegion,
-    todos,
+    grupos,
+    verbosDe,
+    verbos,
     recargar: () => window.location.reload(),
     alumnos: () => ({ perfiles: indice.perfiles, actual: perfilId }),
     copiaCasa() {
@@ -657,19 +498,16 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
     },
   });
   const abrirGuia = crearGuia({
-    paisParaTaller() {
-      if (!hayContenido) return null;
-      const sinTruco = paisesDeRegion(region.id).filter((p) => !estado.trucosPropios[p.id]);
+    verboParaTaller() {
+      const sinTruco = verbosDe(grupoElegido.id).filter((v) => !estado.trucosPropios[v.id]);
       if (!sinTruco.length) return null;
       // Primero, el que más ha fallado: es donde un truco propio sirve de verdad.
       const fallos = new Map<string, number>();
-      for (const r of estado.historial) if (r.res === 'fallo') fallos.set(r.pais, (fallos.get(r.pais) ?? 0) + 1);
+      for (const r of estado.historial) if (r.res === 'fallo') fallos.set(r.verbo, (fallos.get(r.verbo) ?? 0) + 1);
       const masFallado = [...sinTruco].sort((a, b) => (fallos.get(b.id) ?? 0) - (fallos.get(a.id) ?? 0))[0];
       if ((fallos.get(masFallado.id) ?? 0) > 0) return masFallado;
-      // Si aún no ha fallado nada, uno sin truco predefinido, al azar.
-      const sinNinguno = sinTruco.filter((p) => !trucos.predefinido(p.id));
-      const lista = sinNinguno.length ? sinNinguno : sinTruco;
-      return lista[Math.floor(Math.random() * lista.length)];
+      // Si aún no ha fallado nada, uno al azar.
+      return sinTruco[Math.floor(Math.random() * sinTruco.length)];
     },
     guardarTruco: (id, texto) => trucos.guardarPropio(id, texto),
     alCerrar() {
@@ -696,10 +534,9 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
     cambiarAlumno,
     editarPerfil: () => editarPerfil(),
     anadirAlumno: () => anadirAlumno(backend, indice, () => undefined),
-    // Las guías explican cómo estudiar con la app: sin verbos todavía, no se ofrecen.
-    abrirGuia: hayContenido && !PROTOTIPO ? abrirGuia : undefined,
+    abrirGuia,
     abrirInstalar: () => (formaInstalar() === 'instalada' ? null : abrirInstalar),
-    abrirGuiaAdultos: hayContenido && !PROTOTIPO ? abrirGuiaAdultos : undefined,
+    abrirGuiaAdultos,
     abrirAcercaDe: crearAcercaDe(),
     abrirPanelAdultos: abrirPanel,
     estado: () => estado,
@@ -710,14 +547,10 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
       window.location.reload();
     },
   });
-  montarMapa();
-  cambiarPestana(PROTOTIPO && hayContenido ? 'aprender' : 'hoy');
-  // Sin verbos, o mientras las guías sigan hablando de capitales, la bienvenida y la guía esperan.
-  if (!hayContenido || PROTOTIPO) return;
+  cambiarPestana('hoy');
   // Primer arranque: "¿quién eres?". Después, si el alumno aún no ha visto su guía, se le abre sola.
   if (!estado.bienvenidaVista) abrirBienvenida();
   // Primera vez con la versión de los alumnos: ponerle nombre al perfil (una sola vez).
   else if (faltaNombre(indice)) editarPerfil(true, () => (estado.guiaVista ? undefined : abrirGuia()));
   else if (!estado.guiaVista) abrirGuia();
-
 }
