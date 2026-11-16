@@ -2,7 +2,7 @@
 
 Lee `SPEC.md` antes de empezar cualquier tarea. Es la fuente de verdad del producto; si una tarea la contradice, pregunta antes de implementar.
 
-By Heart nació de una copia de Capitalia, pero el código ya trabaja solo con verbos y grupos (`Verbo`, `Grupo`). La estructura está en `docs/notas-tecnicas.md`.
+By Heart nació de una copia de Capitalia, pero el código ya trabaja solo con verbos (`Verbo`): una sola lista, sin grupos. La estructura está en `docs/notas-tecnicas.md`.
 
 ## Cómo trabajamos
 
@@ -18,7 +18,7 @@ By Heart nació de una copia de Capitalia, pero el código ya trabaja solo con v
 - **Sin rachas y sin mecánicas que castiguen.**
 - **Sin voz mientras el responsable no lo decida** (`SPEC.md`, 5.5).
 - En el fallo: claro pero sin castigo, nunca rojo intenso. Mostrar la respuesta correcta y el truco.
-- Celebraciones grandes solo al dominar un grupo o recuperar un fallo.
+- Celebraciones grandes solo cada diez verbos dominados o al recuperar un fallo.
 - Textos de la interfaz en español de España, tono cercano y breve.
 - **El estilo visual es el de Capitalia.** No se cambia paleta, tipografía ni componentes sin pedirlo.
 

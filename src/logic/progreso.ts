@@ -2,7 +2,7 @@ import { createEmptyCard, fsrs, generatorParameters, State, type Card } from 'ts
 import { CONFIG, type ModoId } from './config';
 import { deducirNota } from './nota';
 import type { Resultado } from './sesion';
-import type { Grupo, Verbo } from './types';
+import type { Verbo } from './types';
 
 /** Tarjeta FSRS en formato guardable (fechas como texto ISO). */
 export interface TarjetaGuardada {
@@ -39,8 +39,6 @@ export interface Ajustes {
   trucosEditados: Record<string, string>;
   /** Hash del PIN del panel de adultos. */
   pinHash: string | null;
-  /** El adulto ha abierto todos los grupos (sin esperar al desbloqueo progresivo). */
-  todasDesbloqueadas: boolean;
   /** Máximo de verbos nuevos por día en Hoy (se autorregula hasta este valor). */
   maxNuevos: number;
 }
@@ -69,10 +67,8 @@ export interface EstadoProgreso {
   historial: RespuestaGuardada[];
   /** Trucos inventados por el alumno (sustituyen al predefinido). */
   trucosPropios: Record<string, string>;
-  /** Grupos cuyo dominio ya se ha celebrado (para no repetir el confeti). */
-  gruposCelebrados: string[];
-  /** Último grupo estudiado (para volver a él al abrir la app). */
-  ultimoGrupo: string | null;
+  /** Decenas de verbos dominados ya celebradas (para no repetir el confeti). */
+  decenasCelebradas: number;
   /** La guía se ha visto (para no abrirla sola cada vez). */
   guiaVista: boolean;
   /** Se ha pasado la bienvenida del primer arranque ("¿quién eres?"). */
@@ -90,8 +86,7 @@ export function estadoVacio(): EstadoProgreso {
     tarjetas: {},
     historial: [],
     trucosPropios: {},
-    gruposCelebrados: [],
-    ultimoGrupo: null,
+    decenasCelebradas: 0,
     guiaVista: false,
     bienvenidaVista: false,
     aprendizaje: {},
@@ -102,7 +97,6 @@ export function estadoVacio(): EstadoProgreso {
       trucosDesactivados: [],
       trucosEditados: {},
       pinHash: null,
-      todasDesbloqueadas: false,
       maxNuevos: CONFIG.nuevosMaximo,
     },
   };
@@ -261,41 +255,20 @@ export function registrarEscalon(
   return { subio: true, aprendido: false };
 }
 
-/**
- * Un grupo está superado (abre el siguiente) cuando todos sus verbos han
- * llegado al escalón Completar (o están aprendidos), o están en repaso según FSRS.
- */
-export function grupoSuperado(estado: EstadoProgreso, verbos: readonly Verbo[]): boolean {
-  return (
-    verbos.length > 0 &&
-    verbos.every((v) => {
-      const a = estado.aprendizaje[v.id];
-      return (a && (a.aprendido || a.escalon >= 2)) || nivelDominio(estado.tarjetas[v.id]) >= 2;
-    })
-  );
-}
-
-/** Un grupo está dominado cuando todos sus verbos lo están. */
-export function grupoDominado(estado: EstadoProgreso, verbos: readonly Verbo[]): boolean {
-  return verbos.length > 0 && verbos.every((v) => nivelDominio(estado.tarjetas[v.id]) === 3);
+/** Verbos dominados según FSRS (estabilidad de varios días). */
+export function dominados(estado: EstadoProgreso, verbos: readonly Verbo[]): number {
+  return verbos.filter((v) => nivelDominio(estado.tarjetas[v.id]) === 3).length;
 }
 
 /**
- * Grupos desbloqueados: el primero siempre; cada uno de los siguientes, cuando
- * el anterior está superado o cuando ya tiene algún verbo empezado (Hoy saca
- * los nuevos por orden del curso sin mirar si el grupo está abierto, y eso
- * también lo abre). Siempre se puede volver a los anteriores.
+ * Verbos en curso (Aprender): los empezados que aún no están aprendidos y,
+ * si son menos de `minimo`, los siguientes sin empezar hasta llegar a él: primero
+ * los de `prioridad` (lista de examen), después en el orden del listado.
  */
-export function gruposDesbloqueados(
-  estado: EstadoProgreso,
-  grupos: readonly Grupo[],
-  verbosDe: (grupoId: string) => readonly Verbo[],
-): Set<string> {
-  const ordenados = [...grupos].sort((a, b) => a.orden - b.orden);
-  const abiertos = new Set<string>();
-  for (let i = 0; i < ordenados.length; i++) {
-    const empezadoYa = verbosDe(ordenados[i].id).some((v) => empezado(estado, v.id));
-    if (i === 0 || empezadoYa || grupoSuperado(estado, verbosDe(ordenados[i - 1].id))) abiertos.add(ordenados[i].id);
-  }
-  return abiertos;
+export function verbosEnCurso(estado: EstadoProgreso, verbos: readonly Verbo[], prioridad: ReadonlySet<string> = new Set(), minimo = 8): Verbo[] {
+  const enCurso = verbos.filter((v) => empezado(estado, v.id) && !aprendido(estado, v.id));
+  const nuevos = verbos.filter((v) => !empezado(estado, v.id)).sort((a, b) => Number(!prioridad.has(a.id)) - Number(!prioridad.has(b.id)));
+  const elegidos = new Set([...enCurso, ...nuevos.slice(0, Math.max(0, minimo - enCurso.length))].map((v) => v.id));
+  // En el orden del listado, para que la cuadrícula no baile.
+  return verbos.filter((v) => elegidos.has(v.id));
 }

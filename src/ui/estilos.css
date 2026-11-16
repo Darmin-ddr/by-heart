@@ -12,11 +12,11 @@
   --casilla: #d8d4cc;
   --objetivo: #a9c9ef;
   --objetivo-borde: #2f62a8;
-  /* El color base del grupo lo fija app.ts al montar la cuadrícula. */
-  --grupo-base: #c8b6e2;
-  --color-grupo-base: var(--grupo-base);
-  /* Texto sobre el color del grupo: siempre oscuro, también en modo oscuro (el pastel es claro). */
-  --texto-sobre-grupo: #1f2a37;
+  /* Color de las casillas de los verbos aprendidos. */
+  --verbo-base: #c8b6e2;
+  --color-verbo-base: var(--verbo-base);
+  /* Texto sobre ese color: siempre oscuro, también en modo oscuro (el pastel es claro). */
+  --texto-sobre-color: #1f2a37;
 
   --acierto: #1f7d5c;
   --acierto-fondo: #dcf3e9;
@@ -147,33 +147,6 @@ button {
   letter-spacing: 0.01em;
 }
 
-.grupo-actual {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 45vw;
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid var(--borde);
-  background: var(--superficie);
-  color: var(--texto);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.grupo-nombre {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.grupo-flecha {
-  color: var(--texto-suave);
-  font-size: 0.8em;
-}
-
 @media (max-width: 480px) {
   .barra {
     flex-wrap: nowrap;
@@ -185,7 +158,7 @@ button {
   .modo {
     padding: 0 14px;
   }
-  /* En pantallas estrechas se oculta el nombre de la app para que quepan pestañas y grupo. */
+  /* En pantallas estrechas se oculta el nombre de la app para que quepan las pestañas. */
   .marca {
     display: none;
   }
@@ -199,18 +172,6 @@ button {
   }
   .tablero {
     --reserva-superior: 48px;
-  }
-  /* El selector de grupo va sobre la esquina de la cuadrícula: en la barra no cabe. */
-  .grupo-actual {
-    position: absolute;
-    top: calc(env(safe-area-inset-top) + 72px);
-    left: calc(env(safe-area-inset-left) + 24px);
-    z-index: 5;
-    max-width: calc(100vw - 48px);
-    min-height: 44px;
-    padding: 0 12px;
-    font-size: 0.95rem;
-    box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
   }
   .modos {
     flex: 1;
@@ -348,8 +309,8 @@ button {
 }
 
 .resaltado.seleccion {
-  background: var(--color-grupo-base);
-  color: var(--texto-sobre-grupo);
+  background: var(--color-verbo-base);
+  color: var(--texto-sobre-color);
 }
 
 .ficha-formas {
@@ -401,9 +362,9 @@ button {
 }
 
 .chip[aria-pressed='true'] {
-  background: var(--color-grupo-base);
+  background: var(--color-verbo-base);
   border-color: transparent;
-  color: var(--texto-sobre-grupo);
+  color: var(--texto-sobre-color);
   font-weight: 700;
 }
 
@@ -767,7 +728,7 @@ button {
   border-color: var(--acento);
 }
 
-/* ---------- Diálogos y selector de grupos ---------- */
+/* ---------- Diálogos ---------- */
 
 .dialogo {
   width: min(92vw, 480px);
@@ -799,59 +760,6 @@ button {
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--texto-suave);
-}
-
-.lista-grupos {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
-}
-
-.grupo-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 56px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 2px solid var(--borde);
-  background: var(--superficie);
-  text-align: left;
-  cursor: pointer;
-}
-
-.grupo-item.actual {
-  border-color: var(--acento);
-}
-
-.grupo-item:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.grupo-muestra {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--color-grupo);
-}
-
-.grupo-textos {
-  flex: 1;
-  display: grid;
-}
-
-.grupo-titulo {
-  font-weight: 800;
-}
-
-.grupo-detalle {
-  font-size: 0.85rem;
   color: var(--texto-suave);
 }
 
@@ -939,8 +847,8 @@ button {
   height: 12px;
   border-radius: 3px;
   vertical-align: -1px;
-  /* Color fijo: el del grupo puede ser casi gris ("Todos los verbos") y la leyenda no se leería. */
-  --color-grupo: #e0a93e;
+  /* Color fijo para la leyenda del panel. */
+  --color-verbo: #e0a93e;
 }
 
 .nivel-tramo-0 {
@@ -948,15 +856,15 @@ button {
 }
 
 .nivel-tramo-1 {
-  background: color-mix(in srgb, var(--color-grupo) 35%, var(--casilla));
+  background: color-mix(in srgb, var(--color-verbo) 35%, var(--casilla));
 }
 
 .nivel-tramo-2 {
-  background: color-mix(in srgb, var(--color-grupo) 65%, var(--casilla));
+  background: color-mix(in srgb, var(--color-verbo) 65%, var(--casilla));
 }
 
 .nivel-tramo-3 {
-  background: var(--color-grupo);
+  background: var(--color-verbo);
 }
 
 .leyenda {
@@ -1006,23 +914,10 @@ button {
   max-width: 260px;
 }
 
-.grupos-examen {
+.lista-examen {
   display: grid;
   gap: 6px;
   margin: 8px 0 12px;
-}
-
-.grupo-examen {
-  border: 1px solid var(--borde);
-  border-radius: 10px;
-  padding: 4px 12px;
-}
-
-.grupo-examen summary {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
 }
 
 .casillas {
@@ -1159,7 +1054,7 @@ button {
   font-size: 1.05rem;
 }
 
-/* --- Aprender: escalones del grupo (SPEC 4.3) --- */
+/* --- Aprender: escalones de los verbos en curso (SPEC 4.3) --- */
 .escalera {
   list-style: none;
   margin: 12px 0;
@@ -1241,48 +1136,6 @@ button {
   border-radius: 999px;
   border: 1px solid var(--borde);
   background: var(--superficie);
-}
-
-/* Rótulo con el nombre del grupo cuando Hoy cambia de cuadrícula. */
-.rotulo-grupo {
-  position: absolute;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  max-width: calc(100% - 140px);
-  text-align: center;
-  padding: 10px 20px;
-  border-radius: 999px;
-  background: var(--superficie);
-  box-shadow: var(--sombra);
-  font-size: 1.25rem;
-  font-weight: 800;
-  pointer-events: none;
-  animation: rotulo-entra 0.25s ease-out;
-  transition: opacity 0.25s;
-}
-
-.rotulo-grupo.saliendo {
-  opacity: 0;
-}
-
-@keyframes rotulo-entra {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 8px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rotulo-grupo {
-    animation: none;
-    transition: none;
-  }
-}
-
-/* --- Examen --- */
-.grupo-actual[hidden] {
-  display: none;
 }
 
 .nota-examen {
@@ -1373,10 +1226,6 @@ button {
 .fila-cifra {
   font-variant-numeric: tabular-nums;
   color: var(--texto-suave);
-}
-
-.grupo-item.grupo-todos .grupo-titulo {
-  font-weight: 800;
 }
 
 /* --- Revisión visual: espaciados y anchos coherentes --- */
@@ -1867,18 +1716,18 @@ button {
 
 /* Progreso: la casilla se colorea según el escalón del verbo (SPEC 10). */
 .cuadro.nivel-1 {
-  background: color-mix(in srgb, var(--color-grupo, var(--color-grupo-base)) 35%, var(--casilla));
+  background: color-mix(in srgb, var(--color-verbo, var(--color-verbo-base)) 35%, var(--casilla));
 }
 
 .cuadro.nivel-2 {
-  background: color-mix(in srgb, var(--color-grupo, var(--color-grupo-base)) 65%, var(--casilla));
-  color: var(--texto-sobre-grupo);
+  background: color-mix(in srgb, var(--color-verbo, var(--color-verbo-base)) 65%, var(--casilla));
+  color: var(--texto-sobre-color);
 }
 
 .cuadro.nivel-3,
 .cuadro.seleccion {
-  background: var(--color-grupo, var(--color-grupo-base));
-  color: var(--texto-sobre-grupo);
+  background: var(--color-verbo, var(--color-verbo-base));
+  color: var(--texto-sobre-color);
 }
 
 .cuadro.seleccion {

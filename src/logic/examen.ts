@@ -10,13 +10,13 @@ import type { Verbo } from './types';
  * da el pasado ni el participio: varios verbos podrían compartirlos. Lógica pura.
  */
 
-/** Qué entra: todos los verbos, la lista del examen del panel o un grupo (por su id). */
-export type AmbitoExamen = 'todo' | 'lista' | { grupo: string };
+/** Qué entra: todos los verbos, la lista del examen del panel o los que el alumno ya ha empezado. */
+export type AmbitoExamen = 'todo' | 'lista' | 'empezados';
 
-export function verbosDeAmbito(ambito: AmbitoExamen, verbos: readonly Verbo[], lista: readonly string[] | null): Verbo[] {
+export function verbosDeAmbito(ambito: AmbitoExamen, verbos: readonly Verbo[], lista: readonly string[] | null, empezados: ReadonlySet<string> = new Set()): Verbo[] {
   if (ambito === 'lista') return verbos.filter((v) => lista?.includes(v.id));
-  if (ambito === 'todo') return [...verbos];
-  return verbos.filter((v) => v.grupo === ambito.grupo);
+  if (ambito === 'empezados') return verbos.filter((v) => empezados.has(v.id));
+  return [...verbos];
 }
 
 export type Dato = 'infinitivo' | 'significado';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aprendido, escalonDe, estadoVacio, grupoSuperado, registrarEscalon } from '../src/logic/progreso';
+import { aprendido, escalonDe, estadoVacio, registrarEscalon, verbosEnCurso } from '../src/logic/progreso';
 import { validarEstado } from '../src/logic/almacen';
 import { verbo } from './ayuda';
 
@@ -47,17 +47,19 @@ describe('escalones de aprendizaje', () => {
     expect(escalonDe(e, 'A')).toBe('completar');
   });
 
-  it('grupo superado cuando todos sus verbos llegan a Completar', () => {
+  it('verbos en curso: los empezados sin aprender y, hasta el mínimo, los siguientes del listado', () => {
+    const vs = ['A', 'B', 'C', 'D', 'E', 'F'].map((id) => verbo(id));
     const e = estadoVacio();
-    const vs = [verbo('A'), verbo('B')];
-    for (const id of ['A', 'B']) {
-      for (const modo of ['elegir', 'emparejar'] as const) {
-        registrarEscalon(e, id, modo, 'acierto');
-        registrarEscalon(e, id, modo, 'acierto');
-      }
-    }
-    expect(grupoSuperado(e, vs)).toBe(true);
-    expect(grupoSuperado(e, [...vs, verbo('C')])).toBe(false);
+    expect(verbosEnCurso(e, vs, new Set(), 3).map((v) => v.id)).toEqual(['A', 'B', 'C']);
+    // B aprendido y E empezado (por Hoy): sale B, entra E, y se completa con el siguiente (C).
+    e.aprendizaje.B = { escalon: 3, aciertos: 0, aprendido: true };
+    e.aprendizaje.E = { escalon: 1, aciertos: 0, aprendido: false };
+    expect(verbosEnCurso(e, vs, new Set(), 3).map((v) => v.id)).toEqual(['A', 'C', 'E']);
+    // Los de la lista de examen entran antes que los siguientes del listado.
+    expect(verbosEnCurso(e, vs, new Set(['F']), 3).map((v) => v.id)).toEqual(['A', 'E', 'F']);
+    // Si hay más empezados que el mínimo, salen todos.
+    for (const id of ['A', 'C', 'D', 'F']) e.aprendizaje[id] = { escalon: 0, aciertos: 1, aprendido: false };
+    expect(verbosEnCurso(e, vs, new Set(), 3)).toHaveLength(5);
   });
 });
 

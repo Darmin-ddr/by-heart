@@ -3,7 +3,7 @@ import type { Rng } from '../logic/rng';
 import type { Resultado } from '../logic/sesion';
 import { crearPreguntaOpciones } from '../logic/opciones';
 import { corregirVerbo, type CorreccionForma } from '../logic/formas';
-import { formasDe } from '../logic/verbos';
+import { formasDe, tresFormas } from '../logic/verbos';
 import type { Tablero } from './tablero';
 import { boton, el } from './dom';
 import { nombreResaltado, pintarAcierto, pintarFallo, type Teclado } from './comun';
@@ -30,15 +30,18 @@ export interface ControlPregunta {
 
 export type Renderizador = (a: ArgsPregunta) => ControlPregunta;
 
-function significado(verbo: Verbo): HTMLElement {
+function significado(verbo: Pick<Verbo, 'significado'>): HTMLElement {
   return el('span', 'significado', ` (${verbo.significado})`);
 }
 
-/** Elegir: el pasado y el participio entre cuatro. */
+/**
+ * Elegir: se da el significado y hay que reconocer el verbo entre cuatro.
+ * La cuadrícula esconde los infinitivos para no chivar la respuesta.
+ */
 export const preguntaElegir: Renderizador = (a) => {
   const { zona, tablero, verbo, rng, teclado } = a;
   tablero.setInteractivo(false);
-  tablero.setEstado(verbo.id, 'objetivo');
+  tablero.setMudo(true);
   const pregunta = crearPreguntaOpciones(verbo, a.candidatos, rng);
   const opciones = el('div', 'opciones');
   const feedback = el('div', 'feedback');
@@ -48,11 +51,7 @@ export const preguntaElegir: Renderizador = (a) => {
     opciones.append(b);
     return b;
   });
-  zona.append(
-    el('p', 'enunciado', '¿Cuál es el pasado y el participio de ', el('span', 'sin-corte', nombreResaltado(verbo.infinitivo, 'objetivo'), '?'), significado(verbo)),
-    opciones,
-    feedback,
-  );
+  zona.append(el('p', 'enunciado', '¿Qué verbo es ', el('span', 'sin-corte', nombreResaltado(verbo.significado, 'objetivo'), '?')), opciones, feedback);
   botones[0].focus({ preventScroll: true });
   teclado.usar((e) => {
     const n = Number(e.key);
@@ -64,24 +63,26 @@ export const preguntaElegir: Renderizador = (a) => {
     for (const b of botones) b.disabled = true;
     const acierto = i === pregunta.correcta;
     const { recuperado } = a.responder(acierto ? 'acierto' : 'fallo');
+    // Ya respondida: se enseña el verbo con sus formas (primer contacto con ellas).
     tablero.mostrarFormas(verbo.id);
     botones[pregunta.correcta].classList.add('correcta');
+    const formas = el('p', 'feedback-texto', el('strong', '', tresFormas(verbo)));
     if (acierto) {
       tablero.setEstado(verbo.id, 'acierto');
       pintarAcierto(feedback, recuperado, rng, a.siguiente);
+      feedback.querySelector('.feedback-titulo')?.after(formas);
       teclado.enterPara(a.siguiente);
       return;
     }
     botones[i].classList.add('elegida-mal');
     tablero.setEstado(verbo.id, 'fallo');
-    pintarFallo(feedback, ['No es ', pregunta.opciones[i], '. Es ', el('strong', '', formasDe(verbo)), '.'], a.truco, a.siguiente)?.focus({
+    pintarFallo(feedback, ['No es ', pregunta.opciones[i], '. «', verbo.significado, '» es ', el('strong', '', verbo.infinitivo), ': ', tresFormas(verbo), '.'], a.truco, a.siguiente)?.focus({
       preventScroll: true,
     });
     teclado.enterPara(a.siguiente);
   }
   return {};
 };
-
 /** Una forma correcta, con las letras de un "casi" señaladas. */
 export function formaCorregida(c: CorreccionForma): HTMLElement {
   if (c.estado === 'bien') return el('span', 'forma', c.correcta);

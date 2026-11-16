@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resumenPortada } from '../src/logic/portada';
 import { estadoVacio, registrarEscalon } from '../src/logic/progreso';
-import { ordenCurso } from '../src/logic/verbos';
 import { verbo } from './ayuda';
 
 const AHORA = new Date('2026-11-10T10:00:00Z');
@@ -28,12 +27,4 @@ describe('portada de Hoy', () => {
     expect(e.aprendizaje.A).toMatchObject({ aprendido: true, aprendidoEl: AHORA.toISOString() });
   });
 
-  it('orden del curso: los grupos por su número de orden', () => {
-    const gs = [
-      { id: 'b', nombre: 'b', orden: 2, color: '' },
-      { id: 'c', nombre: 'c', orden: 3, color: '' },
-      { id: 'a', nombre: 'a', orden: 1, color: '' },
-    ];
-    expect(ordenCurso(gs).map((g) => g.id)).toEqual(['a', 'b', 'c']);
-  });
 });

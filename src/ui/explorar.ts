@@ -30,16 +30,7 @@ export function iniciarExplorar(panel: HTMLElement, tablero: Tablero, verbos: re
   tablero.setInteractivo(true);
 
   const ficha = el('div', 'ficha');
-  const lista = el('div', 'lista-verbos');
-  lista.setAttribute('aria-label', 'Verbos del grupo');
-  const botones = new Map<string, HTMLButtonElement>();
-  for (const v of [...verbos].sort((a, b) => a.infinitivo.localeCompare(b.infinitivo, 'en'))) {
-    const b = boton(v.infinitivo, 'chip', () => seleccionar(v.id));
-    botones.set(v.id, b);
-    lista.append(b);
-  }
-
-  panel.replaceChildren(el('h2', 'titulo-panel', 'Explorar'), ficha, lista);
+  panel.replaceChildren(el('h2', 'titulo-panel', 'Explorar'), ficha);
   pintarFicha();
 
   function seleccionar(id: string): void {
@@ -48,14 +39,13 @@ export function iniciarExplorar(panel: HTMLElement, tablero: Tablero, verbos: re
     editando = false;
     tablero.setEstado(id, 'seleccion');
     tablero.mostrarFormas(id);
-    for (const [bid, b] of botones) b.setAttribute('aria-pressed', String(bid === id));
     pintarFicha();
   }
 
   function pintarFicha(): void {
     const verbo = verbos.find((v) => v.id === seleccionado);
     if (!verbo) {
-      ficha.replaceChildren(el('p', 'ayuda', 'Toca un verbo en la cuadrícula (o en la lista) para ver sus formas.'));
+      ficha.replaceChildren(el('p', 'ayuda', 'Toca un verbo en la cuadrícula para ver sus formas, su significado y su truco.'));
       return;
     }
     const propio = trucos.propio(verbo.id);

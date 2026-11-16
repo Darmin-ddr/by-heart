@@ -3,7 +3,7 @@ import { tresFormas } from '../logic/verbos';
 import { boton, el, enterPulsaPrincipal, rellenar } from './dom';
 
 export interface DatosGuia {
-  /** Un verbo del grupo actual sin truco propio, para el taller de trucos. */
+  /** Un verbo de los que está aprendiendo, sin truco propio, para el taller de trucos. */
   verboParaTaller(): Verbo | null;
   /** Guarda un truco propio (como "Inventa tu truco" en Explorar). */
   guardarTruco(verboId: string, texto: string): void;
@@ -46,7 +46,7 @@ export function crearGuia(datos: DatosGuia): () => void {
             'ul',
             'lista-guia',
             el('li', '', fuerte('Hoy'), ': lo que toca hoy, repasos y unos pocos verbos nuevos. Es lo único imprescindible.'),
-            el('li', '', fuerte('Aprender'), ': para adelantar un grupo de verbos a tu ritmo.'),
+            el('li', '', fuerte('Aprender'), ': para avanzar a tu ritmo, de pocos en pocos verbos.'),
             el('li', '', fuerte('Examen'), ': una tabla con huecos como la de clase, para comprobar cómo lo llevas.'),
             el('li', '', fuerte('Explorar'), ': para mirar la tabla con calma e inventar tus trucos.'),
           ),
@@ -87,7 +87,7 @@ export function crearGuia(datos: DatosGuia): () => void {
           ),
           p('Por eso en ', fuerte('Hoy'), ' no tienes que decidir nada: entra, responde lo que te salga y ya está. Unos diez minutos al día bastan. Cada día entran unos pocos verbos nuevos, mezclados con los repasos.'),
           p(
-            'La cuadrícula es tu marcador: cada verbo se va coloreando a medida que lo dominas. Cuando dominas un grupo entero, lo celebramos, y se van abriendo grupos nuevos.',
+            'La cuadrícula es tu marcador: cada verbo se va coloreando a medida que lo dominas. Cada diez verbos dominados, lo celebramos.',
           ),
         );
       },
@@ -120,7 +120,7 @@ export function crearGuia(datos: DatosGuia): () => void {
           el(
             'ol',
             'lista-guia',
-            el('li', '', fuerte('Elegir'), ': reconocer el pasado y el participio entre cuatro.'),
+            el('li', '', fuerte('Elegir'), ': reconocer el verbo por su significado.'),
             el('li', '', fuerte('Emparejar'), ': unir cada verbo con sus formas.'),
             el('li', '', fuerte('Completar'), ': escribir el pasado y el participio.'),
             el('li', '', fuerte('Tabla muda'), ': a partir del significado, escribir las tres formas, como en el examen.'),
@@ -140,7 +140,7 @@ export function crearGuia(datos: DatosGuia): () => void {
           el(
             'ul',
             'lista-guia',
-            el('li', '', fuerte('Familias.'), ' Agrupa los que cambian igual y apréndelos juntos: sing, sang, sung; ring, rang, rung; drink, drank, drunk. La app ya los presenta por grupos.'),
+            el('li', '', fuerte('Familias.'), ' Fíjate en los que cambian igual: sing, sang, sung; ring, rang, rung; drink, drank, drunk. El truco de cada verbo te dice cuáles son de su familia.'),
             el('li', '', fuerte('Fíjate en la diferencia.'), ' Dentro de una familia, busca lo que cambia: bought y brought solo se diferencian en una r; taught y caught llevan au, thought y fought, ou.'),
             el('li', '', fuerte('Sonido o rima.'), ' Di las tres formas en voz alta, con ritmo, como una canción: "buy, bought, bought".'),
             el('li', '', fuerte('Una frase con las tres.'), ' Inventa una frase corta que las use: "I buy bread; yesterday I bought it; I have bought it every day".'),
@@ -154,7 +154,7 @@ export function crearGuia(datos: DatosGuia): () => void {
       pintar(z) {
         const verbo = datos.verboParaTaller();
         if (!verbo) {
-          z.append(p('Ya tienes trucos propios para todos los verbos de este grupo. ¡Bien hecho! Puedes cambiarlos cuando quieras en Explorar.'));
+          z.append(p('Ya tienes trucos propios para todos los verbos que estás aprendiendo. ¡Bien hecho! Puedes cambiarlos cuando quieras en Explorar.'));
           return;
         }
         const formas = tresFormas(verbo);
@@ -180,7 +180,7 @@ export function crearGuia(datos: DatosGuia): () => void {
           mensaje.textContent = `Guardado. Te saldrá cuando falles ${verbo.infinitivo}, y puedes cambiarlo en Explorar.`;
         });
         z.append(
-          p('Vamos con uno de este grupo: ', fuerte(formas), ` (${verbo.significado}).`),
+          p('Vamos con uno de los que estás aprendiendo: ', fuerte(formas), ` (${verbo.significado}).`),
           el('label', 'etiqueta-guia', '1. ¿A qué otro verbo se parece? (uno que cambie igual, o casi)', parecido),
           el('label', 'etiqueta-guia', '2. Escribe una frase o una imagen que te ayude a recordar sus formas:', frase),
           el('div', 'acciones', guardar),
@@ -197,8 +197,8 @@ export function crearGuia(datos: DatosGuia): () => void {
             'ul',
             'lista-guia',
             el('li', '', fuerte('Cada día'), ': Hoy, unos diez minutos. Mejor un poco cada día que mucho de golpe.'),
-            el('li', '', fuerte('Si te apetece más'), ': adelanta un grupo en Aprender.'),
-            el('li', '', fuerte('Antes de empezar un grupo'), ': date una vuelta por Explorar y fíjate en qué tienen en común sus verbos.'),
+            el('li', '', fuerte('Si te apetece más'), ': avanza en Aprender.'),
+            el('li', '', fuerte('Para mirar con calma'), ': en Explorar ves cualquier verbo, con su truco.'),
             el('li', '', fuerte('Si un verbo se te resiste'), ': inventa tu propio truco para él.'),
             el('li', '', fuerte('Antes de un examen'), ': haz algún Examen de prueba unos días antes, no la víspera. Lo que falles, mándalo a Hoy para repasarlo antes.'),
             el('li', '', fuerte('Para no perder tu progreso'), ': haz de vez en cuando una copia de seguridad desde el botón ⋯.'),

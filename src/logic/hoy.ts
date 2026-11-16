@@ -60,10 +60,8 @@ export function nuevosDeHoy(estado: EstadoProgreso, pendientes: number, ahora: D
 
 export interface ParametrosHoy {
   estado: EstadoProgreso;
-  /** Verbos con los que trabaja Hoy: todos, también los de grupos aún cerrados. */
+  /** Verbos con los que trabaja Hoy (todos), en el orden del listado: los nuevos salen en ese orden. */
   disponibles: readonly Verbo[];
-  /** Orden de los grupos para sacar nuevos (el del curso). */
-  ordenGrupos: readonly string[];
   /** Verbos a priorizar (lista de examen, fallados en un examen). */
   prioridad: ReadonlySet<string>;
   nuevos: number;
@@ -95,45 +93,22 @@ export function crearSesionHoy(p: ParametrosHoy): ItemHoy[] {
     .sort((a, b) => prio(a) - prio(b))
     .map((v): ItemHoy => ({ verboId: v.id, tipo: 'aprendiendo' }));
 
-  const ordenGrupo = (v: Verbo) => {
-    const i = p.ordenGrupos.indexOf(v.grupo);
-    return i === -1 ? p.ordenGrupos.length : i;
-  };
-  const nuevos = barajar(
-    p.disponibles.filter((v) => !empezado(p.estado, v.id)),
-    p.rng,
-  )
-    .sort((a, b) => prio(a) - prio(b) || ordenGrupo(a) - ordenGrupo(b))
+  // Sin barajar: en el orden del listado (los de la lista de examen, antes).
+  const nuevos = p.disponibles
+    .filter((v) => !empezado(p.estado, v.id))
+    .sort((a, b) => prio(a) - prio(b))
     .slice(0, Math.max(0, Math.min(p.nuevos, Math.floor(tam / 2))))
     .map((v): ItemHoy => ({ verboId: v.id, tipo: 'nuevo' }));
 
   const base = [...repasos, ...aprendiendo].slice(0, Math.max(0, tam - nuevos.length * 2));
   if (!base.length && !nuevos.length) return [];
 
-  // Por bloques de grupo, para que la cuadrícula cambie lo menos posible: primero
-  // los grupos sin nuevos (por urgencia), después los que tienen nuevos (en el
-  // orden del curso), cada uno con sus nuevos intercalados.
-  const grupoDe = new Map(p.disponibles.map((v) => [v.id, v.grupo]));
-  const bloques = new Map<string, { base: ItemHoy[]; nuevos: ItemHoy[] }>();
-  const bloque = (id: string) => {
-    const g = grupoDe.get(id) ?? '';
-    if (!bloques.has(g)) bloques.set(g, { base: [], nuevos: [] });
-    return bloques.get(g)!;
-  };
-  for (const item of base) bloque(item.verboId).base.push(item);
-  for (const item of nuevos) bloque(item.verboId).nuevos.push(item);
-  const ordenBloque = ([g, b]: [string, { nuevos: ItemHoy[] }]) => {
-    if (!b.nuevos.length) return -1;
-    const i = p.ordenGrupos.indexOf(g);
-    return i === -1 ? p.ordenGrupos.length : i;
-  };
-  const ordenados = [...bloques.entries()].sort((a, b) => ordenBloque(a) - ordenBloque(b));
-  return ordenados.flatMap(([, b]) => intercalar(b.base, b.nuevos));
+  return intercalar(base, nuevos);
 }
 
 /**
  * Tres de calentamiento, luego un nuevo cada `cada` elementos; la segunda
- * aparición de cada nuevo, tres elementos después (o al final del bloque).
+ * aparición de cada nuevo, tres elementos después (o al final).
  */
 function intercalar(base: readonly ItemHoy[], nuevos: readonly ItemHoy[]): ItemHoy[] {
   const salida: ItemHoy[] = base.slice(0, 3);
@@ -180,27 +155,25 @@ export function modoHoy(estado: EstadoProgreso, verboId: string, rng: Rng): Modo
 }
 
 /**
- * Cola de la sesión de Hoy. Como ColaRonda (lo fallado vuelve a salir unas
- * preguntas después), pero sin cambiar de grupo: el reintento se queda en el
- * bloque de su grupo; si el bloque se acaba, va tras la última pregunta de ese
- * grupo o, si no hay más, al final.
+ * Cola de la sesión de Hoy: como ColaRonda (lo fallado vuelve a salir unas
+ * preguntas después), pero sin barajar: la sesión ya viene ordenada.
  */
 export class ColaHoy {
-  private cola: { id: string; grupo: string }[];
+  private cola: string[];
   private fallados = new Set<string>();
   private readonly total: number;
   private fallos = 0;
 
   constructor(
-    items: readonly { id: string; grupo: string }[],
+    ids: readonly string[],
     private readonly hueco = 3,
   ) {
-    this.cola = [...items];
-    this.total = items.length;
+    this.cola = [...ids];
+    this.total = ids.length;
   }
 
   actual(): string | null {
-    return this.cola[0]?.id ?? null;
+    return this.cola[0] ?? null;
   }
 
   pendientes(): number {
@@ -208,22 +181,14 @@ export class ColaHoy {
   }
 
   responder(resultado: Resultado): { recuperado: boolean } {
-    const item = this.cola.shift();
-    if (!item) throw new Error('La sesión ya ha terminado');
-    if (resultado === 'acierto') return { recuperado: this.fallados.has(item.id) };
+    const id = this.cola.shift();
+    if (id === undefined) throw new Error('La sesión ya ha terminado');
+    if (resultado === 'acierto') return { recuperado: this.fallados.has(id) };
     if (resultado === 'fallo') {
       this.fallos++;
-      this.fallados.add(item.id);
+      this.fallados.add(id);
     }
-    let bloque = 0;
-    while (bloque < this.cola.length && this.cola[bloque].grupo === item.grupo) bloque++;
-    let pos: number;
-    if (bloque > 0) pos = Math.min(this.hueco, bloque);
-    else {
-      const ultima = this.cola.map((x) => x.grupo).lastIndexOf(item.grupo);
-      pos = ultima === -1 ? this.cola.length : ultima + 1;
-    }
-    this.cola.splice(pos, 0, item);
+    this.cola.splice(Math.min(this.hueco, this.cola.length), 0, id);
     return { recuperado: false };
   }
 

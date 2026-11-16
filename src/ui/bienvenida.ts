@@ -57,7 +57,7 @@ export function crearBienvenida(datos: DatosBienvenida): { abrirBienvenida(): vo
       titulo: 'Cómo funciona',
       cuerpo: () => [
         p('En la pestaña ', fuerte('Hoy'), ' la app pregunta cada día lo que conviene repasar (repetición espaciada) y mete unos pocos verbos nuevos: lo que el alumno sabe sale cada vez menos, lo que le cuesta, más a menudo. Con ', fuerte('unos diez minutos al día'), ' es suficiente.'),
-        p('Además, en ', fuerte('Aprender'), ' puede adelantar un grupo de verbos a su ritmo, y en ', fuerte('Examen'), ' hacer un examen de prueba con una tabla de verbos con huecos, como la de clase, con nota.'),
+        p('Además, en ', fuerte('Aprender'), ' puede avanzar a su ritmo, de pocos en pocos verbos, y en ', fuerte('Examen'), ' hacer un examen de prueba con una tabla de verbos con huecos, como la de clase, con nota.'),
         p('El progreso se guarda solo en este dispositivo. No hay cuentas, anuncios ni datos que salgan de aquí.'),
         p('El alumno tiene su propia guía, con técnicas de estudio y trucos de memoria. Se le abrirá la primera vez que use la app.'),
       ],
@@ -67,11 +67,11 @@ export function crearBienvenida(datos: DatosBienvenida): { abrirBienvenida(): vo
       cuerpo: () => [
         p('Está en el botón ', fuerte('⋯'), ' (arriba a la derecha) → ', fuerte('Panel para adultos'), ', protegido con un PIN que crearás al entrar por primera vez. Desde ahí puedes:'),
         lista(
-          [fuerte('Resumen'), ': cómo va cada grupo de verbos, cuáles se le atascan y cuántos días ha practicado.'],
-          [fuerte('Examen'), ': marcar los verbos que entran (hay casillas para todos y para cada grupo) y la fecha. Hoy les dará prioridad y el Examen de prueba podrá hacerse solo con ellos.'],
+          [fuerte('Resumen'), ': cuántos verbos lleva en cada escalón, cuáles se le atascan y cuántos días ha practicado.'],
+          [fuerte('Examen'), ': marcar los verbos que entran y la fecha. Hoy les dará prioridad y el Examen de prueba podrá hacerse solo con ellos.'],
           [fuerte('Trucos'), ': revisar, cambiar o desactivar los trucos de memoria que trae la app.'],
           [fuerte('Alumnos'), ': si estudia más de uno en este dispositivo, se añaden en ⋯ → Añadir alumno; cada uno tiene su progreso y sus ajustes de examen, y la app pregunta quién va a estudiar al abrirla. El PIN es el mismo para todos. Borrar un alumno se hace desde Ajustes.'],
-          [fuerte('Ajustes'), ': cuántos verbos nuevos al día como mucho, desbloquear todos los grupos si el curso va en otro orden, cambiar el PIN o reiniciar el progreso.'],
+          [fuerte('Ajustes'), ': cuántos verbos nuevos al día como mucho, cambiar el PIN o reiniciar el progreso.'],
         ),
       ],
     },

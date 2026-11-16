@@ -1,5 +1,5 @@
 import { nivelCasilla, type EstadoProgreso } from './progreso';
-import type { Grupo, Verbo } from './types';
+import type { Verbo } from './types';
 
 /* ---------------- PIN ---------------- */
 
@@ -28,22 +28,11 @@ export async function comprobarPin(pin: string, hash: string | null): Promise<bo
 
 /* ---------------- Estadísticas ---------------- */
 
-export interface DominioGrupo {
-  grupo: Grupo;
-  total: number;
-  /** Verbos por nivel de la cuadrícula: [sin empezar, Elegir o Emparejar, Completar o Tabla muda, aprendidos]. */
-  porNivel: [number, number, number, number];
-}
-
-export function dominioPorGrupo(estado: EstadoProgreso, grupos: readonly Grupo[], verbosDe: (grupoId: string) => readonly Verbo[]): DominioGrupo[] {
-  return [...grupos]
-    .sort((a, b) => a.orden - b.orden)
-    .map((grupo) => {
-      const porNivel: [number, number, number, number] = [0, 0, 0, 0];
-      const verbos = verbosDe(grupo.id);
-      for (const v of verbos) porNivel[nivelCasilla(estado, v.id)]++;
-      return { grupo, total: verbos.length, porNivel };
-    });
+/** Verbos por nivel de la cuadrícula: [sin empezar, Elegir o Emparejar, Completar o Tabla muda, aprendidos]. */
+export function verbosPorNivel(estado: EstadoProgreso, verbos: readonly Verbo[]): [number, number, number, number] {
+  const porNivel: [number, number, number, number] = [0, 0, 0, 0];
+  for (const v of verbos) porNivel[nivelCasilla(estado, v.id)]++;
+  return porNivel;
 }
 
 export interface VerboAtascado {
@@ -113,15 +102,10 @@ export function diasHastaExamen(fechaExamen: string | null, ahora: Date): number
   return Math.round((examen - hoy) / 86400000);
 }
 
-/** Grupos que contienen algún verbo de la lista de examen (se desbloquean para poder prepararlo). */
-export function gruposConExamen(lista: readonly string[] | null, verbos: readonly Verbo[]): Set<string> {
-  const ids = new Set(lista ?? []);
-  return new Set(verbos.filter((v) => ids.has(v.id)).map((v) => v.grupo));
-}
 
 /* ---------------- Casillas de la lista de examen ---------------- */
 
-/** Estado de una casilla que marca varios verbos a la vez (todos, o un grupo), según los verbos marcados. */
+/** Estado de una casilla que marca varios verbos a la vez (todos), según los verbos marcados. */
 export type EstadoMarcado = 'todos' | 'ninguno' | 'parcial';
 
 export function estadoMarcado(ids: readonly string[], seleccion: ReadonlySet<string>): EstadoMarcado {

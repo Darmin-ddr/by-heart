@@ -25,7 +25,7 @@ export class Cuadricula implements Tablero {
       casilla.type = 'button';
       casilla.dataset.id = v.id;
       const color = op.colorDe?.(v.id);
-      if (color) casilla.style.setProperty('--color-grupo', color);
+      if (color) casilla.style.setProperty('--color-verbo', color);
       casilla.addEventListener('click', () => {
         if (this.interactivo) this.op.alTocar?.(v.id);
       });

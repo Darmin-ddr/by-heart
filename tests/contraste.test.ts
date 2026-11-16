@@ -55,8 +55,7 @@ describe('contraste (WCAG AA)', () => {
     }
   }
 
-  it('texto oscuro sobre el color de cada grupo (casillas aprendidas y chips)', () => {
-    const grupos: { color: string; nombre: string }[] = JSON.parse(readFileSync(new URL('../src/data/groups.json', import.meta.url), 'utf8'));
-    for (const g of grupos) expect(contraste('#1f2a37', g.color), g.nombre).toBeGreaterThanOrEqual(4.5);
+  it('texto oscuro sobre el color de los verbos que avanzan (casillas y chips)', () => {
+    for (const tema of [claro, oscuro]) expect(contraste(tema['texto-sobre-color'], tema['verbo-base'])).toBeGreaterThanOrEqual(4.5);
   });
 });

@@ -17,7 +17,7 @@ export const NOMBRE_ESCALON: Record<Escalon, string> = {
 };
 
 const QUE_SE_HACE: Record<Escalon, string> = {
-  elegir: 'reconocer el pasado y el participio entre cuatro',
+  elegir: 'reconocer el verbo por su significado',
   emparejar: 'unir cada verbo con sus formas',
   completar: 'escribir el pasado y el participio',
   tablamuda: 'escribir las tres formas a partir del significado',
@@ -34,12 +34,19 @@ function modoDeEscalon(e: Escalon): ModoId {
 }
 
 /**
- * Pestaña "Aprender" (SPEC 4.3): los verbos del grupo, cada uno en su
+ * Pestaña "Aprender" (SPEC 4.3): los verbos en curso, cada uno en su
  * escalón (Elegir → Emparejar → Completar → Tabla muda). Cada tanda pregunta una
  * vez por cada verbo pendiente, en el modo de su escalón; los de Emparejar van
  * juntos. Dos aciertos separados suben de escalón.
  */
-export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contenedor'>, estado: () => EstadoProgreso): Modo {
+export function iniciarAprender(
+  panel: HTMLElement,
+  ctx: Omit<Contexto, 'contenedor'>,
+  estado: () => EstadoProgreso,
+  /** Vuelve a montar Aprender con los verbos en curso de ahora (al aprender uno, entra otro); mpezar arranca ya la tanda. */
+  recargar: (empezar: boolean) => void,
+  empezarYa = false,
+): Modo {
   const contenedor = el('div', 'contenido-modo');
   panel.replaceChildren(contenedor);
   let actual: ModoPractica | null = null;
@@ -66,11 +73,11 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
   };
   const contexto = { ...ctx, contenedor, motor };
 
-  /** Los verbos del grupo, por escalón, más los aprendidos. */
+  /** Los verbos en curso, por escalón, más los aprendidos. */
   function escalera(): HTMLElement {
     const e = estado();
     const lista = el('ol', 'escalera');
-    lista.setAttribute('aria-label', 'Escalones de este grupo');
+    lista.setAttribute('aria-label', 'Escalones de tus verbos');
     const filas: { titulo: string; detalle: string; ids: string[]; clase: string }[] = ESCALONES.map((esc, i) => ({
       titulo: `${i + 1}. ${NOMBRE_ESCALON[esc]}`,
       detalle: QUE_SE_HACE[esc],
@@ -79,7 +86,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     }));
     filas.push({
       titulo: 'Aprendidos',
-      detalle: 'ya te los sabes de memoria',
+      detalle: 'ya te los sabes: dejan sitio a otros nuevos',
       ids: ctx.verbos.filter((v) => escalonDe(e, v.id) === null).map((v) => v.id),
       clase: 'escalon-aprendido',
     });
@@ -120,8 +127,8 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
         'p',
         'ayuda',
         hay
-          ? `Cada verbo sube de escalón con dos aciertos en tandas distintas. Al superar el último, queda aprendido.${pendientes().length > TAM_TANDA ? ` Cada tanda lleva ${TAM_TANDA} verbos.` : ''}`
-          : 'Ya has aprendido todos los verbos de este grupo. Si quieres, puedes practicarlos ahora con la tabla muda.',
+          ? `Estos son los verbos que estás aprendiendo. Cada uno sube de escalón con dos aciertos en tandas distintas; cuando aprendes uno, entra otro nuevo.${pendientes().length > TAM_TANDA ? ` Cada tanda lleva ${TAM_TANDA} verbos.` : ''}`
+          : '¡Ya has aprendido todos los verbos! Si quieres, puedes practicar con la tabla muda.',
       ),
       escalera(),
       el('div', 'acciones', empezar),
@@ -174,7 +181,7 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     });
   }
 
-  /** Repaso sin escalones pendientes: una vuelta de Tabla muda a todo el grupo. */
+  /** Repaso sin escalones pendientes: una vuelta de Tabla muda. */
   function repasoLibre(): void {
     actual?.salir();
     subieron.clear();
@@ -197,9 +204,8 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     ctx.tablero.mostrarFormas(null);
     const listaNombres = (ids: string[]) => ids.map(nombre).join(', ');
     const sube = [...subieron.entries()];
-    const seguir = boton(pendientes().length ? 'Seguir aprendiendo' : 'Ver el grupo', 'boton-principal', () =>
-      pendientes().length ? empezarTanda() : pintarInicio(),
-    );
+    // Si alguno ha quedado aprendido, los verbos en curso cambian (entra otro): se vuelve a montar Aprender.
+    const seguir = boton('Seguir aprendiendo', 'boton-principal', () => (aprendidos.size ? recargar(true) : pendientes().length ? empezarTanda() : pintarInicio()));
     rellenar(
       contenedor,
       el('p', 'resumen-titulo', 'Tanda terminada'),
@@ -220,7 +226,8 @@ export function iniciarAprender(panel: HTMLElement, ctx: Omit<Contexto, 'contene
     seguir.focus({ preventScroll: true });
   }
 
-  pintarInicio();
+  if (empezarYa && pendientes().length) empezarTanda();
+  else pintarInicio();
 
   return {
     alTocarVerbo: (id) => actual?.alTocarVerbo(id),

@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { Rating } from 'ts-fsrs';
 import { deducirNota } from '../src/logic/nota';
 import {
-  estadoVacio, grupoDominado, gruposDesbloqueados, grupoSuperado, nivelCasilla, nivelDominio, registrarRespuesta, type EstadoProgreso,
+  dominados, estadoVacio, nivelCasilla, nivelDominio, registrarRespuesta, type EstadoProgreso,
 } from '../src/logic/progreso';
 import { Almacen, validarEstado, type AlmacenTexto } from '../src/logic/almacen';
-import type { Grupo } from '../src/logic/types';
 import { verbo } from './ayuda';
 const D = (s: string) => new Date(s);
 
@@ -79,42 +78,14 @@ function aprender(e: EstadoProgreso, id: string, hasta: 2 | 3, desde = D('2026-1
   }
 }
 
-describe('grupos', () => {
-  const g1 = [verbo('A'), verbo('B')];
-  const g2 = [verbo('C', 'g2')];
-  const g3 = [verbo('D', 'g3')];
-  const grupos: Grupo[] = [
-    { id: 'g2', nombre: '2', orden: 2, color: '' },
-    { id: 'g1', nombre: '1', orden: 1, color: '' },
-    { id: 'g3', nombre: '3', orden: 3, color: '' },
-  ];
-  const verbosDe = (id: string) => ({ g1, g2, g3 })[id as 'g1'];
-
-  it('solo el primero abierto al principio; el siguiente al superar el anterior', () => {
+describe('verbos', () => {
+  it('cuántos están dominados', () => {
     const e = estadoVacio();
-    expect([...gruposDesbloqueados(e, grupos, verbosDe)]).toEqual(['g1']);
-    aprender(e, 'A', 2);
-    expect(grupoSuperado(e, g1)).toBe(false);
-    aprender(e, 'B', 2);
-    expect(grupoSuperado(e, g1)).toBe(true);
-    expect([...gruposDesbloqueados(e, grupos, verbosDe)]).toEqual(['g1', 'g2']);
-  });
-
-  it('un grupo con algún verbo empezado (por Hoy) también se abre', () => {
-    const e = estadoVacio();
-    e.aprendizaje.D = { escalon: 0, aciertos: 1, aprendido: false };
-    expect([...gruposDesbloqueados(e, grupos, verbosDe)].sort()).toEqual(['g1', 'g3']);
-  });
-
-  it('grupo dominado cuando todos sus verbos lo están', () => {
-    const e = estadoVacio();
+    const vs = [verbo('A'), verbo('B'), verbo('C')];
     aprender(e, 'A', 3);
-    expect(grupoDominado(e, g1)).toBe(false);
-    aprender(e, 'B', 3);
-    expect(grupoDominado(e, g1)).toBe(true);
-    expect(grupoDominado(e, [])).toBe(false);
+    aprender(e, 'B', 2);
+    expect(dominados(e, vs)).toBe(1);
   });
-
   it('color de la casilla según el escalón', () => {
     const e = estadoVacio();
     expect(nivelCasilla(e, 'A')).toBe(0);

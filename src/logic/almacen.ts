@@ -30,8 +30,7 @@ export function validarEstado(datos: unknown): EstadoProgreso | null {
     tarjetas: d.tarjetas,
     historial: Array.isArray(d.historial) ? d.historial.filter((r) => r && typeof r.verbo === 'string') : [],
     trucosPropios: d.trucosPropios && typeof d.trucosPropios === 'object' ? d.trucosPropios : {},
-    gruposCelebrados: Array.isArray(d.gruposCelebrados) ? d.gruposCelebrados : [],
-    ultimoGrupo: typeof d.ultimoGrupo === 'string' ? d.ultimoGrupo : null,
+    decenasCelebradas: typeof d.decenasCelebradas === 'number' ? d.decenasCelebradas : 0,
     guiaVista: d.guiaVista === true,
     // Quien ya vio la guía del alumno no necesita la bienvenida.
     bienvenidaVista: d.bienvenidaVista === true || d.guiaVista === true,

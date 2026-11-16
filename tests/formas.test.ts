@@ -8,7 +8,6 @@ const verbo = (v: Partial<Verbo> & Pick<Verbo, 'infinitivo' | 'pasado' | 'partic
   variantesParticipio: [],
   significado: '',
   variantesSignificado: [],
-  grupo: 'g',
   trucos: [],
   ...v,
 });

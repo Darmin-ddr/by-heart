@@ -22,8 +22,8 @@ Herramienta interactiva para que un alumno de secundaria se aprenda de memoria l
 ### 3.1 Estructura del contenido
 - **Módulo 1: verbos irregulares.** Es lo único que entra en la primera versión.
 - **Módulo 2: phrasal verbs.** Hito posterior, con su propio diseño (ver 3.4). No se adelanta nada.
-- Los verbos se reparten en **grupos por patrón** de 6 a 10 verbos (ahora, 11 grupos; la división es una propuesta, **por confirmar**): las tres formas iguales (*cut, cut, cut*), pasado y participio iguales (*buy, bought, bought*), vocal que cambia i-a-u (*sing, sang, sung*), participio en -en (*break, broke, broken*), etc. El grupo hace el papel de la región de Capitalia y es, además, el primer truco de memoria. La división concreta se define en los datos.
-- Los grupos se desbloquean progresivamente (en Aprender y Explorar): un grupo se abre cuando todos los verbos del anterior llegan al escalón Completar, o cuando Hoy ya ha empezado alguno de sus verbos. Siempre se puede volver a los anteriores.
+- **Una sola lista de verbos, sin grupos** (decisión del responsable, 16/11/2026: los grupos por patrón complicaban y hacían obvias algunas preguntas). Se avanza de pocos en pocos verbos, en el orden del listado; los de la lista de examen, antes.
+- Las **familias** (verbos que cambian igual: *sing, sang, sung*; *ring, rang, rung*...) no se enseñan como grupos: aparecen en el truco de cada verbo ("Pasado con a y participio con u, como begin, drink y ring").
 - **Lista base: de momento, un listado de referencia** de internet (`docs/listas/`): 79 verbos de 3º de ESO del IES Alexandre Bóveda. **No es el listado de clase**: cuando llegue el de clase, lo sustituye y pasa a ser la fuente de verdad (qué verbos entran, con qué formas y con qué significado).
 - **Significados en castellano.** El listado de referencia los da en gallego; la app los enseña traducidos (decisión del responsable, 16/11/2026), sin que dos verbos tengan el mismo.
 - **Filtro "solo examen"**: el adulto marca qué verbos entran en un examen concreto.
@@ -51,13 +51,13 @@ Solo lo ya decidido, para no perderlo:
 Se asume que el examen de clase es una **tabla de verbos con huecos** (dan una forma o el significado y hay que completar el resto) **(por confirmar)**. Todo se orienta a ese objetivo, separando **aprender** de **repasar**.
 
 ### 4.1 Pestañas
-- **Hoy** (uso diario, un solo botón): repaso de lo aprendido mezclando grupos y tipos de pregunta, con **verbos nuevos intercalados**. Es la portada: lo que toca hoy (preguntas y minutos), un botón para empezar y unas cifras de logro (verbos aprendidos en total y esta semana, y cómo va la lista de examen; nunca rachas), con la cuadrícula de verbos coloreada (sección 10).
-- **Aprender** (extra, a ritmo propio): por grupo; lleva a cada verbo por los escalones de 4.3.
+- **Hoy** (uso diario, un solo botón): repaso de lo aprendido mezclando tipos de pregunta, con **verbos nuevos intercalados**. Es la portada: lo que toca hoy (preguntas y minutos), un botón para empezar y unas cifras de logro (verbos aprendidos en total y esta semana, y cómo va la lista de examen; nunca rachas), con la cuadrícula de todos los verbos coloreada (sección 10). Durante la sesión, la cuadrícula enseña solo los verbos de la sesión.
+- **Aprender** (extra, a ritmo propio): los **verbos en curso**, los empezados que aún no están aprendidos (y, si son menos de 8, los siguientes hasta llegar a 8). Lleva a cada uno por los escalones de 4.3; cuando uno queda aprendido, entra otro nuevo.
 - **Examen** (comprobar si estás listo): ver 4.4.
-- **Explorar**: la tabla de verbos por grupos. Tocar un verbo muestra sus tres formas, el significado y su truco. Sin evaluación.
+- **Explorar**: la cuadrícula de todos los verbos. Tocar uno muestra sus tres formas, el significado y su truco. Sin evaluación.
 
 ### 4.2 Tipos de pregunta
-1. **Elegir:** se muestra el infinitivo y su significado; hay que elegir la pareja pasado/participio correcta entre cuatro. Los distractores son **formas reales de otros verbos** parecidos (*bought / brought / thought / caught*), nunca formas inventadas (*buyed*): no queremos enseñar errores.
+1. **Elegir:** se da el significado y hay que reconocer el verbo entre cuatro infinitivos del listado, de los que más se parecen al correcto (*leer*: *read, lead, ride, write*). La cuadrícula esconde los infinitivos para no chivarlo. Al responder se enseñan las tres formas. (Antes se elegía el pasado y el participio, pero se acertaba por la pinta: decisión del responsable, 16/11/2026.)
 2. **Emparejar:** tanda de 4 a 6 verbos; hay que unir cada infinitivo con sus formas. Sustituye a "Colocar".
 3. **Completar:** se dan el infinitivo y el significado; hay que escribir el pasado y el participio.
 4. **Tabla muda:** se da solo el significado en español; hay que escribir las tres formas. Sustituye al "Mapa mudo" y es lo más parecido al examen.
@@ -70,7 +70,7 @@ Cada verbo pasa por: **Elegir → Emparejar → Completar → Tabla muda**. Mism
 ### 4.4 Examen
 - Una **tabla con huecos**, como la de clase (columnas Infinitivo, Pasado, Participio y Significado), a todo lo ancho y sin la cuadrícula, que delataría las respuestas.
 - En cada fila se da el **significado**, y en la mitad de las filas también el **infinitivo**: o se escriben pasado y participio, o las tres formas. Nunca se da el pasado ni el participio, porque varios verbos podrían compartirlos. El significado no se escribe nunca.
-- Se elige qué entra (todos los verbos, un grupo o la lista del examen del panel) y cuántos verbos (10, 20 o todos).
+- Se elige qué entra (los verbos que el alumno ya ha visto, todos o la lista del examen del panel) y cuántos verbos (10, 20 o todos).
 - Sin corrección en el momento: se rellena la tabla entera y se corrige al final. Si quedan casillas en blanco, se avisa una vez antes de corregir. Sin trucos ni repeticiones.
 - **Nota sobre 10:** 1 punto por verbo con todo bien, **medio punto** si falla una sola casilla, 0 si fallan más; un "casi" (una letra) cuenta como mal **(por confirmar: ajustarlo a cómo puntúa el profesor)**. La corrección se ve en la propia tabla, con la forma correcta debajo de cada casilla mal, y se pueden mandar los fallos a Hoy.
 - Los resultados cuentan para la planificación: acierto completo como acierto, medio punto como "repasar", fallo como fallo.
@@ -79,7 +79,7 @@ Cada verbo pasa por: **Elegir → Emparejar → Completar → Tabla muda**. Mism
 
 ### 5.1 Acierto
 - Animación breve y discreta.
-- Celebración mayor (confeti corto) solo al **dominar un grupo** o al **acertar un verbo que antes se había fallado**.
+- Celebración mayor (confeti corto) solo **cada diez verbos dominados** o al **acertar un verbo que antes se había fallado**.
 
 ### 5.2 Fallo
 - Decir con claridad que no es correcto, **sin castigo** y **sin rojo intenso**.
@@ -112,13 +112,13 @@ Igual que en Capitalia:
 
 - **Hoy:** corta (unos 10 minutos o unas 20 preguntas), con opción de seguir al terminar. Empieza con repasos y reparte los verbos nuevos entre ellos.
 - Los verbos en aprendizaje salen en Hoy una vez al día.
-- Los nuevos siguen el **orden de los grupos**; los de la lista de examen van antes.
+- Los nuevos siguen el **orden del listado**; los de la lista de examen van antes.
 - **Nuevos por día, autorregulados entre 5 y 10** según los aciertos recientes; el adulto puede ajustar el máximo.
 - **Examen configurado por el adulto** (fecha y verbos): Hoy les da prioridad a medida que se acerca la fecha.
 
 ## 8. Panel de adultos
 
-Como en Capitalia: protegido con PIN (cerradura de niños, no seguridad real). Muestra verbos aprendidos por grupo, los que más se atascan y la actividad reciente. Configura la lista y la fecha de examen, el máximo de nuevos al día, el desbloqueo de todos los grupos, los trucos, los alumnos y el reinicio de progreso. No hay verbos opcionales.
+Como en Capitalia: protegido con PIN (cerradura de niños, no seguridad real). Muestra cuántos verbos hay en cada escalón, los que más se atascan y la actividad reciente. Configura la lista y la fecha de examen, el máximo de nuevos al día, los trucos, los alumnos y el reinicio de progreso. No hay verbos opcionales.
 
 ## 9. Persistencia y dispositivos
 
@@ -130,7 +130,7 @@ Como en Capitalia: protegido con PIN (cerradura de niños, no seguridad real). M
 ## 10. Estilo visual
 
 - **El de Capitalia**, tal cual: misma paleta, misma tipografía (Nunito), mismos botones, tarjetas y diálogos, mismo modo claro y oscuro. Lo divertido viene de los trucos y del progreso, no de la decoración.
-- **La cuadrícula de verbos es el marcador de progreso** y ocupa el lugar del mapa: una casilla por verbo, agrupadas por patrón; en gris claro al empezar, se colorean (pastel por grupo) según suben de escalón, con color pleno al quedar aprendidas.
+- **La cuadrícula de verbos es el marcador de progreso** y ocupa el lugar del mapa: una casilla por verbo, en el orden del listado; en gris al empezar, se colorean (un mismo pastel para todos) según suben de escalón, con color pleno al quedar aprendidas.
 - Feedback: verde menta (acierto), coral/ámbar (fallo). Nunca rojo intenso.
 - Distribución: en móvil, cuadrícula arriba y tarjeta de pregunta abajo; en iPad y PC, cuadrícula a la izquierda y panel a la derecha. Durante una pregunta, lo importante es la tarjeta; el detalle se decide con el prototipo.
 - Objetivos táctiles de 44 px como mínimo.
@@ -148,22 +148,19 @@ Como en Capitalia: protegido con PIN (cerradura de niños, no seguridad real). M
 - `infinitivo`, `pasado`, `participio`: las formas que se muestran (las del listado).
 - `variantesPasado`, `variantesParticipio`: otras formas aceptadas.
 - `significado`: en español, como en el listado. `variantesSignificado`: otras formas aceptadas.
-- `grupo`: identificador del grupo.
 - `nota`: texto breve opcional (p. ej. pronunciación de *read*).
 - `trucos`: lista de { tipo, texto }.
-
-`groups.json`: `id`, `nombre`, `orden`, `color`.
 
 Progreso (local): como en Capitalia, por verbo en lugar de por país.
 
 ## 13. Hitos
 
-**Estado (16/11/2026):** hitos 0, 1, 2 y 4 hechos y probados en el navegador del ordenador: cuadrícula, los cuatro escalones, Explorar, Hoy, Examen y panel de adultos. Del hito 3 están cargados los 79 verbos del listado de clase en 11 grupos; faltan confirmar los grupos y revisar los trucos. Del hito 5, las guías del alumno y de adultos ya hablan de verbos. Falta probarlo todo en iPad y móvil, y publicarlo.
+**Estado (16/11/2026):** hitos 0, 1, 2 y 4 hechos y probados en el navegador del ordenador: cuadrícula, los cuatro escalones, Explorar, Hoy, Examen y panel de adultos. Del hito 3 están cargados los 79 verbos de un listado de referencia (no el de clase), con los significados en castellano; falta revisar los trucos y la traducción. Sin grupos y con Elegir por significado (16/11/2026). Del hito 5, las guías del alumno y de adultos ya hablan de verbos. Falta probarlo todo en iPad y móvil, y publicarlo.
 
 0. **Puesta a punto:** nombre, textos, icono provisional y claves de guardado propias; retirar el mapa. La app compila, pasa los tests y abre, aunque esté vacía de contenido. Adaptar también `CLAUDE.md` y el README, que aún hablan de capitales.
-1. **Prototipo de un grupo** (6 a 10 verbos): cuadrícula, Elegir y Emparejar, feedback. Probar en iPad y móvil.
+1. **Prototipo con unos pocos verbos**: cuadrícula, Elegir y Emparejar, feedback. Probar en iPad y móvil.
 2. Completar y Tabla muda, con la validación exacta y el "casi acierto".
-3. Datos completos del listado de clase, grupos definitivos y trucos revisados.
+3. Datos completos del listado de clase y trucos revisados.
 4. Hoy, Examen y panel de adultos adaptados.
 5. Guías, icono definitivo y publicación en GitHub Pages.
 6. Phrasal verbs (antes, su sección en esta SPEC).
@@ -173,10 +170,8 @@ Progreso (local): como en Capitalia, por verbo en lugar de por país.
 - Saber si habrá listas de examen más cortas que el listado de clase.
 - Revisar la traducción de los significados (`docs/listas/3eso.md`).
 - Variantes *learned* y *dreamed*: comprobarlas en un diccionario antes de aceptarlas (`docs/listas/README.md`).
-- Quitar los nombres heredados de Capitalia (país, capital, región) del código.
 - Curso exacto del alumno.
 - Cómo es el examen de clase: qué dan, qué hay que escribir y cómo se puntúa (afecta a 4, 4.4 y a la nota).
 - Voz: botón "Escuchar" sí o no (5.5).
 - *be*: si se exigen "was" y "were" (3.2).
-- División definitiva en grupos.
 - Revisión de todos los trucos por un adulto antes de dárselos al alumno.

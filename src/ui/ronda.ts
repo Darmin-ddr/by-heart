@@ -77,7 +77,7 @@ export function iniciarRonda(ctx: Contexto, op: OpcionesRonda): ModoPractica {
   function otraRonda(): void {
     cola = new ColaRonda(op.ids(), rng);
     if (!cola.actual()) {
-      contenedor.replaceChildren(el('p', 'ayuda', 'No hay nada que practicar en este grupo ahora mismo.'));
+      contenedor.replaceChildren(el('p', 'ayuda', 'No hay nada que practicar ahora mismo.'));
       return;
     }
     siguiente();

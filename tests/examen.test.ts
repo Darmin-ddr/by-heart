@@ -3,15 +3,15 @@ import { corregirFila, notaExamen, prepararExamen, verbosDeAmbito } from '../src
 import { rngConSemilla } from '../src/logic/rng';
 import { verbo } from './ayuda';
 
-const teach = verbo('teach', 'g1', { pasado: 'taught', participio: 'taught', significado: 'enseñar' });
-const verbos = [teach, verbo('B', 'g1'), verbo('C', 'g2'), verbo('D', 'g2'), verbo('E', 'g2')];
+const teach = verbo('teach', { pasado: 'taught', participio: 'taught', significado: 'enseñar' });
+const verbos = [teach, verbo('B'), verbo('C'), verbo('D'), verbo('E')];
 
 describe('examen', () => {
-  it('qué entra: todos, la lista del examen o un grupo', () => {
+  it('qué entra: todos, la lista del examen o los ya empezados', () => {
     expect(verbosDeAmbito('todo', verbos, null)).toHaveLength(5);
     expect(verbosDeAmbito('lista', verbos, ['B', 'D']).map((v) => v.id)).toEqual(['B', 'D']);
     expect(verbosDeAmbito('lista', verbos, null)).toHaveLength(0);
-    expect(verbosDeAmbito({ grupo: 'g2' }, verbos, null).map((v) => v.id)).toEqual(['C', 'D', 'E']);
+    expect(verbosDeAmbito('empezados', verbos, null, new Set(['C', 'E'])).map((v) => v.id)).toEqual(['C', 'E']);
   });
 
   it('filas: n verbos distintos, con el dato repartido entre infinitivo y significado', () => {

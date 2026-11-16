@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  actividadReciente, comprobarPin, diasHastaExamen, dominioPorGrupo, estadoMarcado, gruposConExamen, hashPin,
-  marcarVarios, pinValido, verbosAtascados,
+  actividadReciente, comprobarPin, diasHastaExamen, estadoMarcado, hashPin,
+  marcarVarios, pinValido, verbosAtascados, verbosPorNivel,
 } from '../src/logic/adultos';
 import { estadoVacio, registrarRespuesta } from '../src/logic/progreso';
-import type { Grupo } from '../src/logic/types';
 import { verbo } from './ayuda';
 const D = (s: string) => new Date(s);
 
@@ -24,19 +23,14 @@ describe('PIN', () => {
 });
 
 describe('estadísticas', () => {
-  const g1: Grupo = { id: 'g1', nombre: 'Uno', orden: 1, color: '' };
-  const g2: Grupo = { id: 'g2', nombre: 'Dos', orden: 2, color: '' };
-  const verbos = [verbo('A'), verbo('B'), verbo('C', 'g2')];
+  const verbos = [verbo('A'), verbo('B'), verbo('C'), verbo('D')];
 
-  it('aprendidos por grupo, por escalones (como la cuadrícula)', () => {
+  it('verbos por escalón (como la cuadrícula)', () => {
     const e = estadoVacio();
     e.aprendizaje.A = { escalon: 1, aciertos: 0, aprendido: false };
     e.aprendizaje.B = { escalon: 3, aciertos: 0, aprendido: true };
     e.aprendizaje.C = { escalon: 2, aciertos: 0, aprendido: false };
-    const d = dominioPorGrupo(e, [g2, g1], (id) => verbos.filter((v) => v.grupo === id));
-    expect(d.map((x) => x.grupo.id)).toEqual(['g1', 'g2']); // en el orden del curso
-    expect(d[0]).toMatchObject({ total: 2, porNivel: [0, 1, 0, 1] });
-    expect(d[1]).toMatchObject({ total: 1, porNivel: [0, 0, 1, 0] });
+    expect(verbosPorNivel(e, verbos)).toEqual([1, 1, 1, 1]);
   });
 
   it('verbos que más se atascan (solo fallos recientes)', () => {
@@ -72,11 +66,6 @@ describe('modo examen', () => {
     expect(diasHastaExamen(null, new Date())).toBeNull();
   });
 
-  it('grupos con verbos del examen', () => {
-    const vs = [verbo('A', 'g1'), verbo('B', 'g1'), verbo('C', 'g2')];
-    expect([...gruposConExamen(['B', 'C'], vs)].sort()).toEqual(['g1', 'g2']);
-    expect(gruposConExamen(null, vs).size).toBe(0);
-  });
 });
 
 describe('casillas de la lista de examen (todos, o un grupo)', () => {

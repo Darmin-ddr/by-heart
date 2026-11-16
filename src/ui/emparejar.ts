@@ -5,7 +5,7 @@ import { boton, el } from './dom';
 import { pintarAcierto, pintarFallo, pintarResumen, progreso, type Contexto, type ModoPractica } from './comun';
 
 export interface OpcionesEmparejar {
-  /** Verbos cuyas formas hay que emparejar (por defecto, todos los del grupo). Se puede tocar cualquier verbo del grupo. */
+  /** Verbos cuyas formas hay que emparejar (por defecto, todos los de la cuadrícula). Se puede tocar cualquier verbo de la cuadrícula. */
   ids?: readonly string[];
   /** Qué hacer al terminar (por defecto, el resumen con "Otra ronda"). */
   alTerminar?: (resumen: ResumenRonda) => void;
@@ -13,7 +13,7 @@ export interface OpcionesEmparejar {
 
 /**
  * Emparejar (SPEC 4.2): tandas de formas para unir con su verbo. "Toca unas
- * formas, luego toca su verbo." Todos los verbos del grupo se pueden tocar siempre.
+ * formas, luego toca su verbo." Todos los verbos de la cuadrícula se pueden tocar siempre.
  */
 export function iniciarEmparejar(ctx: Contexto, op: OpcionesEmparejar = {}): ModoPractica {
   const { contenedor, tablero, verbos, rng, motor } = ctx;

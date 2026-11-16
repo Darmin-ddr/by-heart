@@ -1,7 +1,7 @@
 import { corregirFila, notaExamen, prepararExamen, verbosDeAmbito, type AmbitoExamen, type CorreccionFila, type FilaExamen } from '../logic/examen';
 import type { CorreccionForma } from '../logic/formas';
 import type { Rng } from '../logic/rng';
-import type { Grupo, Verbo } from '../logic/types';
+import type { Verbo } from '../logic/types';
 import { boton, el, rellenar } from './dom';
 import type { Motor } from './comun';
 import type { Modo } from './explorar';
@@ -11,7 +11,8 @@ import { campoRespuesta, formaCorregida } from './preguntas';
 export interface ServiciosExamen {
   motor: Motor;
   verbos: readonly Verbo[];
-  grupos: readonly Grupo[];
+  /** Ids de los verbos que el alumno ya ha empezado. */
+  empezados: () => ReadonlySet<string>;
   rng: Rng;
   /** Lista de examen del panel (null si no hay). */
   listaExamen: () => readonly string[] | null;
@@ -24,7 +25,7 @@ type Clave = 'infinitivo' | 'pasado' | 'participio';
 const ETIQUETA: Record<Clave, string> = { infinitivo: 'Infinitivo', pasado: 'Pasado', participio: 'Participio' };
 
 /** Recuerda la última elección en esta visita (solo en memoria). */
-let ultimoAmbito: AmbitoExamen = 'todo';
+let ultimoAmbito: AmbitoExamen = 'empezados';
 let ultimaCantidad: Cantidad = 20;
 
 /**
@@ -36,8 +37,8 @@ let ultimaCantidad: Cantidad = 20;
 export function iniciarExamen(panel: HTMLElement, s: ServiciosExamen): Modo {
   const contenedor = el('div', 'contenido-modo');
   panel.replaceChildren(contenedor);
-  const grupoInicial = [...s.grupos].sort((a, b) => a.orden - b.orden)[0]?.id ?? '';
-  let ambito: AmbitoExamen = ultimoAmbito === 'lista' && !s.listaExamen()?.length ? 'todo' : ultimoAmbito;
+  let ambito: AmbitoExamen =
+    (ultimoAmbito === 'lista' && !s.listaExamen()?.length) || (ultimoAmbito === 'empezados' && !s.empezados().size) ? 'todo' : ultimoAmbito;
   let cantidad: Cantidad = ultimaCantidad;
 
   function selector<T>(etiqueta: string, opciones: { valor: T; texto: string; desactivado?: boolean }[], esActual: (v: T) => boolean, elegir: (v: T) => void): HTMLElement {
@@ -53,48 +54,30 @@ export function iniciarExamen(panel: HTMLElement, s: ServiciosExamen): Modo {
     return el('div', 'campo-etiquetado', el('span', 'etiqueta-campo', etiqueta), caja);
   }
 
-  const verbosAmbito = () => verbosDeAmbito(ambito, s.verbos, s.listaExamen());
-  const esGrupo = (a: AmbitoExamen): a is { grupo: string } => typeof a === 'object';
+  const verbosAmbito = () => verbosDeAmbito(ambito, s.verbos, s.listaExamen(), s.empezados());
 
   function pintarInicio(): void {
     const lista = s.listaExamen();
     const total = verbosAmbito().length;
     const empezar = boton('Empezar examen', 'boton-principal', empezarExamen);
     empezar.disabled = total === 0;
-    let elegirGrupo: HTMLElement | null = null;
-    if (esGrupo(ambito)) {
-      const desplegable = el('select', 'campo-texto selector-grupo');
-      desplegable.setAttribute('aria-label', 'Grupo');
-      for (const g of [...s.grupos].sort((a, b) => a.orden - b.orden)) {
-        const o = el('option', '', g.nombre);
-        o.value = g.id;
-        o.selected = g.id === ambito.grupo;
-        desplegable.append(o);
-      }
-      desplegable.addEventListener('change', () => {
-        ambito = ultimoAmbito = { grupo: desplegable.value };
-        pintarInicio();
-      });
-      elegirGrupo = el('label', 'campo-etiquetado', el('span', 'etiqueta-campo', 'Grupo'), desplegable);
-    }
     rellenar(
       contenedor,
       el('h2', 'titulo-panel', 'Examen'),
       el('p', 'ayuda', 'Como el de clase: una tabla de verbos con huecos. Rellénala entera y, al final, corrígela para ver tu nota.'),
-      selector<'todo' | 'lista' | 'grupo'>(
+      selector<AmbitoExamen>(
         'Qué entra',
         [
+          { valor: 'empezados', texto: 'Los que has visto', desactivado: s.empezados().size === 0 },
           { valor: 'todo', texto: 'Todos los verbos' },
           ...(lista?.length ? [{ valor: 'lista' as const, texto: 'Lista del examen' }] : []),
-          { valor: 'grupo', texto: 'Un grupo' },
         ],
-        (v) => (v === 'grupo' ? esGrupo(ambito) : ambito === v),
+        (v) => ambito === v,
         (v) => {
-          ambito = ultimoAmbito = v === 'grupo' ? (esGrupo(ambito) ? ambito : { grupo: grupoInicial }) : v;
+          ambito = ultimoAmbito = v;
           pintarInicio();
         },
       ),
-      elegirGrupo,
       selector<Cantidad>(
         'Cuántos verbos',
         [

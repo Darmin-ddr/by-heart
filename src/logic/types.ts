@@ -20,15 +20,7 @@ export interface Verbo {
   /** Como en el listado de clase. */
   significado: string;
   variantesSignificado: string[];
-  grupo: string;
   nota?: string;
   trucos: Truco[];
 }
 
-/** Grupo de verbos por patrón (`groups.json`). */
-export interface Grupo {
-  id: string;
-  nombre: string;
-  orden: number;
-  color: string;
-}

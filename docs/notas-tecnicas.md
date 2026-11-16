@@ -1,25 +1,25 @@
 # Notas técnicas (memoria de trabajo)
 
-By Heart parte de una copia de Capitalia 1.3.2. Desde el 16/11/2026 el código ya no tiene nada de países, mapas ni continentes: todo trabaja con verbos y grupos.
+By Heart parte de una copia de Capitalia 1.3.2. Desde el 16/11/2026 el código ya no tiene nada de países, mapas ni continentes, ni grupos de verbos: una sola lista de verbos, en el orden del listado.
 
 ## Estructura
-- `src/data/`: el contenido. `verbs.json` y `groups.json` (modelo de SPEC 12) los genera `scripts/generar-verbos.cjs` a partir de su propia tabla, comprobando cada fila contra el texto del PDF del listado (`pdftotext -raw`). Para cambiar un verbo, un grupo o un truco, se cambia ahí y se regenera. Detalles del listado: `docs/listas/README.md`.
+- `src/data/`: el contenido. `verbs.json` (modelo de SPEC 12) lo genera `scripts/generar-verbos.cjs` a partir de su propia tabla, comprobando cada fila contra el texto del PDF del listado (`pdftotext -raw`). Ahí están también la traducción (`CASTELLANO`) y las familias que dan el truco de cada verbo (`FAMILIAS`). Para cambiar un verbo, un significado o un truco, se cambia ahí y se regenera. Detalles del listado: `docs/listas/README.md`.
 - `src/logic/`: lógica pura con tests (`tests/`). Nada de DOM.
-  - `types.ts` (`Verbo`, `Grupo`), `verbos.ts` (formas para enseñar, verbos de un grupo, orden del curso).
-  - `progreso.ts`: estado guardado, FSRS, escalones (`ESCALONES`: elegir, emparejar, completar, tablamuda), grupos superados, dominados y desbloqueados.
+  - `types.ts` (`Verbo`), `verbos.ts` (formas para enseñar).
+  - `progreso.ts`: estado guardado, FSRS, escalones (`ESCALONES`: elegir, emparejar, completar, tablamuda), verbos dominados y verbos en curso (`verbosEnCurso`, lo que trabaja Aprender).
   - `formas.ts`: corrección de las formas escritas (ortografía exacta y "casi").
-  - `hoy.ts` (sesión de Hoy por bloques de grupo, nuevos autorregulados, `ColaHoy`), `portada.ts` (cifras de la portada), `examen.ts` (filas, corrección y nota), `opciones.ts` (Elegir), `emparejar.ts` (Emparejar por tandas), `sesion.ts` (cola de una ronda), `adultos.ts` (PIN, estadísticas del panel, casillas de la lista de examen), `almacen.ts`, `copia.ts`, `perfiles.ts`, `nota.ts`, `config.ts`.
+  - `hoy.ts` (sesión de Hoy, nuevos autorregulados en el orden del listado, `ColaHoy`), `portada.ts` (cifras de la portada), `examen.ts` (filas, corrección y nota), `opciones.ts` (Elegir: el verbo por su significado; distractores por distancia de edición), `emparejar.ts` (Emparejar por tandas), `sesion.ts` (cola de una ronda), `adultos.ts` (PIN, estadísticas del panel, casillas de la lista de examen), `almacen.ts`, `copia.ts`, `perfiles.ts`, `nota.ts`, `config.ts`.
 - `src/ui/`: interfaz sin framework.
-  - `app.ts`: arranque (alumnos), estado, grupo actual, cuadrícula, pestañas y `Motor` (registrar respuesta en FSRS y en el escalón, trucos), avisos y celebraciones.
+  - `app.ts`: arranque (alumnos), estado, cuadrícula, pestañas y `Motor` (registrar respuesta en FSRS y en el escalón, trucos), avisos y celebraciones (cada diez verbos dominados, `decenasCelebradas`).
   - `tablero.ts` (contrato) y `cuadricula.ts`: la cuadrícula de verbos. Las pantallas solo conocen el contrato `Tablero`.
-  - `hoy.ts`, `aprender.ts`, `examen.ts`, `explorar.ts`, `ronda.ts` (rondas de preguntas sueltas), `preguntas.ts` (Elegir, Completar, Tabla muda y Al revés), `emparejar.ts`, `grupos.ts` (selector), `panel.ts`, `guia.ts`, `bienvenida.ts`, `mas.ts`, `perfiles.ts`, `instalar.ts`, `actualizar.ts`, `tema.ts`, `acerca.ts`, `comun.ts` (feedback compartido).
+  - `hoy.ts`, `aprender.ts`, `examen.ts`, `explorar.ts`, `ronda.ts` (rondas de preguntas sueltas), `preguntas.ts` (Elegir, Completar, Tabla muda y Al revés), `emparejar.ts`, `panel.ts`, `guia.ts`, `bienvenida.ts`, `mas.ts`, `perfiles.ts`, `instalar.ts`, `actualizar.ts`, `tema.ts`, `acerca.ts`, `comun.ts` (feedback compartido).
 
 ## Decisiones de la interfaz
-- **"Todos los verbos"** es un grupo más (`TODOS` en `app.ts`, id `todos`): la cuadrícula de la portada de Hoy y una opción del selector, que se abre cuando lo están todos los grupos.
-- **Hoy**: la portada enseña todos los verbos; cada pregunta, la cuadrícula de su grupo (con un rótulo al cambiar). El tiempo de respuesta cuenta desde que la cuadrícula está quieta.
+- **Qué enseña la cuadrícula:** todos los verbos en la portada de Hoy y en Explorar; los verbos en curso en Aprender; los verbos de la sesión durante Hoy (`montarTablero` en `app.ts`).
+- **Aprender** se vuelve a montar al terminar una tanda en la que algún verbo ha quedado aprendido, para que entre otro (`recargar`).
+- **Elegir** y **Tabla muda** esconden los infinitivos de la cuadrícula (`setMudo`): si no, chivarían la respuesta.
 - **Examen**: sin cuadrícula (`#tablero` oculto, el panel a todo lo ancho). Es un formulario: Enter pasa a la casilla siguiente y solo el botón corrige. Las respuestas cuentan para FSRS (Completar o Tabla muda según la fila, con `examen: true`), no para los escalones.
-- **Tabla muda**: la cuadrícula esconde los infinitivos (`setMudo`) y no señala ninguna casilla hasta responder.
-- **Clases CSS**: `.cuadro` es una casilla de la cuadrícula; `.casilla` es una casilla de verificación (panel). Variables de color: `--casilla`, `--acierto-casilla`, `--fallo-casilla`, `--color-grupo`, `--grupo-base`.
+- **Clases CSS**: `.cuadro` es una casilla de la cuadrícula; `.casilla` es una casilla de verificación (panel). Variables de color: `--casilla`, `--acierto-casilla`, `--fallo-casilla`, `--color-verbo`, `--verbo-base`.
 - En modo oscuro, `--acierto-casilla` y `--fallo-casilla` son algo más oscuros que en Capitalia: el texto de las casillas no llegaba al contraste mínimo (lo comprueba `tests/contraste.test.ts`).
 - Los atajos de teclado de las preguntas (`Teclado` en `comun.ts`) se ignoran mientras haya un `<dialog>` abierto.
 
@@ -39,7 +39,6 @@ By Heart parte de una copia de Capitalia 1.3.2. Desde el 16/11/2026 el código y
 - `ts-fsrs` 5.4.2: `fsrs(generatorParameters())`, `createEmptyCard(fecha)`, `f.next(card, fecha, Rating.X).card`.
   Rating: Again 1, Hard 2, Good 3, Easy 4. State: New 0, Learning 1, Review 2, Relearning 3.
   Con pasos de aprendizaje cortos: un Good nuevo -> Learning con due a 10 min; otro Good -> Review a 2 días.
-- Por eso, tras la primera sesión de Hoy, los verbos nuevos ya cuentan como "en repaso" y el grupo siguiente se abre (`grupoSuperado`). Es el comportamiento heredado de Capitalia.
 
 ## Alumnos (perfiles locales)
 - Lógica pura en `src/logic/perfiles.ts`; interfaz en `src/ui/perfiles.ts` (imagen, "¿Quién va a estudiar?", añadir y editar).

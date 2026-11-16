@@ -25,8 +25,8 @@ export interface ServiciosHoy {
   adelantado: () => ItemHoy[];
   /** Tipo de pregunta de un verbo en este momento (según su escalón o, si está aprendido, variado). */
   modoPara: (verboId: string) => ModoId;
-  /** Cuadrícula del grupo del verbo (la cambia si hace falta) y cuánto dura el rótulo del grupo nuevo (0 si no cambia). */
-  tableroPara: (verbo: Verbo) => { tablero: Tablero; transicionMs: number };
+  /** Monta la cuadrícula con los verbos de la sesión y la devuelve. */
+  tableroSesion: (ids: readonly string[]) => Tablero;
   /** Cuadrícula actual (para limpiarla al salir). */
   tableroActual: () => Tablero | null;
   /** Vuelve a la cuadrícula de todos los verbos (la de la portada). */
@@ -62,8 +62,7 @@ function textoDiasExamen(dias: number): string {
 /**
  * Pestaña "Hoy" (SPEC 4.1 y 7): la rutina diaria. Repasos de lo aprendido,
  * verbos en aprendizaje y nuevos intercalados (cada nuevo sale dos veces).
- * Las preguntas pueden ser de cualquier grupo: la cuadrícula cambia al grupo
- * del verbo con un rótulo, y el tiempo cuenta desde que está quieta.
+ * Durante la sesión, la cuadrícula enseña solo los verbos de la sesión.
  */
 export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
   const contenedor = el('div', 'contenido-modo');
@@ -75,6 +74,7 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
   let nuevosVistos = new Set<string>();
   let tiposPorVerbo = new Map<string, ItemHoy['tipo']>();
   let adelantando = false;
+  let tablero: Tablero | null = null;
 
   function limpiarTablero(): void {
     const tablero = s.tableroActual();
@@ -235,8 +235,9 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
     adelantando = adelantado;
     nuevosVistos = new Set(items.filter((i) => i.tipo === 'nuevo').map((i) => i.verboId));
     tiposPorVerbo = new Map(items.map((i) => [i.verboId, i.tipo]));
-    // La sesión ya viene ordenada (por grupos, con los nuevos intercalados): no se baraja.
-    cola = new ColaHoy(items.map((i) => ({ id: i.verboId, grupo: s.candidatos.find((v) => v.id === i.verboId)?.grupo ?? '' })));
+    // La sesión ya viene ordenada (con los nuevos intercalados): no se baraja.
+    cola = new ColaHoy(items.map((i) => i.verboId));
+    tablero = s.tableroSesion(items.map((i) => i.verboId));
     siguiente();
   }
 
@@ -250,14 +251,13 @@ export function iniciarHoy(panel: HTMLElement, s: ServiciosHoy): Modo {
       return;
     }
     const verbo = s.candidatos.find((v) => v.id === id)!;
-    const { tablero, transicionMs } = s.tableroPara(verbo);
+    if (!tablero) return;
     const modo = s.modoPara(id);
     const renderizar = RENDERIZADORES[modo] ?? preguntaElegir;
     const { total } = cola.resumen();
     const etiqueta = tiposPorVerbo.get(id) === 'nuevo' ? ' · nuevo' : '';
     contenedor.replaceChildren(progreso(`${total - cola.pendientes() + 1} de ${total}${etiqueta}`));
-    // El tiempo cuenta desde que la cuadrícula está quieta (tras el rótulo del grupo nuevo).
-    const inicio = performance.now() + transicionMs;
+    const inicio = performance.now();
     let respondida = false;
     const actual = cola;
     control = renderizar({

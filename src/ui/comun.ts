@@ -16,7 +16,7 @@ export interface Contexto {
   /** Zona del panel donde dibuja el modo. */
   contenedor: HTMLElement;
   tablero: Tablero;
-  /** Verbos en juego (los del grupo, o todos). */
+  /** Verbos en juego (los de la cuadrícula). */
   verbos: readonly Verbo[];
   /** Todos los verbos (para los distractores de Elegir). */
   candidatos: readonly Verbo[];
@@ -52,7 +52,7 @@ export interface ModoPractica {
 export class Teclado {
   private manejador: ((e: KeyboardEvent) => void) | null = null;
   private readonly oyente = (e: KeyboardEvent) => {
-    // Con un diálogo abierto (guías, panel, grupos...), las teclas son suyas:
+    // Con un diálogo abierto (guías, panel...), las teclas son suyas:
     // la pregunta de detrás no debe responder ni avanzar.
     if (document.querySelector('dialog[open]')) return;
     this.manejador?.(e);

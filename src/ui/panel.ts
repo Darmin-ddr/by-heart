@@ -5,24 +5,21 @@ import {
   actividadReciente,
   comprobarPin,
   diasHastaExamen,
-  dominioPorGrupo,
   estadoMarcado,
   hashPin,
   marcarVarios,
   pinValido,
   verbosAtascados,
+  verbosPorNivel,
 } from '../logic/adultos';
 import { estadoVacio, type EstadoProgreso } from '../logic/progreso';
 import { formasDe } from '../logic/verbos';
-import type { Grupo, Verbo } from '../logic/types';
+import type { Verbo } from '../logic/types';
 import { boton, el } from './dom';
 
 export interface DatosPanel {
   estado(): EstadoProgreso;
   guardar(): void;
-  grupos: readonly Grupo[];
-  /** Verbos de un grupo. */
-  verbosDe(grupoId: string): readonly Verbo[];
   /** Todos los verbos. */
   verbos: readonly Verbo[];
   /** Aplica cambios que afectan a lo que se ve (examen, desbloqueo): reinicia la app. */
@@ -44,7 +41,7 @@ const NOMBRES: Record<Seccion, string> = { resumen: 'Resumen', examen: 'Examen',
 const NIVELES = ['Sin empezar', 'Elegir o Emparejar', 'Completar o Tabla muda', 'Aprendidos'];
 
 /**
- * Panel de adultos (SPEC 8), protegido con PIN: progreso por grupo, verbos
+ * Panel de adultos (SPEC 8), protegido con PIN: progreso, verbos
  * que más se atascan, actividad reciente, lista y fecha de examen, edición de
  * trucos, ajustes, alumnos y reinicio del progreso.
  */
@@ -166,29 +163,18 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
   function pintarResumen(cuerpo: HTMLElement): void {
     const estado = datos.estado();
     const ahora = new Date();
-    const grupos = dominioPorGrupo(estado, datos.grupos, datos.verbosDe);
-    const tabla = el('div', 'tabla-dominio');
-    for (const d of grupos) {
-      const barra = el('div', 'barra-dominio');
-      barra.setAttribute('role', 'img');
-      barra.setAttribute('aria-label', d.porNivel.map((n, i) => `${NIVELES[i]}: ${n}`).join(', '));
-      d.porNivel.forEach((n, i) => {
-        if (!n) return;
-        const tramo = el('span', `tramo nivel-tramo-${i}`);
-        tramo.style.flexGrow = String(n);
-        tramo.style.setProperty('--color-grupo', d.grupo.color);
-        barra.append(tramo);
-      });
-      tabla.append(
-        el('div', 'fila-dominio', el('span', 'fila-nombre', d.grupo.nombre), barra, el('span', 'fila-cifra', `${d.porNivel[3]}/${d.total}`)),
-      );
-    }
-    const leyenda = el(
-      'p',
-      'leyenda',
-      ...NIVELES.flatMap((n, i) => [el('span', `muestra nivel-tramo-${i}`), ` ${n}  `]),
-      el('span', 'leyenda-nota', 'Cada grupo usa su propio color; lo que cuenta es el tono: cuanto más intenso, más avanzado.'),
-    );
+    const porNivel = verbosPorNivel(estado, datos.verbos);
+    const barra = el('div', 'barra-dominio');
+    barra.setAttribute('role', 'img');
+    barra.setAttribute('aria-label', porNivel.map((n, i) => `${NIVELES[i]}: ${n}`).join(', '));
+    porNivel.forEach((n, i) => {
+      if (!n) return;
+      const tramo = el('span', `tramo nivel-tramo-${i}`);
+      tramo.style.flexGrow = String(n);
+      barra.append(tramo);
+    });
+    const tabla = el('div', 'tabla-dominio', el('div', 'fila-dominio', el('span', 'fila-nombre', 'Todos'), barra, el('span', 'fila-cifra', `${porNivel[3]}/${datos.verbos.length}`)));
+    const leyenda = el('p', 'leyenda', ...NIVELES.flatMap((n, i) => [el('span', `muestra nivel-tramo-${i}`), ` ${n} (${porNivel[i]})  `]));
 
     const atascados = verbosAtascados(estado, datos.verbos, ahora);
     const listaAtascados = atascados.length
@@ -213,7 +199,7 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
 
     cuerpo.append(
       explicacionResumen(),
-      el('h3', 'dialogo-subtitulo', 'Aprendidos por grupo'),
+      el('h3', 'dialogo-subtitulo', 'Verbos por escalón'),
       tabla,
       leyenda,
       el('h3', 'dialogo-subtitulo', 'Los que más se atascan'),
@@ -236,7 +222,7 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
       contador.textContent = `${seleccion.size} verbos en el examen` + (dias !== null ? ` · ${textoDias(dias)}` : '');
     };
 
-    // Casillas de "todos los verbos", de grupo y de verbo, sincronizadas.
+    // Casilla de "todos los verbos" y una por verbo, sincronizadas.
     let seleccion = new Set(estado.ajustes.listaExamen ?? []);
     const casillasVerbo = new Map<string, HTMLInputElement>();
     const varios: { ids: string[]; casilla: HTMLInputElement }[] = [];
@@ -261,31 +247,19 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
     };
 
     const todos = datos.verbos.map((v) => v.id);
-    const bloques = el('div', 'grupos-examen', el('label', 'casilla casilla-todos', casillaVarios(todos), ` Todos los verbos (${todos.length})`));
-    for (const g of [...datos.grupos].sort((a, b) => a.orden - b.orden)) {
-      const verbos = datos.verbosDe(g.id);
-      if (!verbos.length) continue;
-      const lista = el('div', 'casillas');
-      for (const v of verbos) {
-        const c = el('input');
-        c.type = 'checkbox';
-        c.addEventListener('change', () => {
-          if (c.checked) seleccion.add(v.id);
-          else seleccion.delete(v.id);
-          refrescar();
-        });
-        casillasVerbo.set(v.id, c);
-        lista.append(el('label', 'casilla', c, ` ${v.infinitivo}`));
-      }
-      bloques.append(
-        el(
-          'details',
-          'grupo-examen',
-          el('summary', '', el('label', 'casilla', casillaVarios(verbos.map((v) => v.id)), ` ${g.nombre} (${verbos.length})`)),
-          lista,
-        ),
-      );
+    const lista = el('div', 'casillas casillas-verbos');
+    for (const v of datos.verbos) {
+      const c = el('input');
+      c.type = 'checkbox';
+      c.addEventListener('change', () => {
+        if (c.checked) seleccion.add(v.id);
+        else seleccion.delete(v.id);
+        refrescar();
+      });
+      casillasVerbo.set(v.id, c);
+      lista.append(el('label', 'casilla', c, ` ${v.infinitivo}`));
     }
+    const bloques = el('div', 'lista-examen', el('label', 'casilla casilla-todos', casillaVarios(todos), ` Todos los verbos (${todos.length})`), lista);
     fecha.addEventListener('change', actualizarContador);
     refrescar();
 
@@ -309,7 +283,7 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
       el(
         'p',
         'ayuda',
-        'Marca los verbos que entran en el examen (puedes marcarlos todos o un grupo entero) y su fecha. Hoy les dará prioridad, y en la pestaña Examen se podrá elegir «Lista del examen» para hacer un examen de prueba solo con ellos.',
+        'Marca los verbos que entran en el examen y su fecha. Hoy les dará prioridad, y en la pestaña Examen se podrá elegir «Lista del examen» para hacer un examen de prueba solo con ellos.',
       ),
       el('label', 'etiqueta-campo', 'Fecha del examen', fecha),
       contador,
@@ -321,17 +295,10 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
 
   function pintarTrucos(cuerpo: HTMLElement): void {
     const estado = datos.estado();
-    const selector = el('select', 'campo-texto');
-    selector.setAttribute('aria-label', 'Grupo');
-    for (const g of [...datos.grupos].sort((a, b) => a.orden - b.orden)) {
-      const o = el('option', '', g.nombre);
-      o.value = g.id;
-      selector.append(o);
-    }
     const lista = el('div', 'lista-trucos');
     const pintar = () => {
       lista.replaceChildren();
-      for (const p of datos.verbosDe(selector.value)) {
+      for (const p of datos.verbos) {
         const original = p.trucos[0]?.texto ?? '';
         const area = el('textarea', 'campo-truco');
         area.rows = 2;
@@ -367,26 +334,15 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
         );
       }
     };
-    selector.addEventListener('change', pintar);
     pintar();
     cuerpo.append(
       el('p', 'ayuda', 'Los cambios se guardan al salir de cada cuadro. Si el alumno ha inventado su propio truco, se le muestra el suyo.'),
-      selector,
       lista,
     );
   }
 
   function pintarAjustes(cuerpo: HTMLElement): void {
     const estado = datos.estado();
-
-    const todas = el('input');
-    todas.type = 'checkbox';
-    todas.checked = estado.ajustes.todasDesbloqueadas;
-    todas.addEventListener('change', () => {
-      estado.ajustes.todasDesbloqueadas = todas.checked;
-      datos.guardar();
-      cambiosQueRecargan = true;
-    });
 
     // Máximo de nuevos al día en Hoy: se autorregula entre 5 y este valor (SPEC 7).
     const maxNuevos = el('select', 'campo-texto campo-select');
@@ -426,8 +382,7 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
       estado.historial = limpio.historial;
       estado.aprendizaje = limpio.aprendizaje;
       estado.prioridad = limpio.prioridad;
-      estado.gruposCelebrados = limpio.gruposCelebrados;
-      estado.ultimoGrupo = null;
+      estado.decenasCelebradas = limpio.decenasCelebradas;
       datos.guardar();
       cambiosQueRecargan = true;
       mensaje.textContent = 'Progreso reiniciado.';
@@ -437,9 +392,7 @@ export function crearPanelAdultos(datos: DatosPanel): () => void {
       el('h3', 'dialogo-subtitulo', 'Verbos nuevos al día'),
       el('label', 'casilla', 'Como mucho ', maxNuevos),
       el('p', 'ayuda', 'Hoy mete entre 5 y este número de verbos nuevos cada día, según cómo vayan los aciertos recientes. Con muchos repasos pendientes, 5.'),
-      el('h3', 'dialogo-subtitulo', 'Grupos'),
-      el('label', 'casilla', todas, ' Desbloquear todos los grupos'),
-      el('p', 'ayuda', 'Normalmente se abren de uno en uno según el progreso. Útil si el examen o el curso van por otro orden.'),
+
       el('h3', 'dialogo-subtitulo', 'PIN'),
       el('div', 'acciones', pin1, cambiarPin),
       el('h3', 'dialogo-subtitulo', 'Progreso'),
@@ -541,8 +494,8 @@ function explicacionResumen(): HTMLElement {
       'ul',
       'lista-simple',
       punto(
-        'Aprendidos por grupo.',
-        'Cada verbo sube cuatro escalones: Elegir (reconocer el pasado y el participio entre cuatro), Emparejar (unir cada verbo con sus formas), Completar (escribir el pasado y el participio) y Tabla muda (escribir las tres formas a partir del significado, como en el examen). La barra muestra cuántos verbos hay en cada tramo, en el color del grupo: cuanto más intenso el tono, más avanzado; la cifra de la derecha, cuántos están ya aprendidos, es decir, han pasado los cuatro escalones. Los aprendidos no se olvidan del todo: Hoy los vuelve a preguntar de vez en cuando, cada vez más espaciados.',
+        'Verbos por escalón.',
+        'Cada verbo sube cuatro escalones: Elegir (reconocer el verbo por su significado), Emparejar (unir cada verbo con sus formas), Completar (escribir el pasado y el participio) y Tabla muda (escribir las tres formas a partir del significado, como en el examen). La barra muestra cuántos verbos hay en cada tramo: cuanto más intenso el tono, más avanzado; la cifra de la derecha, cuántos están ya aprendidos, es decir, han pasado los cuatro escalones. Los aprendidos no se olvidan del todo: Hoy los vuelve a preguntar de vez en cuando, cada vez más espaciados.',
       ),
       punto(
         'Los que más se atascan.',
@@ -554,7 +507,7 @@ function explicacionResumen(): HTMLElement {
       ),
       punto(
         'Cómo avanza.',
-        'Cada día, Hoy mezcla repasos con unos pocos verbos nuevos (entre 5 y 10, según cómo vayan los aciertos; el máximo se cambia en Ajustes). En Aprender se puede adelantar un grupo, y el Examen de prueba da una nota y permite mandar los fallos a Hoy.',
+        'Cada día, Hoy mezcla repasos con unos pocos verbos nuevos (entre 5 y 10, según cómo vayan los aciertos; el máximo se cambia en Ajustes). En Aprender se puede avanzar a su ritmo, y el Examen de prueba da una nota y permite mandar los fallos a Hoy.',
       ),
     ),
   );

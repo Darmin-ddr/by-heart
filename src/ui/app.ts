@@ -1,25 +1,15 @@
-import { grupos, verbos } from '../data';
-import { ordenCurso, verbosDeGrupo } from '../logic/verbos';
+import { verbos } from '../data';
 import { Almacen, CLAVE, almacenDelNavegador, type AlmacenTexto } from '../logic/almacen';
 import {
   borrarPerfil, cargarIndice, claveProgreso, crearPerfil, faltaNombre, guardarIndice, perfilDe, type IndicePerfiles,
 } from '../logic/perfiles';
 import { editarAlumno, elegirAlumno, nuevoAlumno } from './perfiles';
-import {
-  estadoVacio,
-  grupoDominado,
-  gruposDesbloqueados,
-  nivelCasilla,
-  nivelesDe,
-  registrarEscalon,
-  registrarRespuesta,
-  type EstadoProgreso,
-} from '../logic/progreso';
+import { dominados, empezado, estadoVacio, nivelesDe, registrarEscalon, registrarRespuesta, verbosEnCurso, type EstadoProgreso } from '../logic/progreso';
 import { exportarCasa, importarCasa, nombreFicheroCasa } from '../logic/copia';
 import { crearSesionHoy, modoHoy, nuevosDeHoy, repasoAdelantado, repasosPendientes } from '../logic/hoy';
 import { resumenPortada } from '../logic/portada';
-import { diasHastaExamen, gruposConExamen } from '../logic/adultos';
-import type { Grupo, Verbo } from '../logic/types';
+import { diasHastaExamen } from '../logic/adultos';
+import type { Verbo } from '../logic/types';
 import { crearTablero, type Tablero } from './tablero';
 import { lanzarConfeti } from './confeti';
 import { el } from './dom';
@@ -29,7 +19,6 @@ import { iniciarAprender } from './aprender';
 import { iniciarHoy } from './hoy';
 import { iniciarExamen } from './examen';
 import { alCambiarInstalacion, avisoDescartado, crearInstalar, descartarAviso, formaInstalar } from './instalar';
-import { prepararSelectorGrupos } from './grupos';
 import { prepararMas } from './mas';
 import { crearGuia } from './guia';
 import { crearAcercaDe } from './acerca';
@@ -38,11 +27,10 @@ import { crearPanelAdultos } from './panel';
 
 type Pestana = 'hoy' | 'aprender' | 'examen' | 'explorar';
 
-/** Duración del rótulo con el nombre del grupo cuando Hoy cambia de grupo. */
-const ROTULO_GRUPO_MS = 1100;
-
-/** "Todos los verbos": se usa como un grupo más en Aprender y Explorar, y es la cuadrícula de la portada de Hoy. */
-const TODOS: Grupo = { id: 'todos', nombre: 'Todos los verbos', orden: 0, color: '#cfd8e3' };
+/** Color de las casillas de los verbos que avanzan (el mismo para todos). */
+const COLOR_CASILLA = '#c8b6e2';
+/** Celebración grande cada vez que se llega a una decena más de verbos dominados (SPEC 5.1). */
+const DECENA = 10;
 /** Alumno elegido en esta visita (al abrir de nuevo la app, se vuelve a preguntar si hay varios). */
 const CLAVE_ELEGIDO = 'byheart-perfil-elegido';
 
@@ -204,34 +192,15 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   const contenedorTablero = document.getElementById('tablero')!;
   const avisos = document.getElementById('avisos')!;
   const botonesPestana = document.querySelectorAll<HTMLButtonElement>('.modo');
-  const botonGrupo = document.getElementById('grupo-actual') as HTMLButtonElement;
 
-  /** Grupo que enseña la cuadrícula en este momento (Hoy lo cambia). */
-  let grupo: Grupo = TODOS;
-  /** Grupo que ha elegido el alumno en el selector (Aprender y Explorar vuelven a él). */
-  let grupoElegido: Grupo = ordenCurso(grupos)[0] ?? TODOS;
+  /** Verbos que enseña la cuadrícula en este momento (todos, los que están en curso o los de la sesión de Hoy). */
+  let verbosTablero: readonly Verbo[] = verbos;
   let tablero: Tablero | null = null;
   let modo: Modo | null = null;
-  let pestana: Pestana = 'hoy';
-  let actualizarSelector: (() => void) | null = null;
 
-  const grupoDe = (id: string) => (id === TODOS.id ? TODOS : grupos.find((g) => g.id === id));
-  const verbosDe = (grupoId: string) => (grupoId === TODOS.id ? [...verbos] : verbosDeGrupo(verbos, grupoId));
-  /** Desbloqueados por progreso, más los que tienen verbos del examen (para poder prepararlo). */
-  const desbloqueados = () => {
-    if (estado.ajustes.todasDesbloqueadas) return new Set(grupos.map((g) => g.id));
-    const abiertos = gruposDesbloqueados(estado, grupos, verbosDe);
-    for (const id of gruposConExamen(estado.ajustes.listaExamen, verbos)) abiertos.add(id);
-    return abiertos;
-  };
-  /** "Todos los verbos" se abre cuando lo están todos los grupos. */
-  const todosAbiertos = () => {
-    const abiertos = desbloqueados();
-    return grupos.every((g) => abiertos.has(g.id));
-  };
-  const grupoAbierto = (g: Grupo) => (g.id === TODOS.id ? todosAbiertos() : desbloqueados().has(g.id));
-  const enExamen = (v: Verbo) => estado.ajustes.listaExamen?.includes(v.id) ?? false;
-  const colorDe = (verboId: string) => grupoDe(verbos.find((v) => v.id === verboId)?.grupo ?? '')?.color ?? '#cccccc';
+  /** Verbos de la lista de examen o fallados en un examen: Hoy y Aprender los sacan antes. */
+  const prioridad = () => new Set([...estado.prioridad, ...(estado.ajustes.listaExamen ?? [])]);
+  const enCurso = () => verbosEnCurso(estado, verbos, prioridad());
 
   function guardar(): void {
     if (!almacen.guardar(estado)) mostrarAvisoAlmacen();
@@ -256,7 +225,7 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   }
 
   function actualizarNiveles(): void {
-    tablero?.setNiveles(nivelesDe(estado, verbosDe(grupo.id)));
+    tablero?.setNiveles(nivelesDe(estado, verbosTablero));
   }
 
   const trucos: ServicioTrucos = {
@@ -274,7 +243,6 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
 
   const motor: Motor = {
     registrar(verboId, modoId, resultado, tiempoMs, opciones) {
-      const antes = desbloqueados();
       registrarRespuesta(estado, verboId, modoId, resultado, tiempoMs, new Date(), opciones);
       // Un verbo priorizado (fallado en un examen) deja de serlo al acertarlo fuera del examen.
       if (resultado === 'acierto' && !opciones?.examen) estado.prioridad = estado.prioridad.filter((x) => x !== verboId);
@@ -282,52 +250,44 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
       const cambio = opciones?.examen ? { subio: false, aprendido: false } : registrarEscalon(estado, verboId, modoId, resultado);
       guardar();
       actualizarNiveles();
-      comprobarHitos(antes);
+      comprobarHitos();
       return cambio;
     },
     truco: (id) => trucos.propio(id) ?? trucos.predefinido(id),
   };
 
-  /** Celebraciones grandes solo al dominar un grupo (SPEC 5.1), y aviso de grupo nuevo. */
-  function comprobarHitos(antes: Set<string>): void {
-    for (const g of grupos) {
-      if (!estado.gruposCelebrados.includes(g.id) && grupoDominado(estado, verbosDe(g.id))) {
-        estado.gruposCelebrados.push(g.id);
-        guardar();
-        lanzarConfeti();
-        avisar(`¡Has dominado el grupo «${g.nombre}»!`);
-      }
-    }
-    for (const id of desbloqueados()) {
-      if (!antes.has(id)) avisar(`Nuevo grupo disponible: ${grupoDe(id)?.nombre ?? id}`);
+  /** Celebración grande cada decena de verbos dominados (SPEC 5.1). */
+  function comprobarHitos(): void {
+    const decenas = Math.floor(dominados(estado, verbos) / DECENA);
+    if (decenas > estado.decenasCelebradas) {
+      estado.decenasCelebradas = decenas;
+      guardar();
+      lanzarConfeti();
+      avisar(`¡Ya dominas ${decenas * DECENA} verbos!`);
     }
   }
 
-  /** Monta la cuadrícula del grupo actual (o la quita, si se pasa `null`: el examen no la usa). */
-  function montarTablero(visible = true): void {
+  /** Monta la cuadrícula con estos verbos (o la quita, con `null`: el examen no la usa). */
+  function montarTablero(lista: readonly Verbo[] | null): void {
     tablero?.destruir();
-    tablero = visible ? crearTablero({ contenedor: contenedorTablero, verbos: verbosDe(grupo.id), colorDe, alTocar: (id) => modo?.alTocarVerbo(id) }) : null;
+    verbosTablero = lista ?? [];
+    tablero = lista ? crearTablero({ contenedor: contenedorTablero, verbos: lista, colorDe: () => COLOR_CASILLA, alTocar: (id) => modo?.alTocarVerbo(id) }) : null;
     contenedorTablero.hidden = !tablero;
     actualizarNiveles();
-    document.documentElement.style.setProperty('--grupo-base', grupo.color);
-    actualizarSelector?.();
   }
 
-  function cambiarPestana(nueva: Pestana): void {
+  function cambiarPestana(nueva: Pestana, empezarYa = false): void {
     modo?.salir();
-    pestana = nueva;
     for (const b of botonesPestana) b.setAttribute('aria-pressed', String(b.dataset.modo === nueva));
-    // Hoy y el examen no usan el selector de grupo.
-    botonGrupo.hidden = nueva === 'hoy' || nueva === 'examen';
     if (nueva === 'examen') {
       // Una tabla con huecos a todo lo ancho: sin cuadrícula, que delataría las respuestas.
-      montarTablero(false);
+      montarTablero(null);
       modo = iniciarExamen(panel, {
         motor,
         verbos,
-        grupos,
         rng: Math.random,
         listaExamen: () => estado.ajustes.listaExamen,
+        empezados: () => new Set(verbos.filter((v) => empezado(estado, v.id)).map((v) => v.id)),
         priorizar(ids: readonly string[]) {
           estado.prioridad = [...new Set([...estado.prioridad, ...ids])];
           guardar();
@@ -335,14 +295,22 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
       });
       return;
     }
-    // Portada de Hoy: todos los verbos, coloreados según lo aprendido. Aprender y Explorar: el grupo elegido.
-    grupo = nueva === 'hoy' ? TODOS : grupoElegido;
-    montarTablero();
-    const verbosGrupo = verbosDe(grupo.id);
-    const ctx = { tablero: tablero!, verbos: verbosGrupo, candidatos: verbos, rng: Math.random, alExplorar: () => cambiarPestana('explorar'), motor };
-    if (nueva === 'explorar') modo = iniciarExplorar(panel, tablero!, verbosGrupo, trucos);
-    else if (nueva === 'aprender') modo = iniciarAprender(panel, ctx, () => estado);
-    else modo = iniciarHoy(panel, serviciosHoy());
+    if (nueva === 'aprender') {
+      // Aprender: los verbos en curso (si se aprende uno, en la siguiente tanda entra otro).
+      const lista = enCurso();
+      montarTablero(lista);
+      modo = iniciarAprender(
+        panel,
+        { tablero: tablero!, verbos: lista, candidatos: verbos, rng: Math.random, alExplorar: () => cambiarPestana('explorar'), motor },
+        () => estado,
+        (empezar) => cambiarPestana('aprender', empezar),
+        empezarYa,
+      );
+      return;
+    }
+    // Explorar y la portada de Hoy: todos los verbos.
+    montarTablero(verbos);
+    modo = nueva === 'explorar' ? iniciarExplorar(panel, tablero!, verbos, trucos) : iniciarHoy(panel, serviciosHoy());
   }
 
   const abrirInstalar = crearInstalar();
@@ -354,7 +322,6 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   };
 
   function serviciosHoy() {
-    const prioridad = () => new Set([...estado.prioridad, ...(estado.ajustes.listaExamen ?? [])]);
     return {
       motor,
       candidatos: verbos,
@@ -362,15 +329,7 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
       sesion() {
         const ahora = new Date();
         const pendientes = repasosPendientes(estado, verbos, ahora).length;
-        return crearSesionHoy({
-          estado,
-          disponibles: verbos,
-          ordenGrupos: ordenCurso(grupos).map((g) => g.id),
-          prioridad: prioridad(),
-          nuevos: nuevosDeHoy(estado, pendientes, ahora),
-          ahora,
-          rng: Math.random,
-        });
+        return crearSesionHoy({ estado, disponibles: verbos, prioridad: prioridad(), nuevos: nuevosDeHoy(estado, pendientes, ahora), ahora, rng: Math.random });
       },
       adelantado: () => repasoAdelantado(estado, verbos),
       resumen: () => resumenPortada(estado, verbos, new Date()),
@@ -383,70 +342,27 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
       instalada: () => formaInstalar() === 'instalada',
       alCambiarInstalacion,
       modoPara: (id: string) => modoHoy(estado, id, Math.random),
-      tableroPara(verbo: Verbo) {
-        // En Hoy las preguntas van en la cuadrícula de su grupo (no en la de todos los verbos de la portada).
-        let transicionMs = 0;
-        if (grupo.id !== verbo.grupo) {
-          grupo = grupoDe(verbo.grupo) ?? TODOS;
-          montarTablero();
-          transicionMs = mostrarRotuloGrupo(grupo.nombre);
-        }
-        return { tablero: tablero!, transicionMs };
+      tableroSesion(ids: readonly string[]) {
+        // Durante la sesión, la cuadrícula enseña solo sus verbos (en el orden del listado).
+        const enSesion = new Set(ids);
+        montarTablero(verbos.filter((v) => enSesion.has(v.id)));
+        return tablero!;
       },
       tableroActual: () => tablero,
-      verTodos() {
-        grupo = TODOS;
-        montarTablero();
-      },
+      verTodos: () => montarTablero(verbos),
       irAAprender: () => cambiarPestana('aprender'),
       alExplorar: () => cambiarPestana('explorar'),
     };
   }
 
-  /** Rótulo con el nombre del grupo sobre la cuadrícula recién cambiada. Devuelve cuánto dura. */
-  function mostrarRotuloGrupo(nombre: string): number {
-    contenedorTablero.querySelector('.rotulo-grupo')?.remove();
-    const rotulo = el('div', 'rotulo-grupo', nombre);
-    rotulo.setAttribute('aria-hidden', 'true');
-    contenedorTablero.append(rotulo);
-    window.setTimeout(() => rotulo.classList.add('saliendo'), ROTULO_GRUPO_MS - 250);
-    window.setTimeout(() => rotulo.remove(), ROTULO_GRUPO_MS);
-    return ROTULO_GRUPO_MS;
-  }
-
-  /** Cambia el grupo en estudio (lo recuerda para la próxima vez). */
-  function irAGrupo(id: string): void {
-    const g = grupoDe(id);
-    if (!g) return;
-    grupoElegido = g;
-    estado.ultimoGrupo = id;
-    guardar();
-    cambiarPestana(pestana);
-  }
-
   // --- Arranque ---
-  const guardado = estado.ultimoGrupo ? grupoDe(estado.ultimoGrupo) : undefined;
-  if (guardado && grupoAbierto(guardado)) grupoElegido = guardado;
   if (!almacen.disponible) mostrarAvisoAlmacen();
   // Pedir almacenamiento persistente (Safari puede borrar datos de webs poco visitadas).
   void navigator.storage?.persist?.().catch(() => undefined);
 
-  for (const b of botonesPestana) b.addEventListener('click', () => cambiarPestana(b.dataset.modo as Pestana));
-  actualizarSelector = prepararSelectorGrupos(botonGrupo, {
-    grupos,
-    todos: () => ({ grupo: TODOS, abierto: todosAbiertos() }),
-    verbosDe,
-    desbloqueados,
-    nivel: (id) => nivelCasilla(estado, id),
-    actual: () => grupoElegido,
-    elegir: irAGrupo,
-    conExamen: (id) => verbosDe(id).filter(enExamen).length,
-  });
-  const abrirPanel = crearPanelAdultos({
+  for (const b of botonesPestana) b.addEventListener('click', () => cambiarPestana(b.dataset.modo as Pestana));  const abrirPanel = crearPanelAdultos({
     estado: () => estado,
     guardar,
-    grupos,
-    verbosDe,
     verbos,
     recargar: () => window.location.reload(),
     alumnos: () => ({ perfiles: indice.perfiles, actual: perfilId }),
@@ -499,7 +415,7 @@ function arrancarCon(backend: AlmacenTexto | null, indice: IndicePerfiles, perfi
   });
   const abrirGuia = crearGuia({
     verboParaTaller() {
-      const sinTruco = verbosDe(grupoElegido.id).filter((v) => !estado.trucosPropios[v.id]);
+      const sinTruco = enCurso().filter((v) => !estado.trucosPropios[v.id]);
       if (!sinTruco.length) return null;
       // Primero, el que más ha fallado: es donde un truco propio sirve de verdad.
       const fallos = new Map<string, number>();

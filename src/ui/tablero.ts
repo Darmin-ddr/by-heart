@@ -14,7 +14,7 @@ export interface OpcionesTablero {
   contenedor: HTMLElement;
   /** Verbos que se enseñan (y que se pueden tocar cuando el tablero es interactivo). */
   verbos: readonly Verbo[];
-  /** Color pastel de cada verbo (el de su grupo). */
+  /** Color pastel de cada verbo cuando avanza. */
   colorDe?: (id: string) => string;
   alTocar?: (id: string) => void;
 }

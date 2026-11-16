@@ -5,7 +5,7 @@ import { rngConSemilla } from '../src/logic/rng';
 import type { Verbo } from '../src/logic/types';
 import { verbo } from './ayuda';
 
-const v = (id: string, grupo = 'r1') => verbo(id, grupo);
+const v = (id: string) => verbo(id);
 const AHORA = new Date('2026-11-10T10:00:00Z');
 const DIA = 864e5;
 
@@ -20,7 +20,7 @@ function aprendidoCon(e: EstadoProgreso, id: string, venceEnDias: number, estabi
 }
 
 const sesion = (e: EstadoProgreso, disponibles: Verbo[], extra: Partial<Parameters<typeof crearSesionHoy>[0]> = {}) =>
-  crearSesionHoy({ estado: e, disponibles, ordenGrupos: ['r1', 'r2'], prioridad: new Set(), nuevos: 5, ahora: AHORA, rng: rngConSemilla(1), ...extra });
+  crearSesionHoy({ estado: e, disponibles, prioridad: new Set(), nuevos: 5, ahora: AHORA, rng: rngConSemilla(1), ...extra });
 
 describe('sesión de Hoy', () => {
   it('primer día: solo nuevos, cada uno dos veces y nunca seguidas', () => {
@@ -51,31 +51,15 @@ describe('sesión de Hoy', () => {
   });
 
   it('los verbos del examen tienen prioridad, también entre los nuevos', () => {
-    const ps = [v('A', 'r1'), v('B', 'r1'), v('Z', 'r2')];
+    const ps = [v('A'), v('B'), v('Z')];
     const s = sesion(estadoVacio(), ps, { nuevos: 1, prioridad: new Set(['Z']) });
     expect(s[0].verboId).toBe('Z');
   });
 
-  it('los nuevos salen primero del grupo anterior en el curso', () => {
-    const ps = [v('A', 'r2'), v('B', 'r2'), v('C', 'r1')];
-    const s = sesion(estadoVacio(), ps, { nuevos: 1 });
-    expect(s[0].verboId).toBe('C');
-  });
-
-  it('agrupa por grupo (la cuadrícula cambia poco) y deja el grupo de los nuevos para el final', () => {
-    const e = estadoVacio();
-    const ps = [v('A1', 'r1'), v('A2', 'r1'), v('B1', 'r2'), v('B2', 'r2'), v('C1', 'r3'), v('N1', 'r1'), v('N2', 'r1')];
-    aprendidoCon(e, 'A1', -5);
-    aprendidoCon(e, 'B1', -4);
-    aprendidoCon(e, 'A2', -3);
-    aprendidoCon(e, 'C1', -2);
-    aprendidoCon(e, 'B2', -1);
-    const s = sesion(e, ps, { nuevos: 2 });
-    const grupos = s.map((i) => ps.find((x) => x.id === i.verboId)!.grupo);
-    const saltos = grupos.filter((g, i) => i > 0 && g !== grupos[i - 1]).length;
-    expect(saltos).toBe(2);
-    expect(grupos.at(-1)).toBe('r1');
-    expect(s.map((i) => i.verboId).slice(0, 3)).toEqual(['B1', 'B2', 'C1']);
+  it('los nuevos salen en el orden del listado', () => {
+    const ps = [v('A'), v('B'), v('C'), v('D')];
+    const s = sesion(estadoVacio(), ps, { nuevos: 2 });
+    expect([...new Set(s.map((i) => i.verboId))]).toEqual(['A', 'B']);
   });
 
   it('los verbos en aprendizaje salen una vez al día', () => {
@@ -157,7 +141,7 @@ describe('tipo de pregunta en Hoy', () => {
 });
 
 describe('cola de Hoy', () => {
-  const items = (s: string) => s.split(' ').map((x) => ({ id: x, grupo: x[0] }));
+  const items = (s: string) => s.split(' ');
   const recorrer = (c: ColaHoy, fallar: Set<string>) => {
     const visto: string[] = [];
     while (c.actual()) {
@@ -168,14 +152,9 @@ describe('cola de Hoy', () => {
     return visto.join(' ');
   };
 
-  it('el fallo vuelve dentro del bloque de su grupo', () => {
-    expect(recorrer(new ColaHoy(items('a1 a2 a3 a4 a5 b1')), new Set(['a1']))).toBe('a1 a2 a3 a4 a1 a5 b1');
-    expect(recorrer(new ColaHoy(items('a1 a2 b1 b2')), new Set(['a1']))).toBe('a1 a2 a1 b1 b2');
-  });
-
-  it('si su bloque se acaba, tras la última de su grupo o al final', () => {
-    expect(recorrer(new ColaHoy(items('a1 b1 b2 a2 c1')), new Set(['a1']))).toBe('a1 b1 b2 a2 a1 c1');
-    expect(recorrer(new ColaHoy(items('a1 b1 b2')), new Set(['a1']))).toBe('a1 b1 b2 a1');
+  it('el fallo vuelve tres preguntas después, sin barajar el resto', () => {
+    expect(recorrer(new ColaHoy(items('a b c d e')), new Set(['a']))).toBe('a b c d a e');
+    expect(recorrer(new ColaHoy(items('a b')), new Set(['a']))).toBe('a b a');
   });
 
   it('resumen como en las rondas', () => {

@@ -1,4 +1,4 @@
-import type { Grupo, Verbo } from './types';
+import type { Verbo } from './types';
 
 const SEPARADOR = ' · ';
 
@@ -12,11 +12,3 @@ export function tresFormas(v: Pick<Verbo, 'infinitivo' | 'pasado' | 'participio'
   return `${v.infinitivo}${SEPARADOR}${formasDe(v)}`;
 }
 
-export function verbosDeGrupo(verbos: readonly Verbo[], grupoId: string): Verbo[] {
-  return verbos.filter((v) => v.grupo === grupoId);
-}
-
-/** Grupos en el orden del curso (SPEC 7). */
-export function ordenCurso(grupos: readonly Grupo[]): Grupo[] {
-  return [...grupos].sort((a, b) => a.orden - b.orden);
-}
